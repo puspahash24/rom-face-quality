@@ -79,7 +79,7 @@ td:first-child,th:first-child{text-align:left}
   </div>
   <div class="row">
     <label>Nearest holes <input id="k" type="number" min="1" max="30" value="3"></label>
-    <label>Max distance (m) <input id="rad" type="number" min="5" max="500" value="40"></label>
+    <label>Max distance (m) <input id="rad" type="number" min="5" max="500" value="15"></label>
   </div>
   <div class="row"><label><input id="w" type="checkbox" checked> Weight by distance</label></div>
   <div id="gpsinfo" class="note"></div>
@@ -355,7 +355,7 @@ $('tome').onclick=()=>{
 ['k','rad','w'].forEach(i=>$(i).onchange=()=>last&&update(last));
 
 function update(p){
-  const k=Math.max(1,+$('k').value||3),R=+$('rad').value||40,wt=$('w').checked;
+  const k=Math.max(1,+$('k').value||3),R=+$('rad').value||15,wt=$('w').checked;
   const near=pts.map(h=>({h,d:map.distance([p.lat,p.lon],[h.lat,h.lon])})).filter(x=>x.d<=R).sort((a,b)=>a.d-b.d).slice(0,k);
 
   // Fluorescent Yellow search circle for high contrast against satellite terrain
