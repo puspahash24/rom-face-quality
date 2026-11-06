@@ -93,7 +93,8 @@ td:first-child,th:first-child{text-align:left}
 <section>
   <h2>4. Face photo and report</h2>
   <div class="row">
-    <label class="btn ghost">Take / choose photo<input id="photo" type="file" accept="image/*" capture="environment"></label>
+    <label class="btn ghost">Take photo (camera)<input id="photo" type="file" accept="image/*" capture="environment"></label>
+    <label class="btn ghost">Upload photo (gallery / files)<input id="photoUp" type="file" accept="image/*"></label>
     <button id="save">Save report image</button>
   </div>
   <div id="prevWrap">
@@ -439,12 +440,15 @@ function renderPreview(){
   $('prevWrap').style.display='block';
 }
 
-$('photo').onchange=e=>{
+const onPhoto=e=>{
   const f=e.target.files[0];if(!f)return;
   const img=new Image();
   img.onload=()=>{photoImg=img;renderPreview();};
   img.src=URL.createObjectURL(f);
+  e.target.value='';
 };
+$('photo').onchange=onPhoto;
+$('photoUp').onchange=onPhoto;
 
 $('save').onclick=()=>{
   if(!last||!last.res){alert('Set a location with blastholes in range first.');return;}
