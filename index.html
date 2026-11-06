@@ -51,8 +51,9 @@ td:first-child,th:first-child{text-align:left}
   <p class="note">Each point name is read as Fe-SiO2-Al2O3-P_Type (for example 67-1-1.2-0.08_HO). If your file has Fe, SiO2, Al2O3 and P in extended data, those values are used instead.</p>
 </section>
 <section>
-  <h2>2. Loading unit location</h2>
-  <div class="row"><button id="gps">Use GPS</button><button id="manual" class="ghost">Tap map to set</button></div>
+  <h2>2. Loading unit pin</h2>
+  <p class="note">Drag the pin to where the loading unit is working, or tap the map. Quality updates as you move it.</p>
+  <div class="row"><button id="drop">Drop pin at map centre</button><button id="gps" class="ghost">Show my GPS</button><button id="tome" class="ghost">Pin at my GPS</button></div>
   <div class="row"><label>Nearest holes <input id="k" type="number" min="1" max="30" value="5"></label>
   <label>Max distance (m) <input id="rad" type="number" min="5" max="500" value="40"></label></div>
   <div class="row"><label><input id="w" type="checkbox"> Weight by distance</label></div>
@@ -83,7 +84,7 @@ const map=L.map('map').setView([22.12,85.49],14);
 const osm=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'});
 const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Esri'}).addTo(map);
 L.control.layers({Satellite:sat,Street:osm}).addTo(map);
-let pts=[],ptLayer=L.layerGroup().addTo(map),hit=L.layerGroup().addTo(map),here=null,watch=null,manualMode=false,last=null,photoImg=null;
+let pts=[],ptLayer=L.layerGroup().addTo(map),hit=L.layerGroup().addTo(map),pin=null,ring=null,me=null,watch=null,gpsLast=null,last=null,photoImg=null;
 
 function fromName(n){const m=/^\s*(-?[\d.]+)-(-?[\d.]+)-(-?[\d.]+)-(-?[\d.]+)_(.+?)\s*$/.exec(n||'');
   return m?{fe:+m[1],si:+m[2],al:+m[3],p:+m[4],type:normType(m[5])}:null;}
@@ -114,29 +115,34 @@ function setPoints(a,fit){
   pts.forEach(p=>L.circleMarker([p.lat,p.lon],{radius:5,color:'#000',weight:1,fillColor:colour(p.type),fillOpacity:.9})
     .bindPopup(`<b>${p.name}</b><br>Fe ${p.fe} | SiO2 ${p.si} | Al2O3 ${p.al} | P ${p.p}`).addTo(ptLayer));
   $('count').textContent=pts.length?pts.length+' blastholes loaded':'No usable points found. Check the naming format.';
-  $('status').textContent=pts.length?'Set your location':'Load a blasthole map to start';
+  $('status').textContent=pts.length?'Drop the pin on the loading unit':'Load a blasthole map to start';
   if(fit&&pts.length)map.fitBounds(L.latLngBounds(pts.map(p=>[p.lat,p.lon])).pad(.1));
   if(last)update(last);}
 try{const s=localStorage.getItem('rom_pts');if(s)setPoints(JSON.parse(s),true);}catch(e){}
 $('kml').onchange=e=>e.target.files[0]&&loadFile(e.target.files[0]).catch(err=>$('count').textContent='Could not read file: '+err.message);
 
-function setPos(lat,lon,acc){last={lat,lon,acc};
-  if(here)here.setLatLng([lat,lon]);else here=L.marker([lat,lon],{title:'Loading unit'}).addTo(map);
+function setPos(lat,lon){last={lat,lon};
+  if(pin)pin.setLatLng([lat,lon]);
+  else{pin=L.marker([lat,lon],{draggable:true,title:'Loading unit (approx.)'}).addTo(map);
+    pin.on('drag',e=>{const q=e.target.getLatLng();last={lat:q.lat,lon:q.lng};update(last);});
+    pin.on('dragend',e=>{const q=e.target.getLatLng();last={lat:q.lat,lon:q.lng};update(last);});}
   update(last);}
-$('gps').onclick=()=>{manualMode=false;
+$('drop').onclick=()=>{const c=map.getCenter();setPos(c.lat,c.lng);};
+map.on('click',e=>setPos(e.latlng.lat,e.latlng.lng));
+$('gps').onclick=()=>{
   if(!navigator.geolocation){$('gpsinfo').textContent='GPS is not available in this browser.';return;}
   if(watch!==null)navigator.geolocation.clearWatch(watch);
-  watch=navigator.geolocation.watchPosition(p=>{if(manualMode)return;
-    $('gpsinfo').textContent='GPS accuracy about '+Math.round(p.coords.accuracy)+' m';
-    setPos(p.coords.latitude,p.coords.longitude,p.coords.accuracy);},
-    e=>$('gpsinfo').textContent='GPS error: '+e.message+'. Use Tap map to set.',{enableHighAccuracy:true,maximumAge:2000});};
-$('manual').onclick=()=>{manualMode=true;$('gpsinfo').textContent='Tap the map where the loading unit is working.';};
-map.on('click',e=>{if(manualMode)setPos(e.latlng.lat,e.latlng.lng,0);});
+  watch=navigator.geolocation.watchPosition(p=>{gpsLast=[p.coords.latitude,p.coords.longitude];
+    $('gpsinfo').textContent='Your GPS accuracy about '+Math.round(p.coords.accuracy)+' m (blue dot)';
+    if(me)me.setLatLng(gpsLast);else me=L.circleMarker(gpsLast,{radius:7,color:'#fff',weight:2,fillColor:'#2563eb',fillOpacity:1}).addTo(map);},
+    e=>$('gpsinfo').textContent='GPS error: '+e.message,{enableHighAccuracy:true,maximumAge:2000});};
+$('tome').onclick=()=>{if(gpsLast){setPos(gpsLast[0],gpsLast[1]);map.panTo(gpsLast);}else $('gpsinfo').textContent='Tap Show my GPS first and wait for the blue dot.';};
 ['k','rad','w'].forEach(i=>$(i).onchange=()=>last&&update(last));
 
 function update(p){
   const k=Math.max(1,+$('k').value||5),R=+$('rad').value||40,wt=$('w').checked;
   const near=pts.map(h=>({h,d:map.distance([p.lat,p.lon],[h.lat,h.lon])})).filter(x=>x.d<=R).sort((a,b)=>a.d-b.d).slice(0,k);
+  if(ring)ring.setLatLng([p.lat,p.lon]).setRadius(R);else ring=L.circle([p.lat,p.lon],{radius:R,color:'#0d5c63',weight:1,fillOpacity:.06,interactive:false}).addTo(map);
   hit.clearLayers();
   near.forEach(x=>L.polyline([[p.lat,p.lon],[x.h.lat,x.h.lon]],{color:'#0d5c63',weight:2,dashArray:'4 4'}).addTo(hit));
   if(!near.length){last.res=null;$('res').innerHTML=`<span class="warn">No blastholes within ${R} m.</span> Move closer or raise the max distance.`;
@@ -161,7 +167,7 @@ $('save').onclick=()=>{
    'ROM quality (nearest '+r.n+' holes, '+(r.wt?'distance weighted':'simple average')+')',
    `Fe ${r.a.fe.toFixed(2)}%   SiO2 ${r.a.si.toFixed(2)}%   Al2O3 ${r.a.al.toFixed(2)}%   P ${isNaN(r.a.p)?'-':r.a.p.toFixed(3)}%`,
    'Material: '+r.mixTxt,
-   `Location: ${last.lat.toFixed(6)}, ${last.lon.toFixed(6)}`,
+   `Pin location (approx.): ${last.lat.toFixed(6)}, ${last.lon.toFixed(6)}`,
    'Time: '+new Date().toLocaleString()];
   const ph=photoImg?Math.round(W*photoImg.height/photoImg.width):0,H=ph+60+lines.length*38;
   const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
