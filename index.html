@@ -37,6 +37,8 @@ td,th{padding:4px 3px;border-bottom:1px solid var(--line);text-align:right}
 td:first-child,th:first-child{text-align:left}
 .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;border:1px solid rgba(0,0,0,.35)}
 .note{color:var(--mute);font-size:13px}.warn{color:var(--warn)}
+.bh-label{background:transparent;border:0;box-shadow:none;padding:0;color:#fff;font-size:10px;font-weight:600;text-shadow:0 0 3px #000,0 0 3px #000,0 0 2px #000;pointer-events:none}
+.bh-label::before{display:none}
 #prev{max-width:100%;border-radius:6px;margin-top:8px;display:none}
 </style>
 </head>
@@ -48,7 +50,11 @@ td:first-child,th:first-child{text-align:left}
   <h2>1. Blasthole map</h2>
   <div class="row"><label class="btn">Upload KML / KMZ<input id="kml" type="file" accept=".kml,.kmz"></label>
   <span id="count" class="note"></span></div>
-  <p class="note">Each point name is read as Fe-SiO2-Al2O3-P_Type (for example 67-1-1.2-0.08_HO). If your file has Fe, SiO2, Al2O3 and P in extended data, those values are used instead.</p>
+  <div class="row"><label class="btn ghost">Upload string file (KML / KMZ)<input id="strf" type="file" accept=".kml,.kmz"></label>
+  <button id="clrstr" class="ghost">Clear strings</button><span id="strcount" class="note"></span></div>
+  <div class="row"><label><input id="lab" type="checkbox" checked> Show BH IDs</label>
+  <label>from zoom <input id="labz" type="number" min="14" max="21" value="18"></label></div>
+  <p class="note">Each point name is read as Fe-SiO2-Al2O3-P_Type (for example 67-1-1.2-0.08_HO). If your file has Fe, SiO2, Al2O3 and P in extended data, those values are used instead. Face map lines (LineString / polygon outlines) are drawn from the string file, or from the blasthole file if it contains them. BH IDs appear once you zoom in to the set zoom level.</p>
 </section>
 <section>
   <h2>2. Loading unit pin</h2>
@@ -83,7 +89,10 @@ const $=id=>document.getElementById(id);
 const map=L.map('map').setView([22.12,85.49],14);
 const osm=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'});
 const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Esri'}).addTo(map);
-L.control.layers({Satellite:sat,Street:osm}).addTo(map);
+map.createPane('strings').style.zIndex=350;
+const strLayer=L.layerGroup().addTo(map);
+let strData=[];
+L.control.layers({Satellite:sat,Street:osm},{'Strings':strLayer}).addTo(map);
 let pts=[],ptLayer=L.layerGroup().addTo(map),hit=L.layerGroup().addTo(map),pin=null,ring=null,me=null,watch=null,gpsLast=null,last=null,photoImg=null;
 
 function fromName(n){const m=/^\s*(-?[\d.]+)-(-?[\d.]+)-(-?[\d.]+)-(-?[\d.]+)_(.+?)\s*$/.exec(n||'');
@@ -102,21 +111,68 @@ function parseKml(txt){
     if(!v)continue;
     out.push({name,lon:+c[0],lat:+c[1],...v});}
   return out;}
-async function loadFile(f){
-  let txt;
+async function readKml(f){
   if(f.name.toLowerCase().endsWith('.kmz')){const z=await JSZip.loadAsync(f);
-    const k=Object.keys(z.files).find(n=>n.toLowerCase().endsWith('.kml'));txt=await z.files[k].async('string');}
-  else txt=await f.text();
+    const k=Object.keys(z.files).find(n=>n.toLowerCase().endsWith('.kml'));return z.files[k].async('string');}
+  return f.text();}
+async function loadFile(f){
+  const txt=await readKml(f);
   setPoints(parseKml(txt),true);
-  try{localStorage.setItem('rom_pts',JSON.stringify(pts));}catch(e){}
+  try{localStorage.setItem('rom_pts',JSON.stringify(pts.map(({m,...r})=>r)));}catch(e){}
+  const ln=parseLines(txt);if(ln.length)setStrings(ln,!pts.length);
 }
+
+// ---- String (face map) lines ----
+const DEF_LINE='#ffd400';
+function kmlColour(c){return c&&c.length===8?'#'+c.slice(6,8)+c.slice(4,6)+c.slice(2,4):null;}
+function parseLines(txt){
+  const d=new DOMParser().parseFromString(txt,'application/xml'),out=[],st={};
+  const lc=el=>{const l=el.getElementsByTagName('LineStyle')[0],c=l&&l.getElementsByTagName('color')[0];return c?kmlColour(c.textContent.trim()):null;};
+  for(const s of d.getElementsByTagName('Style')){const id=s.getAttribute('id'),c=lc(s);if(id&&c)st['#'+id]=c;}
+  for(const sm of d.getElementsByTagName('StyleMap')){const id=sm.getAttribute('id');
+    for(const pr of sm.getElementsByTagName('Pair')){const k=pr.getElementsByTagName('key')[0],u=pr.getElementsByTagName('styleUrl')[0];
+      if(k&&u&&k.textContent.trim()==='normal'&&st[u.textContent.trim()])st['#'+id]=st[u.textContent.trim()];}}
+  for(const pm of d.getElementsByTagName('Placemark')){
+    if(pm.getElementsByTagName('Point')[0])continue;
+    const su=pm.getElementsByTagName('styleUrl')[0];
+    const col=lc(pm)||(su&&st[su.textContent.trim()])||DEF_LINE;
+    const geoms=[...pm.getElementsByTagName('LineString'),...pm.getElementsByTagName('LinearRing')];
+    for(const g of geoms){
+      const ce=g.getElementsByTagName('coordinates')[0];if(!ce)continue;
+      const c=ce.textContent.trim().split(/\s+/).map(t=>{const a=t.split(',');return[+(+a[1]).toFixed(6),+(+a[0]).toFixed(6)];}).filter(a=>!isNaN(a[0])&&!isNaN(a[1]));
+      if(c.length>1)out.push({c,col});}}
+  return out;}
+function setStrings(a,fit){
+  strData=a;strLayer.clearLayers();
+  a.forEach(s=>L.polyline(s.c,{pane:'strings',color:s.col,weight:2,opacity:.95,interactive:false}).addTo(strLayer));
+  $('strcount').textContent=a.length?a.length+' string lines':'';
+  if(fit&&a.length)map.fitBounds(L.latLngBounds(a.flatMap(s=>s.c)).pad(.1));
+  try{localStorage.setItem('rom_str',JSON.stringify(a));}catch(e){$('strcount').textContent+=' (too large to remember for next time)';}}
+$('strf').onchange=e=>{const f=e.target.files[0];if(!f)return;
+  readKml(f).then(t=>{const ln=parseLines(t);
+    if(!ln.length)$('strcount').textContent='No lines found in this file.';else setStrings(ln,true);})
+  .catch(err=>$('strcount').textContent='Could not read file: '+err.message);};
+$('clrstr').onclick=()=>{setStrings([],false);try{localStorage.removeItem('rom_str');}catch(e){}};
+try{const s=localStorage.getItem('rom_str');if(s)setStrings(JSON.parse(s),false);}catch(e){}
+
+// ---- BH ID labels (only holes in view, only when zoomed in) ----
+function refreshLabels(){
+  const on=$('lab').checked&&map.getZoom()>=(+$('labz').value||18),b=map.getBounds().pad(.05);
+  const vis=on?pts.filter(p=>b.contains([p.lat,p.lon])):[];
+  const show=new Set(vis.length<=700?vis:[]);
+  pts.forEach(p=>{if(!p.m)return;
+    if(show.has(p)){if(!p.m.getTooltip())p.m.bindTooltip(p.name,{permanent:true,direction:'right',offset:[6,0],className:'bh-label'});}
+    else if(p.m.getTooltip())p.m.unbindTooltip();});}
+map.on('moveend zoomend',refreshLabels);
+$('lab').onchange=refreshLabels;$('labz').onchange=refreshLabels;
 function setPoints(a,fit){
   pts=a;ptLayer.clearLayers();
-  pts.forEach(p=>L.circleMarker([p.lat,p.lon],{radius:5,color:'#000',weight:1,fillColor:colour(p.type),fillOpacity:.9})
-    .bindPopup(`<b>${p.name}</b><br>Fe ${p.fe} | SiO2 ${p.si} | Al2O3 ${p.al} | P ${p.p}`).addTo(ptLayer));
+  pts.forEach(p=>{p.m=L.circleMarker([p.lat,p.lon],{radius:5,color:'#000',weight:1,fillColor:colour(p.type),fillOpacity:.9})
+    .bindPopup(`<b>${p.name}</b><br>Fe ${p.fe} | SiO2 ${p.si} | Al2O3 ${p.al} | P ${p.p}`).addTo(ptLayer);});
   $('count').textContent=pts.length?pts.length+' blastholes loaded':'No usable points found. Check the naming format.';
   $('status').textContent=pts.length?'Drop the pin on the loading unit':'Load a blasthole map to start';
   if(fit&&pts.length)map.fitBounds(L.latLngBounds(pts.map(p=>[p.lat,p.lon])).pad(.1));
+  refreshLabels();
   if(last)update(last);}
 try{const s=localStorage.getItem('rom_pts');if(s)setPoints(JSON.parse(s),true);}catch(e){}
 $('kml').onchange=e=>e.target.files[0]&&loadFile(e.target.files[0]).catch(err=>$('count').textContent='Could not read file: '+err.message);
