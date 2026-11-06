@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>ROM Face Check</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -11,18 +11,24 @@
 :root{--bg:#edeeea;--card:#fff;--ink:#1b2a30;--mute:#5c6b70;--line:#cfd6d4;--acc:#0d5c63;--acc-ink:#fff;--warn:#9a3412}
 @media (prefers-color-scheme:dark){:root{--bg:#12191c;--card:#1b2529;--ink:#e6ecea;--mute:#98a8ab;--line:#31403f;--acc:#4fb3bb;--acc-ink:#07262a;--warn:#fdba74}}
 *{box-sizing:border-box}
-html,body{margin:0;height:100%}
+html,body{margin:0;padding:0;min-height:100vh;min-height:100dvh}
 body{font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);display:flex;flex-direction:column}
-header{padding:10px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);background:var(--card)}
+header{padding:10px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);background:var(--card);flex-shrink:0}
 header h1{font-size:17px;margin:0;font-weight:650}
 #status{font-size:13px;color:var(--mute)}
-#map{height:46vh;min-height:260px;flex:none}
-main{overflow:auto;padding:12px;display:grid;gap:12px;align-content:start;flex:1}
-@media (min-width:900px){body{flex-direction:row;flex-wrap:wrap}header{width:100%}#map{height:calc(100% - 52px);flex:1}main{width:420px;flex:none;height:calc(100% - 52px)}}
+#map{height:45vh;min-height:260px;width:100%;flex-shrink:0}
+main{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px;display:grid;gap:12px;align-content:start;flex:1}
+@media (min-width:900px){
+  body{flex-direction:row;flex-wrap:wrap;height:100vh;height:100dvh;overflow:hidden}
+  header{width:100%;height:52px}
+  #map{height:calc(100% - 52px);flex:1}
+  main{width:450px;flex:none;height:calc(100% - 52px);overflow-y:auto}
+}
 section{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px}
 h2{font-size:15px;margin:0 0 8px}
-button,.btn{font:inherit;padding:9px 12px;border-radius:6px;border:1px solid var(--acc);background:var(--acc);color:var(--acc-ink);cursor:pointer;display:inline-block}
+button,.btn{font:inherit;padding:9px 12px;border-radius:6px;border:1px solid var(--acc);background:var(--acc);color:var(--acc-ink);cursor:pointer;display:inline-block;text-align:center}
 button.ghost,.btn.ghost{background:transparent;color:var(--acc)}
+button.danger{border-color:var(--warn);background:transparent;color:var(--warn)}
 button:focus-visible,input:focus-visible,.btn:focus-within{outline:3px solid var(--acc);outline-offset:2px}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0}
 label{color:var(--mute);font-size:13px}
@@ -40,11 +46,19 @@ td:first-child,th:first-child{text-align:left}
 #map.nolbl .lbl{display:none}
 .lbl{background:none;border:0;box-shadow:none;color:#fff;font-size:11px;font-weight:600;padding:0;text-shadow:0 0 3px #000,0 0 3px #000,0 0 2px #000}
 .lbl::before{display:none}
-#prev{max-width:100%;border-radius:6px;margin-top:8px;display:none}
+#prevWrap{margin-top:10px;display:none}
+#prevWrap h3{font-size:13px;margin:0 0 6px;color:var(--mute)}
+#reportPrev{width:100%;border-radius:6px;border:1px solid var(--line);box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+.log-item{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.log-item:last-child{border-bottom:none}
+.log-thumb{width:60px;height:60px;object-fit:cover;border-radius:4px;border:1px solid var(--line);background:var(--bg);flex-shrink:0}
+.log-info{flex:1;font-size:12px}
+.log-info b{font-size:13px;display:block;margin-bottom:2px}
+.custom-pin-icon{background:transparent;border:none}
 </style>
 </head>
 <body>
-<header><h1>ROM face check</h1><span id="status">Load a blasthole map to start</span></header>
+<header><h1>ROM Face Check</h1><span id="status">Load a blasthole map to start</span></header>
 <div id="map"></div>
 <main>
 <section>
@@ -54,44 +68,196 @@ td:first-child,th:first-child{text-align:left}
   <div class="row"><label><input id="lbl" type="checkbox" checked> Show hole IDs (zoom in to see them)</label></div>
   <p class="note">Face and bench lines in the same KML/KMZ are drawn automatically. Each point name is read as Fe-SiO2-Al2O3-P_Type (for example 67-1-1.2-0.08_HO), or Fe, SiO2, Al2O3 and P are read from extended data.</p>
 </section>
+
 <section>
-  <h2>2. Loading unit pin</h2>
-  <p class="note">Drag the pin to where the loading unit is working, or tap the map. Quality updates as you move it.</p>
-  <div class="row"><button id="drop">Drop pin at map centre</button><button id="gps" class="ghost">Show my GPS</button><button id="tome" class="ghost">Pin at my GPS</button></div>
-  <div class="row"><label>Nearest holes <input id="k" type="number" min="1" max="30" value="5"></label>
-  <label>Max distance (m) <input id="rad" type="number" min="5" max="500" value="40"></label></div>
-  <div class="row"><label><input id="w" type="checkbox"> Weight by distance</label></div>
+  <h2>2. Loading Unit Location</h2>
+  <p class="note">Drag the excavator to where the loading unit is working, or tap the map. Quality updates as you move it.</p>
+  <div class="row">
+    <button id="drop">Drop Pin at Loading Unit Location (Manually)</button>
+    <button id="gps" class="ghost">Show my GPS</button>
+    <button id="tome" class="ghost">Pin at my GPS</button>
+  </div>
+  <div class="row">
+    <label>Nearest holes <input id="k" type="number" min="1" max="30" value="3"></label>
+    <label>Max distance (m) <input id="rad" type="number" min="5" max="500" value="40"></label>
+  </div>
+  <div class="row"><label><input id="w" type="checkbox" checked> Weight by distance</label></div>
   <div id="gpsinfo" class="note"></div>
 </section>
+
 <section>
   <h2>3. ROM quality at this face</h2>
   <div id="res" class="note">No location yet.</div>
 </section>
+
 <section>
   <h2>4. Face photo and report</h2>
-  <div class="row"><label class="btn ghost">Take / choose photo<input id="photo" type="file" accept="image/*" capture="environment"></label>
-  <button id="save">Save report image</button></div>
-  <img id="prev" alt="Mine face photo preview">
+  <div class="row">
+    <label class="btn ghost">Take / choose photo<input id="photo" type="file" accept="image/*" capture="environment"></label>
+    <button id="save">Save report image</button>
+  </div>
+  <div id="prevWrap">
+    <h3>Generated Report Preview:</h3>
+    <img id="reportPrev" alt="Report image preview">
+  </div>
+</section>
+
+<section>
+  <div class="row" style="justify-content:space-between">
+    <h2 style="margin:0">5. Report History Log</h2>
+    <button id="clearLog" class="danger" style="padding:4px 8px;font-size:12px">Clear Log</button>
+  </div>
+  <div id="logList" class="note" style="margin-top:8px">No reports saved yet.</div>
 </section>
 </main>
+
 <script>
 const TYPES={DR:'#2563eb',W1:'#16a34a',SG:'#06b6d4',HO:'#dc2626',BHJ:'#ec4899',OB:'#ec4899',W2:'#eab308'};
 const colour=t=>TYPES[t]||TYPES[(t||'').replace(/P$/,'')]||'#808080';
 function normType(raw){const s=(raw||'').trim().toUpperCase();
   return TYPES[s]||TYPES[s.replace(/P$/,'')]?s:'Other';}
 const $=id=>document.getElementById(id);
+
+// Animated Cartoon Excavator Marker based on the exact illustration
+const animatedShovelIcon = L.divIcon({
+  className: 'custom-pin-icon',
+  html: `<svg width="52" height="52" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 3px 6px rgba(0,0,0,0.85));overflow:visible">
+    <defs>
+      <!-- Sleek Cartoon Gradients -->
+      <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#FFC217"/>
+        <stop offset="40%" stop-color="#FF9300"/>
+        <stop offset="100%" stop-color="#E05600"/>
+      </linearGradient>
+      <linearGradient id="boomGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#FFDF43"/>
+        <stop offset="50%" stop-color="#FFA200"/>
+        <stop offset="100%" stop-color="#DD6B00"/>
+      </linearGradient>
+      <linearGradient id="trackGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#556068"/>
+        <stop offset="45%" stop-color="#313A40"/>
+        <stop offset="100%" stop-color="#1B2125"/>
+      </linearGradient>
+      <linearGradient id="bucketGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#6B7983"/>
+        <stop offset="60%" stop-color="#424D54"/>
+        <stop offset="100%" stop-color="#232B30"/>
+      </linearGradient>
+      <linearGradient id="glassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#E8F7FF"/>
+        <stop offset="45%" stop-color="#82C8F8"/>
+        <stop offset="100%" stop-color="#3A9BE2"/>
+      </linearGradient>
+    </defs>
+
+    <style>
+      .exc-boom-arm {
+        transform-origin: 47px 51px;
+        animation: boom-cycle 2.5s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+      }
+      .exc-stick-arm {
+        transform-origin: 22px 23px;
+        animation: stick-cycle 2.5s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+      }
+      .exc-bucket-head {
+        transform-origin: 9px 39px;
+        animation: bucket-dig-curl 2.5s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+      }
+
+      /* Realistic Mining Active Dig Cycle */
+      @keyframes boom-cycle {
+        0%   { transform: rotate(0deg); }
+        30%  { transform: rotate(11deg); }  /* Boom lowers to face */
+        60%  { transform: rotate(-5deg); }  /* Crowding and lifting ore */
+        85%  { transform: rotate(-10deg); } /* Hoisting full bucket */
+        100% { transform: rotate(0deg); }
+      }
+      @keyframes stick-cycle {
+        0%   { transform: rotate(0deg); }
+        30%  { transform: rotate(-10deg); } /* Stick reaches forward into bench */
+        60%  { transform: rotate(18deg); }  /* Stick draws payload inwards */
+        85%  { transform: rotate(8deg); }   /* Holding position */
+        100% { transform: rotate(0deg); }
+      }
+      @keyframes bucket-dig-curl {
+        0%   { transform: rotate(0deg); }
+        25%  { transform: rotate(-22deg); } /* Teeth tilted forward to penetrate ore */
+        55%  { transform: rotate(38deg); }  /* Aggressive curl into bucket */
+        85%  { transform: rotate(28deg); }  /* Retaining ROM during swing/raise */
+        100% { transform: rotate(0deg); }
+      }
+    </style>
+
+    <!-- Articulated Front Excavator Assembly -->
+    <g class="exc-boom-arm">
+      <!-- Main Boom -->
+      <path d="M47 51 L44 32 C43 27 46 22 51 22 C56 22 58 27 55 33 L62 48 Z" fill="url(#boomGrad)" stroke="#ffffff" stroke-width="1.8" stroke-linejoin="round"/>
+      <path d="M48 24 L24 20 L22 26 L46 29 Z" fill="url(#boomGrad)" stroke="#ffffff" stroke-width="1.8" stroke-linejoin="round"/>
+      
+      <!-- Big Orange Boom Pivot Ring (from image) -->
+      <circle cx="48" cy="25" r="5" fill="#FFA500" stroke="#D36500" stroke-width="1.5"/>
+      <circle cx="48" cy="25" r="2.2" fill="#FFE86B"/>
+
+      <!-- Stick Assembly -->
+      <g class="exc-stick-arm">
+        <path d="M22 23 L9 39 L13 41 L25 25 Z" fill="url(#boomGrad)" stroke="#ffffff" stroke-width="1.6" stroke-linejoin="round"/>
+        <!-- Stick Pivot Ring -->
+        <circle cx="23" cy="24" r="3.5" fill="#FFA500" stroke="#D36500" stroke-width="1.2"/>
+        <circle cx="23" cy="24" r="1.5" fill="#FFE86B"/>
+
+        <!-- Bucket with Teeth -->
+        <g class="exc-bucket-head">
+          <path d="M9 39 C3 41 1 54 8 60 C15 65 24 63 28 54 C30 49 26 46 20 45 L15 42 Z" fill="url(#bucketGrad)" stroke="#ffffff" stroke-width="1.8" stroke-linejoin="round"/>
+          <!-- Heavy-duty teeth -->
+          <polygon points="17,44 19,40 21,45" fill="#D2DCE2"/>
+          <polygon points="21,47 24,43 25,49" fill="#D2DCE2"/>
+          <polygon points="25,51 28,47 29,53" fill="#D2DCE2"/>
+          <!-- Inner Bucket Shadow Depth -->
+          <path d="M12 43 C8 46 6 54 11 58 C14 60 20 58 23 52 Z" fill="#1C2125" opacity="0.4"/>
+        </g>
+      </g>
+    </g>
+
+    <!-- Base Carriage & Cabin (Ground Reference, matching cartoon image) -->
+    <!-- Revolving Upper Platform -->
+    <path d="M37 53 L90 53 C94 53 96 56 93 60 L89 64 C87 65 85 66 82 66 L39 66 C36 66 34 62 36 57 Z" fill="url(#bodyGrad)" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
+    
+    <!-- Operator Cabin Structure -->
+    <path d="M62 53 L70 30 C71 28 73 27 75 27 L84 27 C86 27 88 29 88 31 L89 53 Z" fill="url(#bodyGrad)" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
+    <!-- Angled Cabin Multi-Pane Glass -->
+    <path d="M65 49 L71 31 C72 30 73 29 74 29 L82 29 C83 29 84 30 84 31 L84 49 Z" fill="url(#glassGrad)" stroke="#ffffff" stroke-width="1.2"/>
+    <line x1="77" y1="29" x2="77" y2="49" stroke="#ffffff" stroke-width="1.2" opacity="0.8"/>
+
+    <!-- Pill-shaped Continuous Rubber Track -->
+    <rect x="40" y="67" width="50" height="17" rx="8.5" fill="url(#trackGrad)" stroke="#ffffff" stroke-width="2"/>
+    <!-- Inner Track Recess -->
+    <rect x="46" y="71" width="38" height="9" rx="4.5" fill="#151A1D" stroke="#3D464D" stroke-width="1.2"/>
+  </svg>`,
+  iconSize: [52, 52],
+  iconAnchor: [26, 48] // Precision anchor at bottom rubber track
+});
+
+// Map Initialization
 const map=L.map('map',{preferCanvas:true,maxZoom:21}).setView([22.12,85.49],14);
 const osm=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:21,maxNativeZoom:19,attribution:'&copy; OpenStreetMap'});
 const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:21,maxNativeZoom:17,attribution:'Esri'}).addTo(map);
 const satHi=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:21,maxNativeZoom:19,attribution:'Esri'});
 const lc=L.control.layers({Satellite:sat,'Satellite (sharper, if available)':satHi,Street:osm}).addTo(map);
-let pts=[],lines=[],lineLayer=L.layerGroup().addTo(map),ptLayer=L.layerGroup().addTo(map),hit=L.layerGroup().addTo(map),pin=null,ring=null,me=null,watch=null,gpsLast=null,last=null,photoImg=null;
+
+let pts=[],lines=[],lineLayer=L.layerGroup().addTo(map),ptLayer=L.layerGroup().addTo(map),hit=L.layerGroup().addTo(map);
+let pin=null,ring=null,me=null,watch=null,gpsLast=null,last=null,photoImg=null,dragRaf=null;
 lc.addOverlay(ptLayer,'Blastholes');lc.addOverlay(lineLayer,'Face lines');
+
+// Fix screen freezing & viewport sizing issues
+window.addEventListener('resize',()=>{map.invalidateSize();});
+window.addEventListener('orientationchange',()=>{setTimeout(()=>map.invalidateSize(),200);});
 
 function fromName(n){const m=/^\s*(-?[\d.]+)-(-?[\d.]+)-(-?[\d.]+)-(-?[\d.]+)_(.+?)\s*$/.exec(n||'');
   return m?{fe:+m[1],si:+m[2],al:+m[3],p:+m[4],type:normType(m[5])}:null;}
 const kc=c=>{c=(c||'').trim();if(c.length!==8)return{color:'#ffffff',opacity:1};
   return{color:parseInt(c.slice(2),16)<0x202020?'#ffffff':'#'+c.slice(6,8)+c.slice(4,6)+c.slice(2,4),opacity:parseInt(c.slice(0,2),16)/255};};
+
 function parseKml(txt){
   const d=new DOMParser().parseFromString(txt,'application/xml'),out=[],ln=[],sty={};
   for(const st of d.getElementsByTagName('Style')){const id=st.getAttribute('id'),ls=st.getElementsByTagName('LineStyle')[0];
@@ -122,6 +288,7 @@ function parseKml(txt){
     if(!v)continue;
     out.push({name,lon:+c[0],lat:+c[1],...v});}
   return{pts:out,lines:ln};}
+
 async function loadFile(f){
   let txt;
   if(f.name.toLowerCase().endsWith('.kmz')){const z=await JSZip.loadAsync(f);
@@ -130,8 +297,10 @@ async function loadFile(f){
   const d=parseKml(txt);setData(d,true);
   try{localStorage.setItem('rom_data',JSON.stringify(d));}catch(e){try{localStorage.setItem('rom_data',JSON.stringify({pts:d.pts,lines:[]}));$('count').textContent+=' (lines too large to save for next visit)';}catch(e2){}}
 }
+
 function lblVis(){$('map').classList.toggle('nolbl',!$('lbl').checked||map.getZoom()<18);}
 map.on('zoomend',lblVis);$('lbl').onchange=lblVis;
+
 function setData(d,fit){
   pts=d.pts||[];lines=d.lines||[];ptLayer.clearLayers();lineLayer.clearLayers();
   lines.forEach(l=>L.polyline(l.p,{color:l.c,opacity:l.o,weight:l.w,interactive:false}).addTo(lineLayer));
@@ -139,38 +308,82 @@ function setData(d,fit){
     .bindPopup(`<b>${p.name}</b><br>Fe ${p.fe} | SiO2 ${p.si} | Al2O3 ${p.al} | P ${p.p}`)
     .bindTooltip(p.name,{permanent:true,direction:'right',offset:[6,0],className:'lbl'}).addTo(ptLayer));
   $('count').textContent=pts.length?pts.length+' blastholes, '+lines.length+' face lines':'No usable points found. Check the naming format.';
-  $('status').textContent=pts.length?'Drop the pin on the loading unit':'Load a blasthole map to start';
+  $('status').textContent=pts.length?'Place the active shovel on the loading unit':'Load a blasthole map to start';
   if(fit&&pts.length)map.fitBounds(L.latLngBounds(pts.map(p=>[p.lat,p.lon])).pad(.1));
   lblVis();if(last)update(last);}
+
 try{const s=localStorage.getItem('rom_data');if(s)setData(JSON.parse(s),true);}catch(e){}
 $('kml').onchange=e=>e.target.files[0]&&loadFile(e.target.files[0]).catch(err=>$('count').textContent='Could not read file: '+err.message);
 
-function setPos(lat,lon){last={lat,lon};
+function setPos(lat,lon){
+  last={lat,lon};
   if(pin)pin.setLatLng([lat,lon]);
-  else{pin=L.marker([lat,lon],{draggable:true,title:'Loading unit (approx.)'}).addTo(map);
-    pin.on('drag',e=>{const q=e.target.getLatLng();last={lat:q.lat,lon:q.lng};update(last);});
-    pin.on('dragend',e=>{const q=e.target.getLatLng();last={lat:q.lat,lon:q.lng};update(last);});}
-  update(last);}
+  else{
+    pin=L.marker([lat,lon],{draggable:true,icon:animatedShovelIcon,title:'Loading Unit (Active Digging)'}).addTo(map);
+    pin.on('drag',e=>{
+      if(dragRaf)cancelAnimationFrame(dragRaf);
+      dragRaf=requestAnimationFrame(()=>{
+        const q=e.target.getLatLng();
+        last={lat:q.lat,lon:q.lng};
+        update(last);
+      });
+    });
+    pin.on('dragend',e=>{const q=e.target.getLatLng();last={lat:q.lat,lon:q.lng};update(last);});
+  }
+  update(last);
+}
+
 $('drop').onclick=()=>{const c=map.getCenter();setPos(c.lat,c.lng);};
 map.on('click',e=>setPos(e.latlng.lat,e.latlng.lng));
+
 $('gps').onclick=()=>{
   if(!navigator.geolocation){$('gpsinfo').textContent='GPS is not available in this browser.';return;}
   if(watch!==null)navigator.geolocation.clearWatch(watch);
-  watch=navigator.geolocation.watchPosition(p=>{gpsLast=[p.coords.latitude,p.coords.longitude];
+  watch=navigator.geolocation.watchPosition(p=>{
+    gpsLast=[p.coords.latitude,p.coords.longitude];
     $('gpsinfo').textContent='Your GPS accuracy about '+Math.round(p.coords.accuracy)+' m (blue dot)';
-    if(me)me.setLatLng(gpsLast);else me=L.circleMarker(gpsLast,{radius:7,color:'#fff',weight:2,fillColor:'#2563eb',fillOpacity:1}).addTo(map);},
-    e=>$('gpsinfo').textContent='GPS error: '+e.message,{enableHighAccuracy:true,maximumAge:2000});};
-$('tome').onclick=()=>{if(gpsLast){setPos(gpsLast[0],gpsLast[1]);map.panTo(gpsLast);}else $('gpsinfo').textContent='Tap Show my GPS first and wait for the blue dot.';};
+    if(me)me.setLatLng(gpsLast);
+    else me=L.circleMarker(gpsLast,{radius:7,color:'#fff',weight:2,fillColor:'#2563eb',fillOpacity:1}).addTo(map);
+  },e=>$('gpsinfo').textContent='GPS error: '+e.message,{enableHighAccuracy:true,maximumAge:2000});
+};
+
+$('tome').onclick=()=>{
+  if(gpsLast){setPos(gpsLast[0],gpsLast[1]);map.panTo(gpsLast);}
+  else $('gpsinfo').textContent='Tap Show my GPS first and wait for the blue dot.';
+};
+
 ['k','rad','w'].forEach(i=>$(i).onchange=()=>last&&update(last));
 
 function update(p){
-  const k=Math.max(1,+$('k').value||5),R=+$('rad').value||40,wt=$('w').checked;
+  const k=Math.max(1,+$('k').value||3),R=+$('rad').value||40,wt=$('w').checked;
   const near=pts.map(h=>({h,d:map.distance([p.lat,p.lon],[h.lat,h.lon])})).filter(x=>x.d<=R).sort((a,b)=>a.d-b.d).slice(0,k);
-  if(ring)ring.setLatLng([p.lat,p.lon]).setRadius(R);else ring=L.circle([p.lat,p.lon],{radius:R,color:'#0d5c63',weight:1,fillOpacity:.06,interactive:false}).addTo(map);
+
+  // Fluorescent Yellow search circle for high contrast against satellite terrain
+  if(ring) {
+    ring.setLatLng([p.lat,p.lon]).setRadius(R);
+  } else {
+    ring=L.circle([p.lat,p.lon],{
+      radius:R,
+      color:'#ffe600',
+      weight:2.5,
+      opacity:0.95,
+      fillColor:'#ffe600',
+      fillOpacity:0.12,
+      interactive:false
+    }).addTo(map);
+  }
+
   hit.clearLayers();
-  near.forEach(x=>L.polyline([[p.lat,p.lon],[x.h.lat,x.h.lon]],{color:'#0d5c63',weight:2,dashArray:'4 4'}).addTo(hit));
-  if(!near.length){last.res=null;$('res').innerHTML=`<span class="warn">No blastholes within ${R} m.</span> Move closer or raise the max distance.`;
-    $('status').textContent='No holes in range';return;}
+  // Connecting dashed lines in fluorescent yellow
+  near.forEach(x=>L.polyline([[p.lat,p.lon],[x.h.lat,x.h.lon]],{color:'#ffe600',weight:2.5,dashArray:'4 4'}).addTo(hit));
+
+  if(!near.length){
+    last.res=null;
+    $('res').innerHTML=`<span class="warn">No blastholes within ${R} m.</span> Move closer or raise the max distance.`;
+    $('status').textContent='No holes in range';
+    if(photoImg)renderPreview();
+    return;
+  }
   const w=near.map(x=>wt?1/Math.max(x.d,1):1),sw=w.reduce((a,b)=>a+b,0);
   const avg=key=>{let s=0,t=0;near.forEach((x,i)=>{if(!isNaN(x.h[key])){s+=x.h[key]*w[i];t+=w[i];}});return t?s/t:NaN;};
   const a={fe:avg('fe'),si:avg('si'),al:avg('al'),p:avg('p')};
@@ -181,24 +394,134 @@ function update(p){
   $('res').innerHTML=`<div class="grid"><div><b>${f(a.fe,2)}</b><span>Fe %</span></div><div><b>${f(a.si,2)}</b><span>SiO2 %</span></div><div><b>${f(a.al,2)}</b><span>Al2O3 %</span></div><div><b>${f(a.p,3)}</b><span>P %</span></div></div>
   <p class="note">${near.length} nearest holes, ${wt?'distance weighted':'simple average'}. Material: ${mixTxt}</p>
   <table><tr><th>Hole</th><th>m</th><th>Fe</th><th>SiO2</th><th>Al2O3</th><th>P</th></tr>${near.map(x=>`<tr><td><span class="dot" style="background:${colour(x.h.type)}"></span>${x.h.name}</td><td>${x.d.toFixed(0)}</td><td>${x.h.fe}</td><td>${x.h.si}</td><td>${x.h.al}</td><td>${x.h.p}</td></tr>`).join('')}</table>`;
-  $('status').textContent=`Fe ${f(a.fe,1)}% from ${near.length} holes`;}
+  $('status').textContent=`Fe ${f(a.fe,1)}% from ${near.length} holes`;
+  if(photoImg)renderPreview();
+}
 
-$('photo').onchange=e=>{const f=e.target.files[0];if(!f)return;
-  const img=new Image();img.onload=()=>{photoImg=img;$('prev').src=img.src;$('prev').style.display='block';};img.src=URL.createObjectURL(f);};
+function buildReportCanvas(){
+  const W=1000;
+  const lines=[];
+  if(last&&last.res){
+    const r=last.res;
+    lines.push(
+      'ROM quality (nearest '+r.n+' holes, '+(r.wt?'distance weighted':'simple average')+')',
+      `Fe ${r.a.fe.toFixed(2)}%   SiO2 ${r.a.si.toFixed(2)}%   Al2O3 ${r.a.al.toFixed(2)}%   P ${isNaN(r.a.p)?'-':r.a.p.toFixed(3)}%`,
+      'Material: '+r.mixTxt,
+      `Loading Unit: ${last.lat.toFixed(6)}, ${last.lon.toFixed(6)}`,
+      'Time: '+new Date().toLocaleString()
+    );
+  } else {
+    lines.push(
+      'ROM Face Check Report',
+      'No loading unit position or blasthole data available',
+      'Time: '+new Date().toLocaleString()
+    );
+  }
+
+  const ph=photoImg?Math.round(W*photoImg.height/photoImg.width):0;
+  const H=ph+60+lines.length*38;
+  const c=document.createElement('canvas');c.width=W;c.height=H;
+  const x=c.getContext('2d');
+  x.fillStyle='#fff';x.fillRect(0,0,W,H);
+  if(photoImg)x.drawImage(photoImg,0,0,W,ph);
+  x.fillStyle='#0d5c63';x.fillRect(0,ph,W,H-ph);
+  x.fillStyle='#fff';
+  lines.forEach((t,i)=>{
+    x.font=(i<2?'bold ':'')+(i===1?'30px':'24px')+' sans-serif';
+    x.fillText(t,24,ph+44+i*38);
+  });
+  return c;
+}
+
+function renderPreview(){
+  const c=buildReportCanvas();
+  $('reportPrev').src=c.toDataURL('image/jpeg',0.9);
+  $('prevWrap').style.display='block';
+}
+
+$('photo').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const img=new Image();
+  img.onload=()=>{photoImg=img;renderPreview();};
+  img.src=URL.createObjectURL(f);
+};
+
 $('save').onclick=()=>{
   if(!last||!last.res){alert('Set a location with blastholes in range first.');return;}
-  const W=1000,r=last.res,lines=[
-   'ROM quality (nearest '+r.n+' holes, '+(r.wt?'distance weighted':'simple average')+')',
-   `Fe ${r.a.fe.toFixed(2)}%   SiO2 ${r.a.si.toFixed(2)}%   Al2O3 ${r.a.al.toFixed(2)}%   P ${isNaN(r.a.p)?'-':r.a.p.toFixed(3)}%`,
-   'Material: '+r.mixTxt,
-   `Pin location (approx.): ${last.lat.toFixed(6)}, ${last.lon.toFixed(6)}`,
-   'Time: '+new Date().toLocaleString()];
-  const ph=photoImg?Math.round(W*photoImg.height/photoImg.width):0,H=ph+60+lines.length*38;
-  const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
-  x.fillStyle='#fff';x.fillRect(0,0,W,H);if(photoImg)x.drawImage(photoImg,0,0,W,ph);
-  x.fillStyle='#0d5c63';x.fillRect(0,ph,W,H-ph);x.fillStyle='#fff';
-  lines.forEach((t,i)=>{x.font=(i<2?'bold ':'')+(i===1?'30px':'24px')+' sans-serif';x.fillText(t,24,ph+44+i*38);});
-  c.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='ROM_face_'+Date.now()+'.png';a.click();});};
+  const c=buildReportCanvas();
+  c.toBlob(blob=>{
+    const filename='ROM_face_'+Date.now()+'.png';
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=filename;
+    a.click();
+    saveReportLog(blob,last.res,last);
+  });
+};
+
+/* --- IndexedDB Storage for Face Photos & Reports Log --- */
+let db;
+const req=indexedDB.open('rom_face_db',1);
+req.onupgradeneeded=e=>{
+  const d=e.target.result;
+  if(!d.objectStoreNames.contains('reports')){
+    d.createObjectStore('reports',{keyPath:'id',autoIncrement:true});
+  }
+};
+req.onsuccess=e=>{db=e.target.result;renderLogList();};
+
+function saveReportLog(blob,res,loc){
+  if(!db)return;
+  const reader=new FileReader();
+  reader.onloadend=()=>{
+    const record={
+      date:new Date().toISOString(),
+      loc:`${loc.lat.toFixed(5)}, ${loc.lon.toFixed(5)}`,
+      fe:res.a.fe.toFixed(2),
+      si:res.a.si.toFixed(2),
+      al:res.a.al.toFixed(2),
+      p:isNaN(res.a.p)?'-':res.a.p.toFixed(3),
+      mix:res.mixTxt,
+      img:reader.result
+    };
+    const tx=db.transaction('reports','readwrite');
+    tx.objectStore('reports').add(record);
+    tx.oncomplete=renderLogList;
+  };
+  reader.readAsDataURL(blob);
+}
+
+function renderLogList(){
+  if(!db)return;
+  const tx=db.transaction('reports','readonly');
+  const store=tx.objectStore('reports');
+  const itemsReq=store.getAll();
+  itemsReq.onsuccess=()=>{
+    const list=itemsReq.result||[];
+    const el=$('logList');
+    if(!list.length){el.innerHTML='No reports logged yet.';return;}
+    list.sort((a,b)=>b.id-a.id);
+    el.innerHTML=list.map(it=>`
+      <div class="log-item">
+        <img class="log-thumb" src="${it.img}" alt="Thumb">
+        <div class="log-info">
+          <b>Fe ${it.fe}% | SiO2 ${it.si}% | Al2O3 ${it.al}% | P ${it.p}</b>
+          <span>${new Date(it.date).toLocaleString()}</span><br>
+          <span>Loc: ${it.loc} | Mix: ${it.mix}</span>
+        </div>
+        <a href="${it.img}" download="ROM_Report_${it.id}.png" class="btn ghost" style="padding:4px 8px;font-size:12px;text-decoration:none">Download</a>
+      </div>
+    `).join('');
+  };
+}
+
+$('clearLog').onclick=()=>{
+  if(!confirm('Clear all stored reports and photos from this device?'))return;
+  if(!db)return;
+  const tx=db.transaction('reports','readwrite');
+  tx.objectStore('reports').clear();
+  tx.oncomplete=renderLogList;
+};
 </script>
 </body>
 </html>
