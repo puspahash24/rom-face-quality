@@ -94,6 +94,13 @@ body.fs #fsBar{display:block}
 .log-info b{font-size:13px;display:block;margin-bottom:2px}
 .custom-pin-icon{background:transparent;border:none}
 </style>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0d5c63">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ROM Face Check">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 </head>
 <body>
 <header><div class="ttl"><h1>ROM Face Quality Monitoring</h1><span id="status">Load a blasthole map to start</span></div>
@@ -830,6 +837,9 @@ $('themeBtn').onclick=e=>{e.stopPropagation();$('themeMenu').hidden=!$('themeMen
 $('themeMenu').onclick=e=>{const b=e.target.closest('button');if(!b)return;
   document.documentElement.dataset.theme=b.dataset.t;store('rom_theme',b.dataset.t);markTheme();$('themeMenu').hidden=true;if(photoImg)renderPreview();};
 document.addEventListener('click',e=>{if(!e.target.closest('#themeWrap'))$('themeMenu').hidden=true;});
+</script>
+<script>
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./service-worker.js').catch(()=>{});});}
 </script>
 </body>
 </html>
