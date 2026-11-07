@@ -31,10 +31,13 @@ header .ttl{display:flex;flex-direction:column;min-width:0}
 #themeMenu button{display:flex;align-items:center;gap:6px;padding:6px 8px;font-size:13px;background:transparent;color:var(--ink);border:1px solid var(--line)}
 #themeMenu button.sel{border-color:var(--acc);outline:2px solid var(--acc)}
 .sw{width:14px;height:14px;border-radius:50%;border:1px solid rgba(0,0,0,.35);flex-shrink:0}
-.map-actions{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px 8px!important}
-.map-actions button{padding:7px 9px;font-size:12px;background:rgba(255,255,255,.96);color:#1b2a30;border:1px solid #6b7280;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,.4)}
-.map-actions button:active{background:#dbeafe}
-body.fs .map-actions{margin-bottom:54px!important}
+.leaflet-bar a.txt-btn,.leaflet-touch .leaflet-bar a.txt-btn{width:auto;height:auto;min-height:32px;line-height:1.2;padding:6px 9px;display:flex!important;align-items:center;gap:6px;font:600 12px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#1b2a30;white-space:nowrap;cursor:pointer;text-decoration:none}
+.leaflet-bar a.txt-btn svg{flex-shrink:0}
+.dest{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.chk{display:flex;align-items:center;gap:8px;padding:9px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font-size:14px}
+.chk input{width:18px;height:18px;flex-shrink:0;accent-color:var(--acc)}
+.chk:has(input:checked){border-color:var(--acc);outline:1px solid var(--acc)}
+#destOther{display:none;width:100%;margin-top:8px;font:inherit;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
 .lock-btn{display:flex!important;align-items:center;justify-content:center;cursor:pointer;color:#222}
 .lock-btn.on{background:var(--acc)!important;color:var(--acc-ink)!important}
 *{box-sizing:border-box}
@@ -128,7 +131,14 @@ body.fs #fsBar{display:block}
 </section>
 
 <section>
-  <h2>4. Face photo and report</h2>
+  <h2>4. Destination</h2>
+  <p class="note">Select the plant(s) this face is supplying ROM to. You can choose more than one.</p>
+  <div id="destBox" class="dest"></div>
+  <input id="destOther" type="text" maxlength="40" placeholder="Stock name or dump name" autocomplete="off">
+</section>
+
+<section>
+  <h2>5. Face photo and report</h2>
   <div class="fields">
     <label>Mine name <select id="mineName"></select></label>
     <label>Pit name <select id="pitName"></select></label>
@@ -149,7 +159,7 @@ body.fs #fsBar{display:block}
 
 <section>
   <div class="row" style="justify-content:space-between">
-    <h2 style="margin:0">5. Report History Log</h2>
+    <h2 style="margin:0">6. Report History Log</h2>
     <button id="clearLog" class="danger" style="padding:4px 8px;font-size:12px">Clear Log</button>
   </div>
   <div id="logList" class="note" style="margin-top:8px">No reports saved yet.</div>
@@ -298,7 +308,7 @@ let fsTs=0;
 function setFull(on){
   fsTs=Date.now();
   document.body.classList.toggle('fs',on);$('map').classList.toggle('full',on);
-  if(fsBtn){fsBtn.innerHTML=on?ICON_OUT:ICON_IN;fsBtn.title=on?'Exit full screen':'Full screen map';fsBtn.setAttribute('aria-label',fsBtn.title);}
+  if(fsBtn){fsBtn.innerHTML=(on?ICON_OUT:ICON_IN)+'<span>'+(on?'Exit full screen':'Full screen')+'</span>';fsBtn.title=on?'Exit full screen':'Full screen map';fsBtn.setAttribute('aria-label',fsBtn.title);}
   try{
     if(on&&document.documentElement.requestFullscreen&&!document.fullscreenElement)document.documentElement.requestFullscreen().catch(()=>{});
     if(!on&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});
@@ -307,8 +317,8 @@ function setFull(on){
 }
 const FsControl=L.Control.extend({options:{position:'topleft'},onAdd(){
   const box=L.DomUtil.create('div','leaflet-bar');
-  fsBtn=L.DomUtil.create('a','fs-btn',box);fsBtn.href='#';fsBtn.setAttribute('role','button');
-  fsBtn.innerHTML=ICON_IN;fsBtn.title='Full screen map';fsBtn.setAttribute('aria-label','Full screen map');
+  fsBtn=L.DomUtil.create('a','fs-btn txt-btn',box);fsBtn.href='#';fsBtn.setAttribute('role','button');
+  fsBtn.innerHTML=ICON_IN+'<span>Full screen</span>';fsBtn.title='Full screen map';fsBtn.setAttribute('aria-label','Full screen map');
   L.DomEvent.disableClickPropagation(box);
   L.DomEvent.on(fsBtn,'click',ev=>{L.DomEvent.preventDefault(ev);setFull(!document.body.classList.contains('fs'));});
   return box;}});
@@ -321,21 +331,21 @@ function setLock(on){
   if(on&&!pin){msg('Place the shovel on the loading unit first, then lock it');return;}
   pinLocked=on;
   if(pin){if(on)pin.dragging.disable();else pin.dragging.enable();}
-  lockBtn.classList.toggle('on',on);lockBtn.innerHTML=on?ICON_LOCK:ICON_UNLOCK;
+  lockBtn.classList.toggle('on',on);lockBtn.innerHTML=(on?ICON_LOCK:ICON_UNLOCK)+'<span>'+(on?'Unlock pin':'Lock pin')+'</span>';
   lockBtn.title=on?'Unlock shovel position':'Lock shovel position';lockBtn.setAttribute('aria-label',lockBtn.title);
   msg(on?'Shovel position locked':'Shovel position unlocked');}
 const LockControl=L.Control.extend({options:{position:'topleft'},onAdd(){
   const box=L.DomUtil.create('div','leaflet-bar');
-  lockBtn=L.DomUtil.create('a','lock-btn',box);lockBtn.href='#';lockBtn.setAttribute('role','button');
-  lockBtn.innerHTML=ICON_UNLOCK;lockBtn.title='Lock shovel position';lockBtn.setAttribute('aria-label',lockBtn.title);
+  lockBtn=L.DomUtil.create('a','lock-btn txt-btn',box);lockBtn.href='#';lockBtn.setAttribute('role','button');
+  lockBtn.innerHTML=ICON_UNLOCK+'<span>Lock pin</span>';lockBtn.title='Lock shovel position';lockBtn.setAttribute('aria-label',lockBtn.title);
   L.DomEvent.disableClickPropagation(box);
   L.DomEvent.on(lockBtn,'click',ev=>{L.DomEvent.preventDefault(ev);setLock(!pinLocked);});
   return box;}});
 map.addControl(new LockControl());
-const ActControl=L.Control.extend({options:{position:'bottomleft'},onAdd(){
-  const box=L.DomUtil.create('div','map-actions');
+const ActControl=L.Control.extend({options:{position:'topleft'},onAdd(){
+  const box=L.DomUtil.create('div','leaflet-bar map-actions');
   [['Show my GPS','gps'],['Pin at my GPS','tome'],['Drop pin','drop']].forEach(([t,id])=>{
-    const b=L.DomUtil.create('button','',box);b.type='button';b.textContent=t;
+    const b=L.DomUtil.create('a','txt-btn',box);b.href='#';b.setAttribute('role','button');b.textContent=t;
     L.DomEvent.on(b,'click',ev=>{L.DomEvent.stop(ev);$(id).click();});});
   L.DomEvent.disableClickPropagation(box);return box;}});
 map.addControl(new ActControl());
@@ -621,6 +631,7 @@ async function buildReportCanvas(){
     const dm=$('mineName').value.trim(),dp=$('pitName').value.trim(),dr=$('mrl').value.trim();
     const mp=[dm&&'Mine: '+dm,dp&&'Pit: '+dp,(dr&&isFinite(+dr))&&'MRL: '+(+dr)+' m'].filter(Boolean).join('     ');
     if(mp)txt.push(mp);
+    const dl=destList();if(dl.length)txt.push('Destination: '+dl.join(', '));
     txt.push('Time: '+new Date().toLocaleString());
   } else {
     txt.push(
@@ -693,6 +704,17 @@ $('mineName').innerHTML='<option value="">Select mine</option>'+Object.keys(PITS
 {const m=recall('rom_mineName');if(PITS[m])$('mineName').value=m;fillPits(recall('rom_pitName'));}
 $('mineName').onchange=()=>{store('rom_mineName',$('mineName').value);store('rom_pitName','');fillPits('');if(photoImg)renderPreview();};
 $('pitName').onchange=()=>{store('rom_pitName',$('pitName').value);if(photoImg)renderPreview();};
+const PLANTS=['NDCMP','Wet Plant','IOPP','C&S NOA','NIM METSO LT','KTM SANDVIK','KTM METSO','OUT-DUMP','Others'];
+$('destBox').innerHTML=PLANTS.map(n=>`<label class="chk"><input type="checkbox" value="${escH(n)}"> ${escH(n)}</label>`).join('');
+function destList(){
+  return [...document.querySelectorAll('#destBox input:checked')].map(c=>{
+    if(c.value!=='Others')return c.value;
+    const o=$('destOther').value.trim();return o?'Others ('+o+')':'Others';});}
+$('destBox').onchange=()=>{
+  const oth=[...document.querySelectorAll('#destBox input')].find(c=>c.value==='Others').checked;
+  $('destOther').style.display=oth?'block':'none';if(!oth)$('destOther').value='';
+  if(photoImg)renderPreview();};
+$('destOther').oninput=()=>{if(photoImg)renderPreview();};
 $('mrl').oninput=()=>{if(photoImg)renderPreview();};
 $('rmPhoto').onclick=()=>{photoImg=null;$('rmPhoto').style.display='none';$('photoMsg').textContent='Photo removed.';renderPreview();};
 $('photo').onchange=onPhoto;
@@ -739,19 +761,20 @@ function saveReportLog(blob,res,loc,canvas){
       mine:$('mineName').value.trim(),
       pit:$('pitName').value.trim(),
       mrl:$('mrl').value.trim(),
+      dest:destList().join(', '),
       img:reader.result,
       thumb
     };
     const tx=db.transaction('reports','readwrite');
     tx.objectStore('reports').add(record);
-    tx.oncomplete=()=>{renderLogList();showSave('Report saved to the Report History Log (section 5). Use Share or Download there.');};
+    tx.oncomplete=()=>{renderLogList();showSave('Report saved to the Report History Log (section 6). Use Share or Download there.');};
     tx.onerror=()=>showSave('Could not save the report on this device.');
   };
   reader.readAsDataURL(blob);
 }
 
 function logDetails(it){
-  const t=[it.mine&&'Mine: '+it.mine,it.pit&&'Pit: '+it.pit,it.mrl&&'MRL: '+it.mrl+' m'].filter(Boolean).join(' | ');
+  const t=[it.mine&&'Mine: '+it.mine,it.pit&&'Pit: '+it.pit,it.mrl&&'MRL: '+it.mrl+' m',it.dest&&'Destination: '+it.dest].filter(Boolean).join(' | ');
   return t?'<br><span>'+escH(t)+'</span>':'';}
 function renderLogList(){
   if(!db)return;
@@ -787,7 +810,7 @@ $('logList').onclick=e=>{
   db.transaction('reports','readonly').objectStore('reports').get(+b.dataset.id).onsuccess=async ev=>{
     const it=ev.target.result;if(!it)return;
     const file=dataUrlToFile(it.img,'ROM_Report_'+it.id+'.'+(/^data:image\/png/.test(it.img)?'png':'jpg'));
-    const text='ROM face quality: Fe '+it.fe+'% | SiO2 '+it.si+'% | Al2O3 '+it.al+'% | P '+it.p+(it.mine?' | '+it.mine:'')+(it.pit?' '+it.pit:'');
+    const text='ROM face quality: Fe '+it.fe+'% | SiO2 '+it.si+'% | Al2O3 '+it.al+'% | P '+it.p+(it.mine?' | '+it.mine:'')+(it.pit?' '+it.pit:'')+(it.mrl?' | MRL: '+it.mrl+' m':'')+(it.dest?' | Destination: '+it.dest:'');
     try{
       if(navigator.canShare&&navigator.canShare({files:[file]}))await navigator.share({files:[file],text,title:'ROM Face Quality Monitoring'});
       else{const a=document.createElement('a');a.href=it.img;a.download=file.name;a.click();alert('This browser cannot share files directly, so the image was downloaded instead.');}
