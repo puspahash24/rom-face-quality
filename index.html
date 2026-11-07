@@ -44,6 +44,11 @@ td:first-child,th:first-child{text-align:left}
 .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;border:1px solid rgba(0,0,0,.35)}
 .note{color:var(--mute);font-size:13px}.warn{color:var(--warn)}
 #map.nolbl .lbl{display:none}
+#map.full{position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100vh;height:100dvh;z-index:2000}
+body.fs{overflow:hidden}
+#fsBar{display:none;position:fixed;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:2001;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:13px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,.35)}
+body.fs #fsBar{display:block}
+.fs-btn{display:flex!important;align-items:center;justify-content:center;cursor:pointer}
 .lbl{background:none;border:0;box-shadow:none;color:#fff;font-size:11px;font-weight:600;padding:0;text-shadow:0 0 3px #000,0 0 3px #000,0 0 2px #000}
 .lbl::before{display:none}
 #prevWrap{margin-top:10px;display:none}
@@ -60,6 +65,7 @@ td:first-child,th:first-child{text-align:left}
 <body>
 <header><h1>ROM Face Check</h1><span id="status">Load a blasthole map to start</span></header>
 <div id="map"></div>
+<div id="fsBar">Tap the map to place the loading unit</div>
 <main>
 <section>
   <h2>1. Blasthole map</h2>
@@ -97,8 +103,9 @@ td:first-child,th:first-child{text-align:left}
     <label class="btn ghost">Upload photo (gallery / files)<input id="photoUp" type="file" accept="image/*"></label>
     <button id="save">Save report image</button>
   </div>
+  <div class="row"><span id="photoMsg" class="note"></span><button id="rmPhoto" class="ghost" style="display:none;padding:4px 8px;font-size:12px">Remove photo</button></div>
   <div id="prevWrap">
-    <h3>Generated Report Preview:</h3>
+    <h3>Generated Report Preview (field photo, face map and quality):</h3>
     <img id="reportPrev" alt="Report image preview">
   </div>
 </section>
@@ -241,10 +248,34 @@ const animatedShovelIcon = L.divIcon({
 
 // Map Initialization
 const map=L.map('map',{preferCanvas:true,maxZoom:21}).setView([22.12,85.49],14);
-const osm=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:21,maxNativeZoom:19,attribution:'&copy; OpenStreetMap'});
-const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:21,maxNativeZoom:17,attribution:'Esri'}).addTo(map);
-const satHi=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:21,maxNativeZoom:19,attribution:'Esri'});
+const osm=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:21,maxNativeZoom:19,crossOrigin:true,attribution:'&copy; OpenStreetMap'});
+const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:21,maxNativeZoom:17,crossOrigin:true,attribution:'Esri'}).addTo(map);
+const satHi=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:21,maxNativeZoom:19,crossOrigin:true,attribution:'Esri'});
 const lc=L.control.layers({Satellite:sat,'Satellite (sharper, if available)':satHi,Street:osm}).addTo(map);
+
+// ---- Full screen map ----
+const ICON_IN='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>';
+const ICON_OUT='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>';
+let fsBtn;
+function setFull(on){
+  document.body.classList.toggle('fs',on);$('map').classList.toggle('full',on);
+  if(fsBtn){fsBtn.innerHTML=on?ICON_OUT:ICON_IN;fsBtn.title=on?'Exit full screen':'Full screen map';fsBtn.setAttribute('aria-label',fsBtn.title);}
+  try{
+    if(on&&document.documentElement.requestFullscreen&&!document.fullscreenElement)document.documentElement.requestFullscreen().catch(()=>{});
+    if(!on&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});
+  }catch(e){}
+  setTimeout(()=>map.invalidateSize(),80);
+}
+const FsControl=L.Control.extend({options:{position:'topleft'},onAdd(){
+  const box=L.DomUtil.create('div','leaflet-bar');
+  fsBtn=L.DomUtil.create('a','fs-btn',box);fsBtn.href='#';fsBtn.setAttribute('role','button');
+  fsBtn.innerHTML=ICON_IN;fsBtn.title='Full screen map';fsBtn.setAttribute('aria-label','Full screen map');
+  L.DomEvent.disableClickPropagation(box);
+  L.DomEvent.on(fsBtn,'click',ev=>{L.DomEvent.preventDefault(ev);setFull(!document.body.classList.contains('fs'));});
+  return box;}});
+map.addControl(new FsControl());
+document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&document.body.classList.contains('fs'))setFull(false);});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.body.classList.contains('fs'))setFull(false);});
 
 let pts=[],lines=[],lineLayer=L.layerGroup().addTo(map),ptLayer=L.layerGroup().addTo(map),hit=L.layerGroup().addTo(map);
 let pin=null,ring=null,me=null,watch=null,gpsLast=null,last=null,photoImg=null,dragRaf=null;
@@ -381,7 +412,7 @@ function update(p){
   if(!near.length){
     last.res=null;
     $('res').innerHTML=`<span class="warn">No blastholes within ${R} m.</span> Move closer or raise the max distance.`;
-    $('status').textContent='No holes in range';
+    $('status').textContent='No holes in range';$('fsBar').textContent='No holes within '+R+' m';
     if(photoImg)renderPreview();
     return;
   }
@@ -390,21 +421,127 @@ function update(p){
   const a={fe:avg('fe'),si:avg('si'),al:avg('al'),p:avg('p')};
   const mix={};near.forEach((x,i)=>mix[x.h.type]=(mix[x.h.type]||0)+w[i]/sw);
   const mixTxt=Object.entries(mix).sort((x,y)=>y[1]-x[1]).map(([t,f])=>`${t} ${Math.round(f*100)}%`).join(', ');
-  last.res={a,mixTxt,n:near.length,wt};
+  last.res={a,mixTxt,n:near.length,wt,near:near.map(x=>x.h),R};
   const f=(v,n)=>isNaN(v)?'-':v.toFixed(n);
   $('res').innerHTML=`<div class="grid"><div><b>${f(a.fe,2)}</b><span>Fe %</span></div><div><b>${f(a.si,2)}</b><span>SiO2 %</span></div><div><b>${f(a.al,2)}</b><span>Al2O3 %</span></div><div><b>${f(a.p,3)}</b><span>P %</span></div></div>
   <p class="note">${near.length} nearest holes, ${wt?'distance weighted':'simple average'}. Material: ${mixTxt}</p>
   <table><tr><th>Hole</th><th>m</th><th>Fe</th><th>SiO2</th><th>Al2O3</th><th>P</th></tr>${near.map(x=>`<tr><td><span class="dot" style="background:${colour(x.h.type)}"></span>${x.h.name}</td><td>${x.d.toFixed(0)}</td><td>${x.h.fe}</td><td>${x.h.si}</td><td>${x.h.al}</td><td>${x.h.p}</td></tr>`).join('')}</table>`;
   $('status').textContent=`Fe ${f(a.fe,1)}% from ${near.length} holes`;
+  $('fsBar').textContent=`Fe ${f(a.fe,2)} | SiO2 ${f(a.si,2)} | Al2O3 ${f(a.al,2)} | P ${f(a.p,3)}  (${near.length} holes)`;
   if(photoImg)renderPreview();
 }
 
-function buildReportCanvas(){
-  const W=1000;
-  const lines=[];
+/* ---------- Map snapshot drawn straight onto a canvas (independent of the on-screen map) ---------- */
+const tileCache=new Map();
+function loadOnce(url){
+  return new Promise(res=>{
+    const i=new Image();i.crossOrigin='anonymous';
+    const to=setTimeout(()=>res(null),9000);
+    i.onload=()=>{clearTimeout(to);res(i);};
+    i.onerror=()=>{clearTimeout(to);res(null);};
+    i.src=url;});}
+function loadImg(url){
+  if(!tileCache.has(url)){
+    if(tileCache.size>80)tileCache.delete(tileCache.keys().next().value);
+    tileCache.set(url,loadOnce(url).then(im=>im||loadOnce(url+(url.includes('?')?'&':'?')+'cors=1')).then(im=>{if(!im)tileCache.delete(url);return im;}));}
+  return tileCache.get(url);}
+const excImg=new Promise(res=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>res(null);
+  i.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(animatedShovelIcon.options.html);});
+
+async function buildMapCanvas(){
+  if(!last)return null;
+  const MW=1000,MH=600,r=last.res,R=r?r.R:(+$('rad').value||15);
+  const mpp=Math.max(R/190,0.05);
+  const z=Math.min(Math.log2(156543.03392*Math.cos(last.lat*Math.PI/180)/mpp),23);
+  const sc=256*Math.pow(2,z);
+  const px=lo=>(lo+180)/360*sc;
+  const py=la=>{const q=Math.sin(la*Math.PI/180);return(0.5-Math.log((1+q)/(1-q))/(4*Math.PI))*sc;};
+  const Cx=px(last.lon),Cy=py(last.lat),ox=Cx-MW/2,oy=Cy-MH/2;
+  const X=lo=>px(lo)-ox,Y=la=>py(la)-oy;
+  const c=document.createElement('canvas');c.width=MW;c.height=MH;
+  const x=c.getContext('2d');
+  x.fillStyle='#1b2529';x.fillRect(0,0,MW,MH);
+
+  // base map tiles (same base layer as on screen)
+  const base=map.hasLayer(osm)?{u:osm._url,n:19,a:'\u00a9 OpenStreetMap'}:map.hasLayer(satHi)?{u:satHi._url,n:19,a:'Imagery: Esri'}:{u:sat._url,n:17,a:'Imagery: Esri'};
+  const zt=Math.max(0,Math.min(Math.round(z),base.n)),sf=Math.pow(2,z-zt),nT=Math.pow(2,zt);
+  const tlx=ox/sf,tly=oy/sf,brx=(ox+MW)/sf,bry=(oy+MH)/sf,jobs=[];
+  for(let ty=Math.floor(tly/256);ty<=Math.floor(bry/256);ty++){
+    if(ty<0||ty>=nT)continue;
+    for(let tx=Math.floor(tlx/256);tx<=Math.floor(brx/256);tx++){
+      const wx=((tx%nT)+nT)%nT,url=base.u.replace('{z}',zt).replace('{x}',wx).replace('{y}',ty);
+      jobs.push(loadImg(url).then(im=>{if(im)x.drawImage(im,(tx*256-tlx)*sf,(ty*256-tly)*sf,256*sf+1,256*sf+1);}));}}
+  await Promise.all(jobs);
+
+  // face lines
+  x.lineJoin='round';
+  lines.forEach(l=>{
+    let mnx=1e9,mxx=-1e9,mny=1e9,mxy=-1e9;const q=l.p.map(a=>{const u=X(a[1]),v=Y(a[0]);
+      if(u<mnx)mnx=u;if(u>mxx)mxx=u;if(v<mny)mny=v;if(v>mxy)mxy=v;return[u,v];});
+    if(mxx<0||mnx>MW||mxy<0||mny>MH)return;
+    x.beginPath();q.forEach((a,k)=>k?x.lineTo(a[0],a[1]):x.moveTo(a[0],a[1]));
+    x.globalAlpha=l.o;x.strokeStyle=l.c;x.lineWidth=Math.max(2,l.w*1.5);x.stroke();x.globalAlpha=1;});
+
+  const cx=MW/2,cy=MH/2,near=r?r.near:[];
+  // search circle
+  x.beginPath();x.arc(cx,cy,R/mpp,0,Math.PI*2);
+  x.fillStyle='rgba(255,230,0,0.12)';x.fill();x.lineWidth=4;x.strokeStyle='#ffe600';x.stroke();
+  // dashed lines to the nearest holes
+  x.setLineDash([12,9]);x.lineWidth=3.5;x.strokeStyle='#ffe600';
+  near.forEach(h=>{x.beginPath();x.moveTo(cx,cy);x.lineTo(X(h.lon),Y(h.lat));x.stroke();});
+  x.setLineDash([]);
+
+  // holes in view
+  const nearSet=new Set(near),vis=[];
+  pts.forEach(h=>{const u=X(h.lon),v=Y(h.lat);if(u>-40&&u<MW+40&&v>-40&&v<MH+40)vis.push({h,u,v,d:(u-cx)**2+(v-cy)**2});});
+  vis.forEach(o=>{x.beginPath();x.arc(o.u,o.v,nearSet.has(o.h)?10:8,0,Math.PI*2);
+    x.fillStyle=colour(o.h.type);x.fill();x.lineWidth=2;x.strokeStyle='#000';x.stroke();});
+  x.font='bold 17px sans-serif';x.textBaseline='middle';x.lineJoin='round';
+  vis.sort((a,b)=>a.d-b.d).slice(0,80).forEach(o=>{
+    x.lineWidth=4;x.strokeStyle='#000';x.strokeText(o.h.name,o.u+15,o.v);
+    x.fillStyle='#fff';x.fillText(o.h.name,o.u+15,o.v);});
+
+  // loading unit (excavator)
+  const ex=await excImg;
+  if(ex)x.drawImage(ex,cx-40,cy-0.923*80,80,80);
+  else{x.beginPath();x.arc(cx,cy,9,0,Math.PI*2);x.fillStyle='#ff9300';x.fill();x.lineWidth=3;x.strokeStyle='#fff';x.stroke();}
+
+  // compass (map is drawn north-up)
+  {const ax=MW-50,ay=64;
+   x.beginPath();x.arc(ax,ay,34,0,Math.PI*2);x.fillStyle='rgba(0,0,0,0.55)';x.fill();x.lineWidth=2;x.strokeStyle='#fff';x.stroke();
+   x.beginPath();x.moveTo(ax,ay-26);x.lineTo(ax-9,ay);x.lineTo(ax+9,ay);x.closePath();x.fillStyle='#e53935';x.fill();
+   x.beginPath();x.moveTo(ax,ay+26);x.lineTo(ax-9,ay);x.lineTo(ax+9,ay);x.closePath();x.fillStyle='#ffffff';x.fill();
+   x.font='bold 18px sans-serif';x.textAlign='center';x.textBaseline='alphabetic';
+   x.lineWidth=4;x.strokeStyle='rgba(0,0,0,0.85)';x.strokeText('N',ax,ay-40);x.fillStyle='#fff';x.fillText('N',ax,ay-40);x.textAlign='left';}
+  // colour-coded material legend (only types visible in this view)
+  {const baseT=t=>TYPES[t]?t:(TYPES[(t||'').replace(/P$/,'')]?t.replace(/P$/,''):'Other');
+   const present=new Set();
+   vis.forEach(o=>{if(o.u>=0&&o.u<=MW&&o.v>=0&&o.v<=MH)present.add(baseT(o.h.type));});
+   const order=['DR','W1','W2','SG','HO','BHJ','OB','Other'].filter(k=>present.has(k));
+   if(order.length){
+     const rh=26,w=170,h=order.length*rh+34;
+     x.fillStyle='rgba(0,0,0,0.6)';x.fillRect(10,10,w,h);
+     x.font='bold 15px sans-serif';x.textAlign='left';x.textBaseline='middle';x.fillStyle='#fff';x.fillText('Material type',20,26);
+     order.forEach((k,i)=>{const y=52+i*rh;
+       x.beginPath();x.arc(28,y,8,0,Math.PI*2);x.fillStyle=k==='Other'?'#808080':TYPES[k];x.fill();x.lineWidth=2;x.strokeStyle='#000';x.stroke();
+       x.fillStyle='#fff';x.font='15px sans-serif';x.fillText(k==='Other'?'Other':k+' / '+k+'P',44,y);});}}
+  // scale bar
+  const nice=[1,2,5,10,20,50,100,200,500,1000,2000],bm=nice.filter(m=>m/mpp<=220).pop()||1,bl=bm/mpp;
+  x.fillStyle='rgba(0,0,0,0.55)';x.fillRect(10,MH-46,bl+24,36);
+  x.strokeStyle='#fff';x.fillStyle='#fff';x.lineWidth=3;
+  x.beginPath();x.moveTo(22,MH-22);x.lineTo(22+bl,MH-22);x.moveTo(22,MH-30);x.lineTo(22,MH-18);x.moveTo(22+bl,MH-30);x.lineTo(22+bl,MH-18);x.stroke();
+  x.font='bold 15px sans-serif';x.textBaseline='alphabetic';x.fillText(bm+' m',22,MH-34);
+  // attribution
+  x.font='13px sans-serif';x.textAlign='right';x.lineWidth=3;x.strokeStyle='rgba(0,0,0,0.8)';
+  x.strokeText(base.a,MW-8,MH-8);x.fillStyle='#fff';x.fillText(base.a,MW-8,MH-8);x.textAlign='left';
+  return c;
+}
+
+async function buildReportCanvas(){
+  const W=1000,txt=[];
   if(last&&last.res){
     const r=last.res;
-    lines.push(
+    txt.push(
       'ROM quality (nearest '+r.n+' holes, '+(r.wt?'distance weighted':'simple average')+')',
       `Fe ${r.a.fe.toFixed(2)}%   SiO2 ${r.a.si.toFixed(2)}%   Al2O3 ${r.a.al.toFixed(2)}%   P ${isNaN(r.a.p)?'-':r.a.p.toFixed(3)}%`,
       'Material: '+r.mixTxt,
@@ -412,55 +549,77 @@ function buildReportCanvas(){
       'Time: '+new Date().toLocaleString()
     );
   } else {
-    lines.push(
+    txt.push(
       'ROM Face Check Report',
       'No loading unit position or blasthole data available',
       'Time: '+new Date().toLocaleString()
     );
   }
-
-  const ph=photoImg?Math.round(W*photoImg.height/photoImg.width):0;
-  const H=ph+60+lines.length*38;
+  const mc=await buildMapCanvas();
+  const ph=photoImg?Math.round(W*photoImg.height/photoImg.width):0,mh=mc?mc.height:0;
+  const H=ph+mh+60+txt.length*38;
   const c=document.createElement('canvas');c.width=W;c.height=H;
   const x=c.getContext('2d');
   x.fillStyle='#fff';x.fillRect(0,0,W,H);
   if(photoImg)x.drawImage(photoImg,0,0,W,ph);
-  x.fillStyle='#0d5c63';x.fillRect(0,ph,W,H-ph);
-  x.fillStyle='#fff';
-  lines.forEach((t,i)=>{
+  if(mc)x.drawImage(mc,0,ph);
+  const by=ph+mh;
+  x.fillStyle='#0d5c63';x.fillRect(0,by,W,H-by);
+  x.fillStyle='#fff';x.textBaseline='alphabetic';x.textAlign='left';
+  txt.forEach((t,i)=>{
     x.font=(i<2?'bold ':'')+(i===1?'30px':'24px')+' sans-serif';
-    x.fillText(t,24,ph+44+i*38);
+    x.fillText(t,24,by+44+i*38);
   });
   return c;
 }
 
+let prevT=null,prevTok=0;
 function renderPreview(){
-  const c=buildReportCanvas();
-  $('reportPrev').src=c.toDataURL('image/jpeg',0.9);
-  $('prevWrap').style.display='block';
+  clearTimeout(prevT);
+  prevT=setTimeout(async()=>{
+    const tok=++prevTok,c=await buildReportCanvas();
+    if(tok!==prevTok)return;
+    $('reportPrev').src=c.toDataURL('image/jpeg',0.85);
+    $('prevWrap').style.display='block';
+  },300);
 }
 
-const onPhoto=e=>{
+async function onPhoto(e){
   const f=e.target.files[0];if(!f)return;
-  const img=new Image();
-  img.onload=()=>{photoImg=img;renderPreview();};
-  img.src=URL.createObjectURL(f);
+  $('photoMsg').textContent='Loading photo...';
+  try{
+    let src=null,w,h;
+    if(window.createImageBitmap){try{src=await createImageBitmap(f,{imageOrientation:'from-image'});w=src.width;h=src.height;}catch(_){src=null;}}
+    if(!src){src=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=URL.createObjectURL(f);});w=src.naturalWidth;h=src.naturalHeight;}
+    const sc=Math.min(1,1600/w),c=document.createElement('canvas');
+    c.width=Math.round(w*sc);c.height=Math.round(h*sc);
+    c.getContext('2d').drawImage(src,0,0,c.width,c.height);
+    if(src.close)src.close();
+    photoImg=c;
+    $('photoMsg').textContent='Photo added: '+(f.name||'camera photo');
+    $('rmPhoto').style.display='inline-block';
+    renderPreview();
+  }catch(err){
+    photoImg=null;$('rmPhoto').style.display='none';
+    $('photoMsg').textContent='Could not read this photo. Try again, or use Upload photo.';
+  }
   e.target.value='';
-};
+}
+$('rmPhoto').onclick=()=>{photoImg=null;$('rmPhoto').style.display='none';$('photoMsg').textContent='Photo removed.';renderPreview();};
 $('photo').onchange=onPhoto;
 $('photoUp').onchange=onPhoto;
 
-$('save').onclick=()=>{
+$('save').onclick=async()=>{
   if(!last||!last.res){alert('Set a location with blastholes in range first.');return;}
-  const c=buildReportCanvas();
+  if(!photoImg&&!confirm('No field photo has been added. Save the report without a photo?'))return;
+  const c=await buildReportCanvas();
   c.toBlob(blob=>{
-    const filename='ROM_face_'+Date.now()+'.png';
     const a=document.createElement('a');
     a.href=URL.createObjectURL(blob);
-    a.download=filename;
+    a.download='ROM_face_'+Date.now()+'.jpg';
     a.click();
-    saveReportLog(blob,last.res,last);
-  });
+    saveReportLog(blob,last.res,last,c);
+  },'image/jpeg',0.88);
 };
 
 /* --- IndexedDB Storage for Face Photos & Reports Log --- */
@@ -474,8 +633,11 @@ req.onupgradeneeded=e=>{
 };
 req.onsuccess=e=>{db=e.target.result;renderLogList();};
 
-function saveReportLog(blob,res,loc){
+function saveReportLog(blob,res,loc,canvas){
   if(!db)return;
+  const t=document.createElement('canvas');t.width=200;t.height=Math.round(200*canvas.height/canvas.width);
+  t.getContext('2d').drawImage(canvas,0,0,t.width,t.height);
+  const thumb=t.toDataURL('image/jpeg',0.7);
   const reader=new FileReader();
   reader.onloadend=()=>{
     const record={
@@ -486,7 +648,8 @@ function saveReportLog(blob,res,loc){
       al:res.a.al.toFixed(2),
       p:isNaN(res.a.p)?'-':res.a.p.toFixed(3),
       mix:res.mixTxt,
-      img:reader.result
+      img:reader.result,
+      thumb
     };
     const tx=db.transaction('reports','readwrite');
     tx.objectStore('reports').add(record);
@@ -507,13 +670,13 @@ function renderLogList(){
     list.sort((a,b)=>b.id-a.id);
     el.innerHTML=list.map(it=>`
       <div class="log-item">
-        <img class="log-thumb" src="${it.img}" alt="Thumb">
+        <img class="log-thumb" src="${it.thumb||it.img}" alt="Thumb">
         <div class="log-info">
           <b>Fe ${it.fe}% | SiO2 ${it.si}% | Al2O3 ${it.al}% | P ${it.p}</b>
           <span>${new Date(it.date).toLocaleString()}</span><br>
           <span>Loc: ${it.loc} | Mix: ${it.mix}</span>
         </div>
-        <a href="${it.img}" download="ROM_Report_${it.id}.png" class="btn ghost" style="padding:4px 8px;font-size:12px;text-decoration:none">Download</a>
+        <a href="${it.img}" download="ROM_Report_${it.id}.${/^data:image\/png/.test(it.img)?'png':'jpg'}" class="btn ghost" style="padding:4px 8px;font-size:12px;text-decoration:none">Download</a>
       </div>
     `).join('');
   };
