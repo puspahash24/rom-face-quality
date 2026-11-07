@@ -33,6 +33,9 @@ button:focus-visible,input:focus-visible,.btn:focus-within{outline:3px solid var
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0}
 label{color:var(--mute);font-size:13px}
 input[type=number]{width:70px;font:inherit;padding:6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
+.fields{display:grid;gap:8px;margin-bottom:6px}
+.fields label{display:flex;flex-direction:column;gap:3px}
+.fields input,.fields select{width:100%;font:inherit;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
 input[type=file]{position:absolute;opacity:0;width:1px;height:1px}
 .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center}
 .grid div{background:var(--bg);border-radius:6px;padding:8px 2px}
@@ -98,6 +101,11 @@ body.fs #fsBar{display:block}
 
 <section>
   <h2>4. Face photo and report</h2>
+  <div class="fields">
+    <label>Mine name <select id="mineName"></select></label>
+    <label>Pit name <select id="pitName"></select></label>
+    <label>MRL of loading unit (m) <input id="mrl" type="number" step="any" inputmode="decimal" placeholder="e.g. 742.21"></label>
+  </div>
   <div class="row">
     <label class="btn ghost">Take photo (camera)<input id="photo" type="file" accept="image/*" capture="environment"></label>
     <label class="btn ghost">Upload photo (gallery / files)<input id="photoUp" type="file" accept="image/*"></label>
@@ -544,10 +552,12 @@ async function buildReportCanvas(){
     txt.push(
       'ROM quality (nearest '+r.n+' holes, '+(r.wt?'distance weighted':'simple average')+')',
       `Fe ${r.a.fe.toFixed(2)}%   SiO2 ${r.a.si.toFixed(2)}%   Al2O3 ${r.a.al.toFixed(2)}%   P ${isNaN(r.a.p)?'-':r.a.p.toFixed(3)}%`,
-      'Material: '+r.mixTxt,
-      `Loading Unit: ${last.lat.toFixed(6)}, ${last.lon.toFixed(6)}`,
-      'Time: '+new Date().toLocaleString()
+      'Material: '+r.mixTxt
     );
+    const dm=$('mineName').value.trim(),dp=$('pitName').value.trim(),dr=$('mrl').value.trim();
+    if(dm||dp)txt.push([dm&&'Mine: '+dm,dp&&'Pit: '+dp].filter(Boolean).join('     '));
+    txt.push(`Loading Unit: ${last.lat.toFixed(6)}, ${last.lon.toFixed(6)}`+(dr&&isFinite(+dr)?'     MRL: '+(+dr)+' m':''),
+      'Time: '+new Date().toLocaleString());
   } else {
     txt.push(
       'ROM Face Check Report',
@@ -567,7 +577,9 @@ async function buildReportCanvas(){
   x.fillStyle='#0d5c63';x.fillRect(0,by,W,H-by);
   x.fillStyle='#fff';x.textBaseline='alphabetic';x.textAlign='left';
   txt.forEach((t,i)=>{
-    x.font=(i<2?'bold ':'')+(i===1?'30px':'24px')+' sans-serif';
+    let fs=i===1?30:24;const wt=i<2?'bold ':'';
+    x.font=wt+fs+'px sans-serif';
+    while(fs>14&&x.measureText(t).width>W-48){fs--;x.font=wt+fs+'px sans-serif';}
     x.fillText(t,24,by+44+i*38);
   });
   return c;
@@ -605,6 +617,20 @@ async function onPhoto(e){
   }
   e.target.value='';
 }
+const escH=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const PITS={'Noamundi':['Western Pit','Hill-3','Hill-4','Hill-6'],'Katamati':['Pit-1','Pit-2','Pit-4']};
+const store=(k,v)=>{try{localStorage.setItem(k,v);}catch(e){}};
+const recall=k=>{try{return localStorage.getItem(k)||'';}catch(e){return '';}};
+function fillPits(sel){
+  const m=$('mineName').value;
+  $('pitName').innerHTML='<option value="">'+(m?'Select pit':'Select mine first')+'</option>'+(PITS[m]||[]).map(n=>`<option>${n}</option>`).join('');
+  $('pitName').disabled=!m;
+  if(sel&&(PITS[m]||[]).includes(sel))$('pitName').value=sel;}
+$('mineName').innerHTML='<option value="">Select mine</option>'+Object.keys(PITS).map(n=>`<option>${n}</option>`).join('');
+{const m=recall('rom_mineName');if(PITS[m])$('mineName').value=m;fillPits(recall('rom_pitName'));}
+$('mineName').onchange=()=>{store('rom_mineName',$('mineName').value);store('rom_pitName','');fillPits('');if(photoImg)renderPreview();};
+$('pitName').onchange=()=>{store('rom_pitName',$('pitName').value);if(photoImg)renderPreview();};
+$('mrl').oninput=()=>{if(photoImg)renderPreview();};
 $('rmPhoto').onclick=()=>{photoImg=null;$('rmPhoto').style.display='none';$('photoMsg').textContent='Photo removed.';renderPreview();};
 $('photo').onchange=onPhoto;
 $('photoUp').onchange=onPhoto;
@@ -648,6 +674,9 @@ function saveReportLog(blob,res,loc,canvas){
       al:res.a.al.toFixed(2),
       p:isNaN(res.a.p)?'-':res.a.p.toFixed(3),
       mix:res.mixTxt,
+      mine:$('mineName').value.trim(),
+      pit:$('pitName').value.trim(),
+      mrl:$('mrl').value.trim(),
       img:reader.result,
       thumb
     };
@@ -658,6 +687,9 @@ function saveReportLog(blob,res,loc,canvas){
   reader.readAsDataURL(blob);
 }
 
+function logDetails(it){
+  const t=[it.mine&&'Mine: '+it.mine,it.pit&&'Pit: '+it.pit,it.mrl&&'MRL: '+it.mrl+' m'].filter(Boolean).join(' | ');
+  return t?'<br><span>'+escH(t)+'</span>':'';}
 function renderLogList(){
   if(!db)return;
   const tx=db.transaction('reports','readonly');
@@ -674,7 +706,7 @@ function renderLogList(){
         <div class="log-info">
           <b>Fe ${it.fe}% | SiO2 ${it.si}% | Al2O3 ${it.al}% | P ${it.p}</b>
           <span>${new Date(it.date).toLocaleString()}</span><br>
-          <span>Loc: ${it.loc} | Mix: ${it.mix}</span>
+          <span>Loc: ${it.loc} | Mix: ${it.mix}</span>${logDetails(it)}
         </div>
         <a href="${it.img}" download="ROM_Report_${it.id}.${/^data:image\/png/.test(it.img)?'png':'jpg'}" class="btn ghost" style="padding:4px 8px;font-size:12px;text-decoration:none">Download</a>
       </div>
