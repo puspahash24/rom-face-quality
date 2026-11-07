@@ -3,19 +3,46 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>ROM Face Check</title>
+<title>ROM Face Quality Monitoring</title>
+<script>try{document.documentElement.dataset.theme=localStorage.getItem('rom_theme')||'green'}catch(e){document.documentElement.dataset.theme='green'}</script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
-:root{--bg:#edeeea;--card:#fff;--ink:#1b2a30;--mute:#5c6b70;--line:#cfd6d4;--acc:#0d5c63;--acc-ink:#fff;--warn:#9a3412}
+:root{--rep:#0d5c63;--bg:#edeeea;--card:#fff;--ink:#1b2a30;--mute:#5c6b70;--line:#cfd6d4;--acc:#0d5c63;--acc-ink:#fff;--warn:#9a3412}
 @media (prefers-color-scheme:dark){:root{--bg:#12191c;--card:#1b2529;--ink:#e6ecea;--mute:#98a8ab;--line:#31403f;--acc:#4fb3bb;--acc-ink:#07262a;--warn:#fdba74}}
+/* themes: green (default), blue, purple, orange, maroon follow the phone's dark mode; light and dark are fixed */
+:root[data-theme=blue]{--acc:#1d4ed8;--rep:#1e40af}
+:root[data-theme=purple]{--acc:#6d28d9;--rep:#5b21b6}
+:root[data-theme=orange]{--acc:#c2410c;--rep:#9a3412}
+:root[data-theme=maroon]{--acc:#b91c1c;--rep:#991b1b}
+@media (prefers-color-scheme:dark){
+:root[data-theme=blue]{--acc:#7aa7ff;--acc-ink:#0a1f4d}
+:root[data-theme=purple]{--acc:#c4a6ff;--acc-ink:#2a0f5c}
+:root[data-theme=orange]{--acc:#fb923c;--acc-ink:#431407}
+:root[data-theme=maroon]{--acc:#f87171;--acc-ink:#450a0a}}
+:root[data-theme=light]{--bg:#f4f6f8;--card:#fff;--ink:#1b2a30;--mute:#5c6b70;--line:#d9dde3;--acc:#334155;--acc-ink:#fff;--warn:#9a3412;--rep:#334155}
+:root[data-theme=dark]{--bg:#12191c;--card:#1b2529;--ink:#e6ecea;--mute:#98a8ab;--line:#31403f;--acc:#4fb3bb;--acc-ink:#07262a;--warn:#fdba74;--rep:#0d5c63}
+header .ttl{display:flex;flex-direction:column;min-width:0}
+#themeWrap{position:relative;flex-shrink:0}
+#themeBtn{padding:6px 8px;line-height:0}
+#themeMenu{position:absolute;right:0;top:calc(100% + 8px);z-index:3000;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px;display:grid;grid-template-columns:1fr 1fr;gap:6px;width:210px;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+#themeMenu[hidden]{display:none}
+#themeMenu button{display:flex;align-items:center;gap:6px;padding:6px 8px;font-size:13px;background:transparent;color:var(--ink);border:1px solid var(--line)}
+#themeMenu button.sel{border-color:var(--acc);outline:2px solid var(--acc)}
+.sw{width:14px;height:14px;border-radius:50%;border:1px solid rgba(0,0,0,.35);flex-shrink:0}
+.map-actions{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px 8px!important}
+.map-actions button{padding:7px 9px;font-size:12px;background:rgba(255,255,255,.96);color:#1b2a30;border:1px solid #6b7280;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.map-actions button:active{background:#dbeafe}
+body.fs .map-actions{margin-bottom:54px!important}
+.lock-btn{display:flex!important;align-items:center;justify-content:center;cursor:pointer;color:#222}
+.lock-btn.on{background:var(--acc)!important;color:var(--acc-ink)!important}
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;min-height:100vh;min-height:100dvh}
 body{font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);display:flex;flex-direction:column}
-header{padding:10px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);background:var(--card);flex-shrink:0}
-header h1{font-size:17px;margin:0;font-weight:650}
-#status{font-size:13px;color:var(--mute)}
+header{padding:10px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);background:var(--card);flex-shrink:0;position:relative;z-index:1500}
+header h1{font-size:16px;margin:0;font-weight:650;line-height:1.2}
+#status{font-size:12px;color:var(--mute)}
 #map{height:45vh;min-height:260px;width:100%;flex-shrink:0}
 main{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px;display:grid;gap:12px;align-content:start;flex:1}
 @media (min-width:900px){
@@ -66,7 +93,8 @@ body.fs #fsBar{display:block}
 </style>
 </head>
 <body>
-<header><h1>ROM Face Check</h1><span id="status">Load a blasthole map to start</span></header>
+<header><div class="ttl"><h1>ROM Face Quality Monitoring</h1><span id="status">Load a blasthole map to start</span></div>
+<div id="themeWrap"><button id="themeBtn" class="ghost" title="Change theme" aria-label="Change theme"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.2 0 2-.8 2-1.8 0-.5-.2-.9-.5-1.3-.3-.4-.5-.8-.5-1.300 0-1 .8-1.800 1.800-1.800H17a4 4 0 0 0 4-4C21 6.100 17 3 12 3z"/><circle cx="7.500" cy="11" r="1"/><circle cx="10" cy="7.500" r="1"/><circle cx="14.500" cy="7.500" r="1"/></svg></button><div id="themeMenu" hidden></div></div></header>
 <div id="map"></div>
 <div id="fsBar">Tap the map to place the loading unit</div>
 <main>
@@ -111,6 +139,7 @@ body.fs #fsBar{display:block}
     <label class="btn ghost">Upload photo (gallery / files)<input id="photoUp" type="file" accept="image/*"></label>
     <button id="save">Save report image</button>
   </div>
+  <div id="saveMsg" class="note" style="color:var(--acc);font-weight:600"></div>
   <div class="row"><span id="photoMsg" class="note"></span><button id="rmPhoto" class="ghost" style="display:none;padding:4px 8px;font-size:12px">Remove photo</button></div>
   <div id="prevWrap">
     <h3>Generated Report Preview (field photo, face map and quality):</h3>
@@ -265,7 +294,9 @@ const lc=L.control.layers({Satellite:sat,'Satellite (sharper, if available)':sat
 const ICON_IN='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>';
 const ICON_OUT='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>';
 let fsBtn;
+let fsTs=0;
 function setFull(on){
+  fsTs=Date.now();
   document.body.classList.toggle('fs',on);$('map').classList.toggle('full',on);
   if(fsBtn){fsBtn.innerHTML=on?ICON_OUT:ICON_IN;fsBtn.title=on?'Exit full screen':'Full screen map';fsBtn.setAttribute('aria-label',fsBtn.title);}
   try{
@@ -282,11 +313,37 @@ const FsControl=L.Control.extend({options:{position:'topleft'},onAdd(){
   L.DomEvent.on(fsBtn,'click',ev=>{L.DomEvent.preventDefault(ev);setFull(!document.body.classList.contains('fs'));});
   return box;}});
 map.addControl(new FsControl());
+const ICON_LOCK='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+const ICON_UNLOCK='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 7.5-2"/></svg>';
+let lockBtn,pinLocked=false;
+const msg=t=>{$('status').textContent=t;$('fsBar').textContent=t;};
+function setLock(on){
+  if(on&&!pin){msg('Place the shovel on the loading unit first, then lock it');return;}
+  pinLocked=on;
+  if(pin){if(on)pin.dragging.disable();else pin.dragging.enable();}
+  lockBtn.classList.toggle('on',on);lockBtn.innerHTML=on?ICON_LOCK:ICON_UNLOCK;
+  lockBtn.title=on?'Unlock shovel position':'Lock shovel position';lockBtn.setAttribute('aria-label',lockBtn.title);
+  msg(on?'Shovel position locked':'Shovel position unlocked');}
+const LockControl=L.Control.extend({options:{position:'topleft'},onAdd(){
+  const box=L.DomUtil.create('div','leaflet-bar');
+  lockBtn=L.DomUtil.create('a','lock-btn',box);lockBtn.href='#';lockBtn.setAttribute('role','button');
+  lockBtn.innerHTML=ICON_UNLOCK;lockBtn.title='Lock shovel position';lockBtn.setAttribute('aria-label',lockBtn.title);
+  L.DomEvent.disableClickPropagation(box);
+  L.DomEvent.on(lockBtn,'click',ev=>{L.DomEvent.preventDefault(ev);setLock(!pinLocked);});
+  return box;}});
+map.addControl(new LockControl());
+const ActControl=L.Control.extend({options:{position:'bottomleft'},onAdd(){
+  const box=L.DomUtil.create('div','map-actions');
+  [['Show my GPS','gps'],['Pin at my GPS','tome'],['Drop pin','drop']].forEach(([t,id])=>{
+    const b=L.DomUtil.create('button','',box);b.type='button';b.textContent=t;
+    L.DomEvent.on(b,'click',ev=>{L.DomEvent.stop(ev);$(id).click();});});
+  L.DomEvent.disableClickPropagation(box);return box;}});
+map.addControl(new ActControl());
 document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&document.body.classList.contains('fs'))setFull(false);});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.body.classList.contains('fs'))setFull(false);});
 
 let pts=[],lines=[],lineLayer=L.layerGroup().addTo(map),ptLayer=L.layerGroup().addTo(map),hit=L.layerGroup().addTo(map);
-let pin=null,ring=null,me=null,watch=null,gpsLast=null,last=null,photoImg=null,dragRaf=null;
+let gpsFirst=false,pinOnFix=false,pin=null,ring=null,me=null,watch=null,gpsLast=null,last=null,photoImg=null,dragRaf=null;
 lc.addOverlay(ptLayer,'Blastholes');lc.addOverlay(lineLayer,'Face lines');
 
 // Fix screen freezing & viewport sizing issues
@@ -360,6 +417,7 @@ function setPos(lat,lon){
   if(pin)pin.setLatLng([lat,lon]);
   else{
     pin=L.marker([lat,lon],{draggable:true,icon:animatedShovelIcon,title:'Loading Unit (Active Digging)'}).addTo(map);
+    if(pinLocked)pin.dragging.disable();
     pin.on('drag',e=>{
       if(dragRaf)cancelAnimationFrame(dragRaf);
       dragRaf=requestAnimationFrame(()=>{
@@ -373,14 +431,19 @@ function setPos(lat,lon){
   update(last);
 }
 
-$('drop').onclick=()=>{const c=map.getCenter();setPos(c.lat,c.lng);};
-map.on('click',e=>setPos(e.latlng.lat,e.latlng.lng));
+const lockedWarn=()=>{msg('Shovel is locked. Tap the lock on the map to unlock');$('gpsinfo').textContent='Shovel is locked. Tap the lock button on the map to move it.';};
+$('drop').onclick=()=>{if(pinLocked){lockedWarn();return;}const c=map.getCenter();setPos(c.lat,c.lng);};
+map.on('click',e=>{if(pinLocked||Date.now()-fsTs<700)return;setPos(e.latlng.lat,e.latlng.lng);});
 
 $('gps').onclick=()=>{
   if(!navigator.geolocation){$('gpsinfo').textContent='GPS is not available in this browser.';return;}
   if(watch!==null)navigator.geolocation.clearWatch(watch);
+  gpsFirst=true;
+  if(gpsLast)map.setView(gpsLast,Math.max(map.getZoom(),18));
   watch=navigator.geolocation.watchPosition(p=>{
     gpsLast=[p.coords.latitude,p.coords.longitude];
+    if(gpsFirst){gpsFirst=false;map.setView(gpsLast,Math.max(map.getZoom(),18));}
+    if(pinOnFix){pinOnFix=false;if(!pinLocked)setPos(gpsLast[0],gpsLast[1]);}
     $('gpsinfo').textContent='Your GPS accuracy about '+Math.round(p.coords.accuracy)+' m (blue dot)';
     if(me)me.setLatLng(gpsLast);
     else me=L.circleMarker(gpsLast,{radius:7,color:'#fff',weight:2,fillColor:'#2563eb',fillOpacity:1}).addTo(map);
@@ -388,8 +451,9 @@ $('gps').onclick=()=>{
 };
 
 $('tome').onclick=()=>{
-  if(gpsLast){setPos(gpsLast[0],gpsLast[1]);map.panTo(gpsLast);}
-  else $('gpsinfo').textContent='Tap Show my GPS first and wait for the blue dot.';
+  if(pinLocked){lockedWarn();return;}
+  if(gpsLast){setPos(gpsLast[0],gpsLast[1]);map.setView(gpsLast,Math.max(map.getZoom(),18));}
+  else{pinOnFix=true;$('gpsinfo').textContent='Getting your GPS position...';$('gps').click();}
 };
 
 ['k','rad','w'].forEach(i=>$(i).onchange=()=>last&&update(last));
@@ -429,7 +493,7 @@ function update(p){
   const a={fe:avg('fe'),si:avg('si'),al:avg('al'),p:avg('p')};
   const mix={};near.forEach((x,i)=>mix[x.h.type]=(mix[x.h.type]||0)+w[i]/sw);
   const mixTxt=Object.entries(mix).sort((x,y)=>y[1]-x[1]).map(([t,f])=>`${t} ${Math.round(f*100)}%`).join(', ');
-  last.res={a,mixTxt,n:near.length,wt,near:near.map(x=>x.h),R};
+  last.res={a,mixTxt,n:near.length,wt,near:near.map(x=>x.h),nd:near.map(x=>x.d),R};
   const f=(v,n)=>isNaN(v)?'-':v.toFixed(n);
   $('res').innerHTML=`<div class="grid"><div><b>${f(a.fe,2)}</b><span>Fe %</span></div><div><b>${f(a.si,2)}</b><span>SiO2 %</span></div><div><b>${f(a.al,2)}</b><span>Al2O3 %</span></div><div><b>${f(a.p,3)}</b><span>P %</span></div></div>
   <p class="note">${near.length} nearest holes, ${wt?'distance weighted':'simple average'}. Material: ${mixTxt}</p>
@@ -555,32 +619,31 @@ async function buildReportCanvas(){
       'Material: '+r.mixTxt
     );
     const dm=$('mineName').value.trim(),dp=$('pitName').value.trim(),dr=$('mrl').value.trim();
-    if(dm||dp)txt.push([dm&&'Mine: '+dm,dp&&'Pit: '+dp].filter(Boolean).join('     '));
-    txt.push(`Loading Unit: ${last.lat.toFixed(6)}, ${last.lon.toFixed(6)}`+(dr&&isFinite(+dr)?'     MRL: '+(+dr)+' m':''),
-      'Time: '+new Date().toLocaleString());
+    const mp=[dm&&'Mine: '+dm,dp&&'Pit: '+dp,(dr&&isFinite(+dr))&&'MRL: '+(+dr)+' m'].filter(Boolean).join('     ');
+    if(mp)txt.push(mp);
+    txt.push('Time: '+new Date().toLocaleString());
   } else {
     txt.push(
-      'ROM Face Check Report',
+      'ROM Face Quality Monitoring Report',
       'No loading unit position or blasthole data available',
       'Time: '+new Date().toLocaleString()
     );
   }
   const mc=await buildMapCanvas();
   const ph=photoImg?Math.round(W*photoImg.height/photoImg.width):0,mh=mc?mc.height:0;
-  const H=ph+mh+60+txt.length*38;
+  const LH=30,by=ph+mh,n=txt.length,H=by+28+(n-1)*LH+14;
   const c=document.createElement('canvas');c.width=W;c.height=H;
   const x=c.getContext('2d');
   x.fillStyle='#fff';x.fillRect(0,0,W,H);
   if(photoImg)x.drawImage(photoImg,0,0,W,ph);
   if(mc)x.drawImage(mc,0,ph);
-  const by=ph+mh;
-  x.fillStyle='#0d5c63';x.fillRect(0,by,W,H-by);
+  x.fillStyle=(getComputedStyle(document.documentElement).getPropertyValue('--rep')||'').trim()||'#0d5c63';x.fillRect(0,by,W,H-by);
   x.fillStyle='#fff';x.textBaseline='alphabetic';x.textAlign='left';
   txt.forEach((t,i)=>{
-    let fs=i===1?30:24;const wt=i<2?'bold ':'';
+    let fs=i===1?28:22;const wt=i<2?'bold ':'';
     x.font=wt+fs+'px sans-serif';
     while(fs>14&&x.measureText(t).width>W-48){fs--;x.font=wt+fs+'px sans-serif';}
-    x.fillText(t,24,by+44+i*38);
+    x.fillText(t,24,by+28+i*LH);
   });
   return c;
 }
@@ -635,15 +698,14 @@ $('rmPhoto').onclick=()=>{photoImg=null;$('rmPhoto').style.display='none';$('pho
 $('photo').onchange=onPhoto;
 $('photoUp').onchange=onPhoto;
 
+const showSave=t=>{$('saveMsg').textContent=t;clearTimeout(showSave.t);showSave.t=setTimeout(()=>$('saveMsg').textContent='',9000);};
 $('save').onclick=async()=>{
   if(!last||!last.res){alert('Set a location with blastholes in range first.');return;}
   if(!photoImg&&!confirm('No field photo has been added. Save the report without a photo?'))return;
   const c=await buildReportCanvas();
   c.toBlob(blob=>{
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(blob);
-    a.download='ROM_face_'+Date.now()+'.jpg';
-    a.click();
+    if(!db){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ROM_face_'+Date.now()+'.jpg';a.click();
+      showSave('Storage is not available on this device, so the image was downloaded instead.');return;}
     saveReportLog(blob,last.res,last,c);
   },'image/jpeg',0.88);
 };
@@ -682,7 +744,8 @@ function saveReportLog(blob,res,loc,canvas){
     };
     const tx=db.transaction('reports','readwrite');
     tx.objectStore('reports').add(record);
-    tx.oncomplete=renderLogList;
+    tx.oncomplete=()=>{renderLogList();showSave('Report saved to the Report History Log (section 5). Use Share or Download there.');};
+    tx.onerror=()=>showSave('Could not save the report on this device.');
   };
   reader.readAsDataURL(blob);
 }
@@ -708,12 +771,28 @@ function renderLogList(){
           <span>${new Date(it.date).toLocaleString()}</span><br>
           <span>Loc: ${it.loc} | Mix: ${it.mix}</span>${logDetails(it)}
         </div>
-        <a href="${it.img}" download="ROM_Report_${it.id}.${/^data:image\/png/.test(it.img)?'png':'jpg'}" class="btn ghost" style="padding:4px 8px;font-size:12px;text-decoration:none">Download</a>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <button class="shareBtn" data-id="${it.id}" style="padding:4px 8px;font-size:12px">Share</button>
+          <a href="${it.img}" download="ROM_Report_${it.id}.${/^data:image\/png/.test(it.img)?'png':'jpg'}" class="btn ghost" style="padding:4px 8px;font-size:12px;text-decoration:none">Download</a>
+        </div>
       </div>
     `).join('');
   };
 }
 
+const dataUrlToFile=(u,n)=>{const p=u.split(','),mime=/data:([^;]+)/.exec(p[0])[1],bin=atob(p[1]),a=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return new File([a],n,{type:mime});};
+$('logList').onclick=e=>{
+  const b=e.target.closest('.shareBtn');if(!b||!db)return;
+  db.transaction('reports','readonly').objectStore('reports').get(+b.dataset.id).onsuccess=async ev=>{
+    const it=ev.target.result;if(!it)return;
+    const file=dataUrlToFile(it.img,'ROM_Report_'+it.id+'.'+(/^data:image\/png/.test(it.img)?'png':'jpg'));
+    const text='ROM face quality: Fe '+it.fe+'% | SiO2 '+it.si+'% | Al2O3 '+it.al+'% | P '+it.p+(it.mine?' | '+it.mine:'')+(it.pit?' '+it.pit:'');
+    try{
+      if(navigator.canShare&&navigator.canShare({files:[file]}))await navigator.share({files:[file],text,title:'ROM Face Quality Monitoring'});
+      else{const a=document.createElement('a');a.href=it.img;a.download=file.name;a.click();alert('This browser cannot share files directly, so the image was downloaded instead.');}
+    }catch(err){if(!err||err.name!=='AbortError')alert('Could not open the share menu: '+(err&&err.message));}
+  };};
 $('clearLog').onclick=()=>{
   if(!confirm('Clear all stored reports and photos from this device?'))return;
   if(!db)return;
@@ -721,6 +800,13 @@ $('clearLog').onclick=()=>{
   tx.objectStore('reports').clear();
   tx.oncomplete=renderLogList;
 };
+const THEMES=[['green','Green','#0d5c63'],['blue','Blue','#1d4ed8'],['purple','Purple','#6d28d9'],['orange','Orange','#c2410c'],['maroon','Maroon','#b91c1c'],['light','Light','#e2e8f0'],['dark','Dark','#12191c']];
+$('themeMenu').innerHTML=THEMES.map(t=>`<button data-t="${t[0]}"><span class="sw" style="background:${t[2]}"></span>${t[1]}</button>`).join('');
+const markTheme=()=>document.querySelectorAll('#themeMenu button').forEach(b=>b.classList.toggle('sel',b.dataset.t===document.documentElement.dataset.theme));
+$('themeBtn').onclick=e=>{e.stopPropagation();$('themeMenu').hidden=!$('themeMenu').hidden;markTheme();};
+$('themeMenu').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+  document.documentElement.dataset.theme=b.dataset.t;store('rom_theme',b.dataset.t);markTheme();$('themeMenu').hidden=true;if(photoImg)renderPreview();};
+document.addEventListener('click',e=>{if(!e.target.closest('#themeWrap'))$('themeMenu').hidden=true;});
 </script>
 </body>
 </html>
