@@ -1,9 +1,9 @@
 // ROM Face Check - offline helper
-const CACHE = 'rom-face-v1';
+const CACHE = 'rom-face-v2';
 const CDN = 'cdnjs.cloudflare.com';
 const PRECACHE = [
   './', './index.html', './manifest.json',
-  './icons/icon-192.png', './icons/icon-512.png',
+  './icon-192.png', './icon-512.png',
   'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css',
   'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'
