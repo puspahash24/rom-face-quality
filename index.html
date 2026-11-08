@@ -208,6 +208,7 @@ body.fs .leaflet-bottom.leaflet-left{bottom:52px}
 </section>
 </main>
 
+<div id="edOv" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.6);overflow-y:auto;padding:16px"><div id="edBox" style="max-width:520px;margin:0 auto;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:14px"></div></div>
 <script>
 const TYPES={DR:'#2563eb',W1:'#16a34a',SG:'#06b6d4',HO:'#dc2626',BHJ:'#ec4899',OB:'#ec4899',W2:'#eab308'};
 const colour=t=>TYPES[t]||TYPES[(t||'').replace(/P$/,'')]||'#808080';
@@ -826,7 +827,7 @@ function saveReportLog(blob,res,loc,canvas){
       mine:$('mineName').value.trim(),
       pit:$('pitName').value.trim(),
       mrl:$('mrl').value.trim(),
-      dest:destList().join(', '),destArr:destList(),
+      dest:destList().join(', '),destArr:destList(),title:'ROM quality (nearest '+res.n+' holes, '+(res.wt?'distance weighted':'simple average')+')',
       img:reader.result,
       thumb
     };
@@ -861,6 +862,7 @@ function renderLogList(){
         </div>
         <div style="display:flex;flex-direction:column;gap:6px">
           <button class="shareBtn" data-id="${it.id}" style="padding:4px 8px;font-size:12px">Share</button>
+          <button class="editBtn ghost" data-s="reports" data-id="${it.id}" style="padding:4px 8px;font-size:12px">Edit</button>
           <a href="${it.img}" download="ROM_Report_${it.id}.${/^data:image\/png/.test(it.img)?'png':'jpg'}" class="btn ghost" style="padding:4px 8px;font-size:12px;text-decoration:none">Download</a>
         </div>
       </div>
@@ -935,7 +937,7 @@ async function shBuild(){
   const prev={};document.querySelectorAll('#shSrc input').forEach(i=>prev[i.dataset.key]=i.value);
   const[w0,w1]=shWin(),inW=t=>{const d=new Date(t);return d>=w0&&d<w1;};
   const[fr,st]=await Promise.all([getAll('reports'),getAll('stocks')]);
-  const srcs=[...fr.filter(r=>inW(r.date)).map(r=>({k:'f'+r.id,lbl:'Face '+[r.pit,r.mrl&&'MRL '+r.mrl].filter(Boolean).join(' ')+' '+tm(r.date),fe:parseFloat(r.fe),si:parseFloat(r.si),al:parseFloat(r.al),p:parseFloat(r.p),dest:r.destArr||(r.dest?r.dest.split(', '):[])})),
+  const srcs=[...fr.filter(r=>inW(r.date)).map(r=>({k:'f'+r.id,lbl:'Face '+[r.mine,r.pit,r.mrl&&'MRL '+r.mrl].filter(Boolean).join(' ')+' '+tm(r.date),fe:parseFloat(r.fe),si:parseFloat(r.si),al:parseFloat(r.al),p:parseFloat(r.p),dest:r.destArr||(r.dest?r.dest.split(', '):[])})),
     ...st.filter(r=>inW(r.date)).map(r=>({k:'s'+r.id,lbl:'Stock '+r.name+' '+tm(r.date),fe:r.fe,si:r.si,al:r.al,p:r.p,dest:r.dest||[]}))];
   shRows=[];
   PLANTS.forEach(pl=>srcs.forEach(s=>{if(s.dest.some(d=>d===pl||(pl==='Others'&&d.startsWith('Others'))))shRows.push({pl,s});}));
@@ -947,21 +949,27 @@ async function shBuild(){
   shPrev();}
 function shCalc(){
   const out=[];
-  PLANTS.forEach(pl=>{let T=0;const a={fe:0,si:0,al:0,p:0},w={fe:0,si:0,al:0,p:0};
+  PLANTS.forEach(pl=>{let T=0;const a={fe:0,si:0,al:0,p:0},w={fe:0,si:0,al:0,p:0},src=[];
     document.querySelectorAll('#shSrc input').forEach(inp=>{const r=shRows[+inp.dataset.i],t=+inp.value||0;if(!r||r.pl!==pl||t<=0)return;
-      T+=t;['fe','si','al','p'].forEach(k=>{if(!isNaN(r.s[k])){a[k]+=r.s[k]*t;w[k]+=t;}});});
-    if(T)out.push({pl,T,fe:w.fe?a.fe/w.fe:NaN,si:w.si?a.si/w.si:NaN,al:w.al?a.al/w.al:NaN,p:w.p?a.p/w.p:NaN});});
+      T+=t;src.push({lbl:r.s.lbl,t,fe:r.s.fe,si:r.s.si,al:r.s.al,p:r.s.p});
+      ['fe','si','al','p'].forEach(k=>{if(!isNaN(r.s[k])){a[k]+=r.s[k]*t;w[k]+=t;}});});
+    if(T)out.push({pl,T,src,fe:w.fe?a.fe/w.fe:NaN,si:w.si?a.si/w.si:NaN,al:w.al?a.al/w.al:NaN,p:w.p?a.p/w.p:NaN});});
   return out;}
 function shCanvas(rows){
-  const W=1000,LH=46,top=120,H=top+24+(rows.length+1)*LH+24,c=document.createElement('canvas');c.width=W;c.height=H;
+  const W=1000,PL=46,SL=36,top=120,H=top+24+rows.reduce((a,r)=>a+PL+r.src.length*SL,0)+PL+24,c=document.createElement('canvas');c.width=W;c.height=H;
   const x=c.getContext('2d'),ink='#1b2a30';
   x.fillStyle='#fff';x.fillRect(0,0,W,H);x.fillStyle=repCol();x.fillRect(0,0,W,top-20);
   x.fillStyle='#fff';x.textAlign='left';x.font='bold 34px sans-serif';x.fillText('Shift End Report',24,46);
   x.font='21px sans-serif';x.fillText([$('shDate').value.split('-').reverse().join('-'),SHL[$('shShift').value],$('mineName').value].filter(Boolean).join('   |   '),24,84);
-  const xs=[24,440,600,730,865,985],put=(v,y,b)=>{x.font=(b?'bold ':'')+'24px sans-serif';v.forEach((t,i)=>{x.textAlign=i?'right':'left';x.fillText(t,xs[i],y);});};
+  const xs=[24,440,600,730,865,985],put=(v,y,b,fs,ind)=>{fs=fs||24;ind=ind||0;v.forEach((t,i)=>{let f=fs;const bw=b?'bold ':'';x.font=bw+f+'px sans-serif';
+    if(!i){while(f>13&&x.measureText(t).width>372-xs[0]-ind){f--;x.font=bw+f+'px sans-serif';}x.textAlign='left';x.fillText(t,xs[0]+ind,y);}
+    else{x.textAlign='right';x.fillText(t,xs[i],y);}});};
   x.fillStyle=ink;put(['Plant','Trips','Fe %','SiO2 %','Al2O3 %','P %'],top+24,true);
-  rows.forEach((r,i)=>{const y=top+24+(i+1)*LH;if(i%2){x.fillStyle='#eef1f0';x.fillRect(0,y-31,W,LH);}x.fillStyle=ink;put([r.pl,String(r.T),fx(r.fe,2),fx(r.si,2),fx(r.al,2),fx(r.p,3)],y);});
-  const y=top+24+(rows.length+1)*LH;x.fillStyle=ink;x.fillRect(0,y-34,W,2);put(['Total trips',String(rows.reduce((a,r)=>a+r.T,0))],y,true);
+  let y=top+24;
+  rows.forEach((r,i)=>{y+=PL;if(i%2){x.fillStyle='#eef1f0';x.fillRect(0,y-31,W,PL+r.src.length*SL);}
+    x.fillStyle=ink;put([r.pl,String(r.T),fx(r.fe,2),fx(r.si,2),fx(r.al,2),fx(r.p,3)],y,true);
+    r.src.forEach(q=>{y+=SL;x.fillStyle='#4a5a60';put([q.lbl,String(q.t),fx(q.fe,2),fx(q.si,2),fx(q.al,2),fx(q.p,3)],y,false,20,22);});});
+  y+=PL;x.fillStyle=ink;x.fillRect(0,y-34,W,2);put(['Total trips',String(rows.reduce((a,r)=>a+r.T,0))],y,true);
   return c;}
 function shPrev(){const r=shCalc();if(!r.length){$('shPrev').style.display='none';return;}$('shPrev').src=shCanvas(r).toDataURL('image/jpeg',.85);$('shPrev').style.display='block';}
 $('shSrc').oninput=()=>{clearTimeout(shT);shT=setTimeout(shPrev,300);};
@@ -969,13 +977,14 @@ $('shDate').onchange=$('shShift').onchange=$('shBuild').onclick=shBuild;
 $('shSave').onclick=()=>{
   const rows=shCalc();if(!rows.length){alert('Enter trips for at least one source first.');return;}
   if(!db){alert('Storage is not available on this device.');return;}
-  const text=SHL[$('shShift').value]+' '+$('shDate').value+'\n'+rows.map(r=>`${r.pl}: ${r.T} trips | Fe ${fx(r.fe,2)} | SiO2 ${fx(r.si,2)} | Al2O3 ${fx(r.al,2)} | P ${fx(r.p,3)}`).join('\n');
+  const sl=q=>`   - ${q.lbl}: ${q.t} trips | Fe ${fx(q.fe,2)} | SiO2 ${fx(q.si,2)} | Al2O3 ${fx(q.al,2)} | P ${fx(q.p,3)}`;
+  const text=SHL[$('shShift').value]+' '+$('shDate').value+'\n'+rows.map(r=>[`${r.pl}: ${r.T} trips | Fe ${fx(r.fe,2)} | SiO2 ${fx(r.si,2)} | Al2O3 ${fx(r.al,2)} | P ${fx(r.p,3)}`,...r.src.map(sl)].join('\n')).join('\n');
   const rec={date:shWin()[0].toISOString(),shift:$('shShift').value,rows,text,img:shCanvas(rows).toDataURL('image/jpeg',.88)};
   const tx=db.transaction('shifts','readwrite');tx.objectStore('shifts').add(rec);
   tx.oncomplete=()=>{say2('shMsg','Shift report saved. Use Share or Download below.');renderExtra();};
   tx.onerror=()=>say2('shMsg','Could not save the shift report.');};
 
-const xBtns=(s,id)=>`<div style="display:flex;flex-direction:column;gap:6px"><button class="xShare" data-s="${s}" data-id="${id}" style="padding:4px 8px;font-size:12px">Share</button><button class="xDl ghost" data-s="${s}" data-id="${id}" style="padding:4px 8px;font-size:12px">Download</button></div>`;
+const xBtns=(s,id)=>`<div style="display:flex;flex-direction:column;gap:6px"><button class="xShare" data-s="${s}" data-id="${id}" style="padding:4px 8px;font-size:12px">Share</button><button class="xDl ghost" data-s="${s}" data-id="${id}" style="padding:4px 8px;font-size:12px">Download</button>${s==='stocks'?`<button class="editBtn ghost" data-s="stocks" data-id="${id}" style="padding:4px 8px;font-size:12px">Edit</button>`:''}</div>`;
 async function renderExtra(){
   if(!db)return;
   const st=(await getAll('stocks')).sort((a,b)=>b.id-a.id),sh=(await getAll('shifts')).sort((a,b)=>b.id-a.id);
@@ -987,6 +996,59 @@ document.addEventListener('click',e=>{const b=e.target.closest('.xShare,.xDl');i
     if(b.classList.contains('xShare')&&navigator.canShare&&navigator.canShare({files:[file]})){
       try{await navigator.share({files:[file],text:it.text||'',title:'ROM Face Quality Monitoring'});}catch(err){}}
     else{const a=document.createElement('a');a.href=it.img;a.download=n;a.click();}};});
+
+
+/* ---------- Edit saved face reports and stock entries ---------- */
+const loadDataImg=u=>new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=u;});
+const destOf=it=>Array.isArray(it.dest)?it.dest:(it.destArr||(it.dest?String(it.dest).split(', '):[]));
+function faceLines(it){
+  const mp=[it.mine&&'Mine: '+it.mine,it.pit&&'Pit: '+it.pit,(it.mrl&&isFinite(+it.mrl))&&'MRL: '+(+it.mrl)+' m'].filter(Boolean).join('     ');
+  const l=[it.title||'ROM quality at the loading face',`Fe ${it.fe}%   SiO2 ${it.si}%   Al2O3 ${it.al}%   P ${it.p}%`,'Material: '+it.mix];
+  if(mp)l.push(mp);if(it.dest)l.push('Destination: '+it.dest);l.push('Time: '+new Date(it.date).toLocaleString());return l;}
+async function redrawFace(old,upd){
+  const im=await loadDataImg(old.img);if(!im)return null;
+  const top=im.height-(28+(faceLines(old).length-1)*30+14);if(top<50)return null;
+  const lines=faceLines(upd),W=im.width,H=top+28+(lines.length-1)*30+14,c=document.createElement('canvas');c.width=W;c.height=H;
+  const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,W,H);x.drawImage(im,0,0,W,top,0,0,W,top);
+  x.fillStyle=repCol();x.fillRect(0,top,W,H-top);x.fillStyle='#fff';x.textBaseline='alphabetic';x.textAlign='left';
+  lines.forEach((t,i)=>{let fs=i===1?28:22;const b=i<2?'bold ':'';x.font=b+fs+'px sans-serif';while(fs>14&&x.measureText(t).width>W-48){fs--;x.font=b+fs+'px sans-serif';}x.fillText(t,24,top+28+i*30);});
+  const t=document.createElement('canvas');t.width=200;t.height=Math.round(200*H/W);t.getContext('2d').drawImage(c,0,0,t.width,t.height);
+  return{img:c.toDataURL('image/jpeg',.88),thumb:t.toDataURL('image/jpeg',.7)};}
+async function redrawStock(oldImg,u){
+  const im=await loadDataImg(oldImg);if(!im)return null;
+  const W=im.width,H=im.height,top=H-(22+4*32+8);if(top<0)return null;
+  const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+  x.fillStyle='#fff';x.fillRect(0,0,W,H);if(top>0)x.drawImage(im,0,0,W,top,0,0,W,top);
+  x.fillStyle=repCol();x.fillRect(0,top,W,H-top);x.fillStyle='#fff';x.textAlign='left';x.textBaseline='alphabetic';
+  const txt=['Stock: '+u.name,`Fe ${fx(u.fe,2)}%   SiO2 ${fx(u.si,2)}%   Al2O3 ${fx(u.al,2)}%   P ${fx(u.p,3)}%`,'Feeding to: '+(u.dest.join(', ')||'-'),'Time: '+new Date(u.date).toLocaleString()];
+  txt.forEach((t,i)=>{let fs=i<2?28:22;const b=i<2?'bold ':'';x.font=b+fs+'px sans-serif';while(fs>14&&x.measureText(t).width>W-48){fs--;x.font=b+fs+'px sans-serif';}x.fillText(t,24,top+34+i*32);});
+  return{img:c.toDataURL('image/jpeg',.88),text:'Stock '+u.name+': '+txt[1]+' | '+txt[2]};}
+function openEdit(sn,id){
+  if(!db)return;
+  db.transaction(sn).objectStore(sn).get(id).onsuccess=e=>{
+    const it=e.target.result;if(!it)return;
+    const face=sn==='reports',dl=destOf(it),ov=dl.find(d=>d.startsWith('Others')),mm=ov&&/\((.*)\)/.exec(ov),ot=mm?mm[1]:'';
+    const num=v=>(v===undefined||v===null||isNaN(v))?'':v;
+    let h=`<h2>Edit ${face?'face report':'stock entry'}</h2>`;
+    h+=face?`<div class="fields"><label>Mine <select id="edMine"><option value="">Select mine</option>${Object.keys(PITS).map(n=>`<option${n===it.mine?' selected':''}>${n}</option>`).join('')}</select></label><label>Pit <select id="edPit"></select></label><label>MRL of loading unit (m) <input id="edMrl" type="number" step="any" inputmode="decimal" value="${escH(it.mrl||'')}"></label></div>`
+      :`<div class="fields"><label>Stock name <input id="edName" type="text" maxlength="40" value="${escH(it.name)}"></label></div><div class="q4"><label>Fe %<input id="edFe" type="number" step="any" inputmode="decimal" value="${num(it.fe)}"></label><label>SiO2 %<input id="edSi" type="number" step="any" inputmode="decimal" value="${num(it.si)}"></label><label>Al2O3 %<input id="edAl" type="number" step="any" inputmode="decimal" value="${num(it.al)}"></label><label>P %<input id="edP" type="number" step="any" inputmode="decimal" value="${num(it.p)}"></label></div>`;
+    h+=`<p class="note" style="margin:10px 0 6px">Feeding to</p><div class="dest">${PLANTS.map(n=>`<label class="chk"><input type="checkbox" value="${escH(n)}"${dl.some(d=>d===n||(n==='Others'&&d.startsWith('Others')))?' checked':''}> ${escH(n)}</label>`).join('')}</div><input id="edOther" type="text" maxlength="40" placeholder="Others: stock name or dump name" value="${escH(ot)}" style="width:100%;margin-top:8px;font:inherit;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)"><div class="row" style="margin-top:12px"><button id="edSave">Save changes</button><button id="edCancel" class="ghost">Cancel</button></div><div id="edMsg" class="note warn"></div>`;
+    $('edBox').innerHTML=h;$('edOv').style.display='block';
+    if(face){const fill=sel=>{const m=$('edMine').value;$('edPit').innerHTML='<option value="">'+(m?'Select pit':'Select mine first')+'</option>'+(PITS[m]||[]).map(n=>`<option${n===sel?' selected':''}>${n}</option>`).join('');$('edPit').disabled=!m;};fill(it.pit);$('edMine').onchange=()=>fill('');}
+    $('edCancel').onclick=()=>{$('edOv').style.display='none';};
+    $('edSave').onclick=async()=>{
+      const d=[...document.querySelectorAll('#edBox .dest input:checked')].map(c=>{if(c.value!=='Others')return c.value;const o=$('edOther').value.trim();return o?'Others ('+o+')':'Others';});
+      const old={...it},fail=t=>{$('edMsg').textContent=t;};
+      if(face){it.mine=$('edMine').value;it.pit=$('edPit').value;it.mrl=$('edMrl').value.trim();it.destArr=d;it.dest=d.join(', ');
+        const r=await redrawFace(old,it);if(!r)return fail('Could not redraw the report image.');it.img=r.img;it.thumb=r.thumb;}
+      else{const q=['edFe','edSi','edAl','edP'].map(i=>{const t=$(i).value.trim();return t===''?NaN:+t;}),nm=$('edName').value.trim();
+        if(!nm||isNaN(q[0]))return fail('Enter the stock name and at least Fe %.');
+        it.name=nm;it.fe=q[0];it.si=q[1];it.al=q[2];it.p=q[3];it.dest=d;
+        const r=await redrawStock(old.img,it);if(!r)return fail('Could not redraw the stock image.');it.img=r.img;it.text=r.text;}
+      const tx=db.transaction(sn,'readwrite');tx.objectStore(sn).put(it);
+      tx.oncomplete=()=>{$('edOv').style.display='none';renderLogList();renderExtra();shBuild();};
+      tx.onerror=()=>fail('Could not save the changes.');};};}
+document.addEventListener('click',e=>{const b=e.target.closest('.editBtn');if(b)openEdit(b.dataset.s,+b.dataset.id);});
 
 const THEMES=[['green','Green','#0d5c63'],['blue','Blue','#1d4ed8'],['purple','Purple','#6d28d9'],['orange','Orange','#c2410c'],['maroon','Maroon','#b91c1c'],['light','Light','#e2e8f0'],['dark','Dark','#12191c']];
 $('themeMenu').innerHTML=THEMES.map(t=>`<button data-t="${t[0]}"><span class="sw" style="background:${t[2]}"></span>${t[1]}</button>`).join('');
