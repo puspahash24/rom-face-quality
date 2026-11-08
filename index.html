@@ -84,6 +84,10 @@ body.fs #fsBar{display:block}
 .fs-btn{display:flex!important;align-items:center;justify-content:center;cursor:pointer}
 .lbl{background:none;border:0;box-shadow:none;color:#fff;font-size:11px;font-weight:600;padding:0;text-shadow:0 0 3px #000,0 0 3px #000,0 0 2px #000}
 .lbl::before{display:none}
+#map{--unrot:0deg}
+.lbl{rotate:var(--unrot);transform-origin:-6px 50%}
+.custom-pin-icon>*{rotate:var(--unrot);transform-origin:50% 95%}
+.leaflet-control-scale-line{background:rgba(255,255,255,.88);color:#111;font:700 12px system-ui,sans-serif;border:2px solid #111;border-top:0;padding:1px 6px;text-shadow:none}
 #prevWrap{margin-top:10px;display:none}
 #prevWrap h3{font-size:13px;margin:0 0 6px;color:var(--mute)}
 #reportPrev{width:100%;border-radius:6px;border:1px solid var(--line);box-shadow:0 2px 8px rgba(0,0,0,0.1)}
@@ -350,11 +354,63 @@ const curIcon=()=>iconMode==='loader'?loaderIcon:animatedShovelIcon;
 let flipPrev=null;
 
 // Map Initialization
-const map=L.map('map',{preferCanvas:true,maxZoom:21}).setView([22.12,85.49],14);
+const map=L.map('map',{preferCanvas:true,renderer:L.canvas({padding:0.5}),maxZoom:21}).setView([22.12,85.49],14);
 const osm=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:21,maxNativeZoom:19,crossOrigin:true,attribution:'&copy; OpenStreetMap'});
 const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:21,maxNativeZoom:17,crossOrigin:true,attribution:'Esri'}).addTo(map);
 const satHi=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:21,maxNativeZoom:19,crossOrigin:true,attribution:'Esri'});
 const lc=L.control.layers({Satellite:sat,'Satellite (sharper, if available)':satHi,Street:osm}).addTo(map);
+
+/* ---------- Map rotation (heading up) ---------- */
+const ROT={rad:0,deg:0,on:false};
+const rotEl=document.createElement('div');rotEl.style.cssText='position:absolute;left:0;top:0;width:100%;height:100%;transform-origin:50% 50%;';
+map._container.insertBefore(rotEl,map._container.firstChild);rotEl.appendChild(map._mapPane);
+let needleEl=null;
+function setRot(d){ROT.deg=d;ROT.rad=d*Math.PI/180;rotEl.style.transform=d?'rotate('+d+'deg)':'';$('map').style.setProperty('--unrot',(-d)+'deg');if(needleEl)needleEl.style.transform='rotate('+d+'deg)';}
+/* pointer positions are mapped back through the rotation so taps, pan, pinch and pin dragging stay correct */
+map.mouseEventToContainerPoint=function(e){
+  const c=this._container,r=c.getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2),co=Math.cos(ROT.rad),si=Math.sin(ROT.rad);
+  return new L.Point(dx*co+dy*si+r.width/2-c.clientLeft,-dx*si+dy*co+r.height/2-c.clientTop);};
+const _dragMove=L.Draggable.prototype._onMove;
+L.Draggable.prototype._onMove=function(e){
+  if(!ROT.rad||!this._startPoint)return _dragMove.call(this,e);
+  const t=e.touches?(e.touches.length===1?e.touches[0]:null):e;
+  if(!t)return _dragMove.call(this,e);
+  const dx=t.clientX-this._startPoint.x,dy=t.clientY-this._startPoint.y,co=Math.cos(ROT.rad),si=Math.sin(ROT.rad),
+    nx=this._startPoint.x+dx*co+dy*si,ny=this._startPoint.y-dx*si+dy*co;
+  return _dragMove.call(this,{type:e.type,target:e.target,srcElement:e.target,clientX:nx,clientY:ny,touches:e.touches?[{clientX:nx,clientY:ny}]:undefined,
+    preventDefault(){if(e.preventDefault)e.preventDefault();},stopPropagation(){if(e.stopPropagation)e.stopPropagation();}});};
+/* load tiles for the whole circle around the centre while rotating, so corners are never empty */
+L.GridLayer.include({_getTiledPixelBounds(center){
+  const m=this._map,z=m._animatingZoom?Math.max(m._animateToZoom,m.getZoom()):m.getZoom(),sc=m.getZoomScale(z,this._tileZoom),pc=m.project(center,this._tileZoom).floor(),sz=m.getSize(),d=ROT.on?Math.hypot(sz.x,sz.y):0,
+    half=(d?new L.Point(d,d):sz).divideBy(sc*2);
+  return new L.Bounds(pc.subtract(half),pc.add(half));}});
+function headingFrom(a,b,g){
+  const d=Math.PI/180,A=a*d,B=b*d,G=g*d,ca=Math.cos(A),sa=Math.sin(A),cb=Math.cos(B),sb=Math.sin(B),cg=Math.cos(G),sg=Math.sin(G);
+  const tE=-sa*cb,tN=ca*cb,bE=-(ca*sg+sa*sb*cg),bN=-(sa*sg-ca*sb*cg);
+  const v=Math.hypot(tE,tN)>=Math.hypot(bE,bN)?[tE,tN]:[bE,bN];
+  return (Math.atan2(v[0],v[1])/d+360)%360;}
+let hdg=null,hdgT=0,gotHdg=false;
+function onOri(e){
+  let h=null;
+  if(typeof e.webkitCompassHeading==='number')h=e.webkitCompassHeading;
+  else if((e.absolute||e.type==='deviceorientationabsolute')&&e.alpha!=null&&e.beta!=null&&e.gamma!=null)h=headingFrom(e.alpha,e.beta,e.gamma);
+  if(h===null||isNaN(h))return;
+  gotHdg=true;
+  hdg=hdg===null?h:(hdg+(((h-hdg+540)%360)-180)*0.25+360)%360;
+  const n=performance.now();if(n-hdgT<80)return;hdgT=n;
+  setRot(-hdg);}
+async function startRot(){
+  try{if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){
+    if(await DeviceOrientationEvent.requestPermission()!=='granted'){msg('Compass permission was denied');return false;}}}catch(err){msg('Could not get compass permission');return false;}
+  ROT.on=true;hdg=null;gotHdg=false;
+  window.addEventListener('deviceorientationabsolute',onOri,true);window.addEventListener('deviceorientation',onOri,true);
+  try{map.eachLayer(l=>{if(l instanceof L.GridLayer)l._update();});}catch(err){}
+  setTimeout(()=>{if(ROT.on&&!gotHdg)msg('No compass heading from this phone. Allow motion sensors for the site, or keep the map fixed.');},2500);
+  return true;}
+function stopRot(){
+  ROT.on=false;window.removeEventListener('deviceorientationabsolute',onOri,true);window.removeEventListener('deviceorientation',onOri,true);
+  setRot(0);map.invalidateSize();}
+
 
 // ---- Full screen map ----
 const ICON_IN='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>';
@@ -412,6 +468,15 @@ const IcoControl=L.Control.extend({options:{position:'topright'},onAdd(){
   L.DomEvent.on(b,'click',ev=>{L.DomEvent.preventDefault(ev);iconMode=iconMode==='loader'?'shovel':'loader';try{localStorage.setItem('rom_icon',iconMode);}catch(e){}lab();if(pin)pin.setIcon(curIcon());});
   return box;}});
 map.addControl(new IcoControl());
+const RotControl=L.Control.extend({options:{position:'topright'},onAdd(){
+  const box=L.DomUtil.create('div','leaflet-bar'),b=L.DomUtil.create('a','txt-btn',box);b.href='#';b.setAttribute('role','button');
+  b.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" style="transition:none"><path d="M12 2L17 13H7Z" fill="#c0392b"/><path d="M12 22L17 13H7Z" fill="#555"/></svg><span></span>';
+  needleEl=b.querySelector('svg');const sp=b.querySelector('span'),lab=()=>{sp.textContent=ROT.on?'Map: Rotating':'Map: North fixed';};lab();
+  L.DomEvent.disableClickPropagation(box);
+  L.DomEvent.on(b,'click',async ev=>{L.DomEvent.preventDefault(ev);if(ROT.on)stopRot();else await startRot();lab();});
+  return box;}});
+map.addControl(new RotControl());
+L.control.scale({position:'bottomleft',metric:true,imperial:false,maxWidth:130}).addTo(map);
 document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&document.body.classList.contains('fs'))setFull(false);});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.body.classList.contains('fs'))setFull(false);});
 
