@@ -94,13 +94,15 @@ body.fs #fsBar{display:block}
 .log-info b{font-size:13px;display:block;margin-bottom:2px}
 .custom-pin-icon{background:transparent;border:none}
 .leaflet-control{opacity:.7;transition:opacity .2s}.leaflet-control:hover,.leaflet-control:focus-within{opacity:1}
-.map-opts{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:4px 6px;display:flex;gap:8px;align-items:center}
-.map-opts label{display:flex;align-items:center;gap:4px;color:var(--ink);font-size:12px}
+.map-opts{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:6px 8px;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.map-opts label{display:flex;align-items:center;justify-content:space-between;width:100%;gap:6px;color:var(--ink);font-size:12px}
 .map-opts input{width:46px;font:inherit;padding:3px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--ink)}
 body.fs .leaflet-bottom.leaflet-left{bottom:52px}
 .q4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .q4 label{display:flex;flex-direction:column;gap:3px}
 .q4 input,.src input{width:100%;font:inherit;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
+.sub{border-top:1px solid var(--line);padding-top:12px;margin-top:14px}.sub:first-of-type{border-top:0;padding-top:0;margin-top:6px}
+main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
 .src{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);font-size:13px}
 .src input{width:74px;flex-shrink:0}
 @keyframes ldrdig{0%{transform:rotate(0)}30%{transform:rotate(-10deg)}60%{transform:rotate(16deg)}85%{transform:rotate(8deg)}100%{transform:rotate(0)}}
@@ -121,15 +123,17 @@ body.fs .leaflet-bottom.leaflet-left{bottom:52px}
 <div id="fsBar">Tap the map to place the loading unit</div>
 <main>
 <section>
-  <h2>1. Blasthole map</h2>
+<h2>Face quality (Blasthole map)</h2>
+<div class="sub">
+  <h2>Blasthole map</h2>
   <div class="row"><label class="btn">Upload KML / KMZ<input id="kml" type="file" accept=".kml,.kmz"></label>
   <span id="count" class="note"></span></div>
   <div class="row"><label><input id="lbl" type="checkbox" checked> Show hole IDs (zoom in to see them)</label></div>
   <p class="note">Face and bench lines in the same KML/KMZ are drawn automatically. Each point name is read as Fe-SiO2-Al2O3-P_Type (for example 67-1-1.2-0.08_HO), or Fe, SiO2, Al2O3 and P are read from extended data.</p>
-</section>
+</div>
 
-<section>
-  <h2>2. Loading Unit Location</h2>
+<div class="sub">
+  <h2>Loading unit location</h2>
   <p class="note">Drag the excavator to where the loading unit is working, or tap the map. Quality updates as you move it.</p>
   <div class="row">
     <button id="drop">Drop Pin at Loading Unit Location (Manually)</button>
@@ -142,22 +146,22 @@ body.fs .leaflet-bottom.leaflet-left{bottom:52px}
   </div>
   <div class="row"><label><input id="w" type="checkbox" checked> Weight by distance</label></div>
   <div id="gpsinfo" class="note"></div>
-</section>
+</div>
 
-<section>
-  <h2>3. ROM quality at this face</h2>
+<div class="sub">
+  <h2>ROM quality at this face</h2>
   <div id="res" class="note">No location yet.</div>
-</section>
+</div>
 
-<section>
-  <h2>4. Destination</h2>
+<div class="sub">
+  <h2>Destination</h2>
   <p class="note">Select the plant(s) this face is supplying ROM to. You can choose more than one.</p>
   <div id="destBox" class="dest"></div>
   <input id="destOther" type="text" maxlength="40" placeholder="Stock name or dump name" autocomplete="off">
-</section>
+</div>
 
-<section>
-  <h2>5. Face photo and report</h2>
+<div class="sub">
+  <h2>Face photo and report</h2>
   <div class="fields">
     <label>Mine name <select id="mineName"></select></label>
     <label>Pit name <select id="pitName"></select></label>
@@ -168,23 +172,26 @@ body.fs .leaflet-bottom.leaflet-left{bottom:52px}
     <label class="btn ghost">Upload photo (gallery / files)<input id="photoUp" type="file" accept="image/*"></label>
     <button id="save">Save report image</button>
   </div>
+  <div class="row"><label><input id="noPhoto" type="checkbox"> No photo, could not visit the face</label><select id="noReason" style="display:none;font:inherit;padding:6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)"><option>Rain</option><option>Safety reasons</option><option>Other</option></select></div>
   <div id="saveMsg" class="note" style="color:var(--acc);font-weight:600"></div>
   <div class="row"><span id="photoMsg" class="note"></span><button id="rmPhoto" class="ghost" style="display:none;padding:4px 8px;font-size:12px">Remove photo</button></div>
   <div id="prevWrap">
     <h3>Generated Report Preview (field photo, face map and quality):</h3>
     <img id="reportPrev" alt="Report image preview">
   </div>
-</section>
+</div>
 
-<section>
+<div class="sub">
   <div class="row" style="justify-content:space-between">
-    <h2 style="margin:0">6. Report History Log</h2>
+    <h2 style="margin:0">Report history log</h2>
     <button id="clearLog" class="danger" style="padding:4px 8px;font-size:12px">Clear Log</button>
   </div>
   <div id="logList" class="note" style="margin-top:8px">No reports saved yet.</div>
+</div>
 </section>
+
 <section>
-  <h2>7. Stock quality entry</h2>
+  <h2>Stock quality</h2>
   <p class="note">Photograph the stock, type its quality and select the plants it is feeding.</p>
   <div class="fields"><label>Mine <select id="stMine"><option value="">Select mine</option><option>Noamundi</option><option>Katamati</option></select></label><label>Stock name <input id="stName" type="text" maxlength="40" placeholder="e.g. Stock-2 Hill-3" autocomplete="off"></label></div>
   <div class="q4"><label>Fe %<input id="stFe" type="number" step="any" inputmode="decimal"></label><label>SiO2 %<input id="stSi" type="number" step="any" inputmode="decimal"></label><label>Al2O3 %<input id="stAl" type="number" step="any" inputmode="decimal"></label><label>P %<input id="stP" type="number" step="any" inputmode="decimal"></label></div>
@@ -196,13 +203,13 @@ body.fs .leaflet-bottom.leaflet-left{bottom:52px}
 </section>
 
 <section>
-  <h2>8. Shift end report</h2>
+  <h2>Shift end report</h2>
   <div class="fields"><label>Date (shift start) <input id="shDate" type="date"></label>
   <label>Shift <select id="shShift"><option value="A">A shift (6 AM to 2 PM)</option><option value="B">B shift (2 PM to 10 PM)</option><option value="C">C shift (10 PM to 6 AM)</option></select></label></div>
-  <p class="note">Sources are the face reports (section 6) and stock entries (section 7) saved in this shift. Enter the trips fed from each source to each plant. Quality is the trip-weighted average.</p>
+  <p class="note">Sources are the face reports and stock entries saved in this shift. Enter the trips fed from each source to each plant. Quality is the trip-weighted average.</p>
   <div id="shSrc"></div>
   <img id="shPrev" style="display:none;width:100%;border-radius:6px;margin-top:10px" alt="Shift end report preview">
-  <div class="row"><button id="shBuild" class="ghost">Refresh sources</button><button id="shSave">Save shift report</button></div>
+  <div class="row"><button id="shBuild" class="ghost">Refresh sources</button><button id="shSave">Save shift report</button><button id="shCsv" class="ghost">Export CSV (Excel)</button></div>
   <div id="shMsg" class="note" style="color:var(--acc);font-weight:600"></div>
   <div id="shList" class="note">No shift reports yet.</div>
 </section>
@@ -527,7 +534,7 @@ $('tome').onclick=()=>{
 };
 
 ['k','rad','w'].forEach(i=>$(i).onchange=()=>last&&update(last));
-const OptControl=L.Control.extend({options:{position:'bottomleft'},onAdd(){
+const OptControl=L.Control.extend({options:{position:'topright'},onAdd(){
   const box=L.DomUtil.create('div','map-opts');
   box.innerHTML='<label>Nearest holes <input id="mk" type="number" min="1" max="30" inputmode="numeric"></label><label>Max dist (m) <input id="mr" type="number" min="5" max="500" inputmode="numeric"></label>';
   L.DomEvent.disableClickPropagation(box);L.DomEvent.disableScrollPropagation(box);return box;}});
@@ -562,7 +569,7 @@ function update(p){
     last.res=null;
     $('res').innerHTML=`<span class="warn">No blastholes within ${R} m.</span> Move closer or raise the max distance.`;
     $('status').textContent='No holes in range';$('fsBar').textContent='No holes within '+R+' m';
-    if(photoImg)renderPreview();
+    if(photoImg||$('noPhoto').checked)renderPreview();
     return;
   }
   const w=near.map(x=>wt?1/Math.max(x.d,1):1),sw=w.reduce((a,b)=>a+b,0);
@@ -577,7 +584,7 @@ function update(p){
   <table><tr><th>Hole</th><th>m</th><th>Fe</th><th>SiO2</th><th>Al2O3</th><th>P</th></tr>${near.map(x=>`<tr><td><span class="dot" style="background:${colour(x.h.type)}"></span>${x.h.name}</td><td>${x.d.toFixed(0)}</td><td>${x.h.fe}</td><td>${x.h.si}</td><td>${x.h.al}</td><td>${x.h.p}</td></tr>`).join('')}</table>`;
   $('status').textContent=`Fe ${f(a.fe,1)}% from ${near.length} holes`;
   $('fsBar').textContent=`Fe ${f(a.fe,2)} | SiO2 ${f(a.si,2)} | Al2O3 ${f(a.al,2)} | P ${f(a.p,3)}  (${near.length} holes)`;
-  if(photoImg)renderPreview();
+  if(photoImg||$('noPhoto').checked)renderPreview();
 }
 
 /* ---------- Map snapshot drawn straight onto a canvas (independent of the on-screen map) ---------- */
@@ -700,6 +707,7 @@ async function buildReportCanvas(){
     const mp=[dm&&'Mine: '+dm,dp&&'Pit: '+dp,(dr&&isFinite(+dr))&&'MRL: '+(+dr)+' m'].filter(Boolean).join('     ');
     if(mp)txt.push(mp);
     const dl=destList();if(dl.length)txt.push('Destination: '+dl.join(', '));
+    if(!photoImg&&$('noPhoto').checked)txt.push('Field photo not taken: '+$('noReason').value);
     txt.push('Time: '+new Date().toLocaleString());
   } else {
     txt.push(
@@ -770,8 +778,8 @@ function fillPits(sel){
   if(sel&&(PITS[m]||[]).includes(sel))$('pitName').value=sel;}
 $('mineName').innerHTML='<option value="">Select mine</option>'+Object.keys(PITS).map(n=>`<option>${n}</option>`).join('');
 {const m=recall('rom_mineName');if(PITS[m])$('mineName').value=m;fillPits(recall('rom_pitName'));}
-$('mineName').onchange=()=>{store('rom_mineName',$('mineName').value);store('rom_pitName','');fillPits('');if(photoImg)renderPreview();};
-$('pitName').onchange=()=>{store('rom_pitName',$('pitName').value);if(photoImg)renderPreview();};
+$('mineName').onchange=()=>{store('rom_mineName',$('mineName').value);store('rom_pitName','');fillPits('');if(photoImg||$('noPhoto').checked)renderPreview();};
+$('pitName').onchange=()=>{store('rom_pitName',$('pitName').value);if(photoImg||$('noPhoto').checked)renderPreview();};
 const PLANTS=['NDCMP','Wet Plant','IOPP','C&S NOA','NIM METSO LT','KTM SANDVIK','KTM METSO','OUT-DUMP','Others'];
 $('destBox').innerHTML=PLANTS.map(n=>`<label class="chk"><input type="checkbox" value="${escH(n)}"> ${escH(n)}</label>`).join('');
 function destList(){
@@ -781,9 +789,9 @@ function destList(){
 $('destBox').onchange=()=>{
   const oth=[...document.querySelectorAll('#destBox input')].find(c=>c.value==='Others').checked;
   $('destOther').style.display=oth?'block':'none';if(!oth)$('destOther').value='';
-  if(photoImg)renderPreview();};
-$('destOther').oninput=()=>{if(photoImg)renderPreview();};
-$('mrl').oninput=()=>{if(photoImg)renderPreview();};
+  if(photoImg||$('noPhoto').checked)renderPreview();};
+$('destOther').oninput=()=>{if(photoImg||$('noPhoto').checked)renderPreview();};
+$('mrl').oninput=()=>{if(photoImg||$('noPhoto').checked)renderPreview();};
 $('rmPhoto').onclick=()=>{photoImg=null;$('rmPhoto').style.display='none';$('photoMsg').textContent='Photo removed.';renderPreview();};
 $('photo').onchange=onPhoto;
 $('photoUp').onchange=onPhoto;
@@ -791,7 +799,7 @@ $('photoUp').onchange=onPhoto;
 const showSave=t=>{$('saveMsg').textContent=t;clearTimeout(showSave.t);showSave.t=setTimeout(()=>$('saveMsg').textContent='',9000);};
 $('save').onclick=async()=>{
   if(!last||!last.res){alert('Set a location with blastholes in range first.');return;}
-  if(!photoImg&&!confirm('No field photo has been added. Save the report without a photo?'))return;
+  if(!photoImg&&!$('noPhoto').checked&&!confirm('No field photo has been added. Save the report without a photo?'))return;
   const c=await buildReportCanvas();
   c.toBlob(blob=>{
     if(!db){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ROM_face_'+Date.now()+'.jpg';a.click();
@@ -827,13 +835,13 @@ function saveReportLog(blob,res,loc,canvas){
       mine:$('mineName').value.trim(),
       pit:$('pitName').value.trim(),
       mrl:$('mrl').value.trim(),
-      dest:destList().join(', '),destArr:destList(),title:'ROM quality (nearest '+res.n+' holes, '+(res.wt?'distance weighted':'simple average')+')',
+      dest:destList().join(', '),destArr:destList(),noPhoto:(!photoImg&&$('noPhoto').checked)?$('noReason').value:'',title:'ROM quality (nearest '+res.n+' holes, '+(res.wt?'distance weighted':'simple average')+')',
       img:reader.result,
       thumb
     };
     const tx=db.transaction('reports','readwrite');
     tx.objectStore('reports').add(record);
-    tx.oncomplete=()=>{renderLogList();shBuild();showSave('Report saved to the Report History Log (section 6). Use Share or Download there.');};
+    tx.oncomplete=()=>{renderLogList();shBuild();showSave('Report saved to the Report history log at the bottom of Face quality. Use Share or Download there.');};
     tx.onerror=()=>showSave('Could not save the report on this device.');
   };
   reader.readAsDataURL(blob);
@@ -981,12 +989,12 @@ $('shSave').onclick=()=>{
   if(!db){alert('Storage is not available on this device.');return;}
   const sl=q=>`   - ${q.lbl}: ${q.t} trips | Fe ${fx(q.fe,2)} | SiO2 ${fx(q.si,2)} | Al2O3 ${fx(q.al,2)} | P ${fx(q.p,3)}`;
   const text=SHL[$('shShift').value]+' '+$('shDate').value+'\n'+rows.map(r=>[`${r.pl}: ${r.T} trips | Fe ${fx(r.fe,2)} | SiO2 ${fx(r.si,2)} | Al2O3 ${fx(r.al,2)} | P ${fx(r.p,3)}`,...r.src.map(sl)].join('\n')).join('\n');
-  const rec={date:shWin()[0].toISOString(),shift:$('shShift').value,rows,text,img:shCanvas(rows).toDataURL('image/jpeg',.88)};
+  const rec={date:shWin()[0].toISOString(),shift:$('shShift').value,mine:$('mineName').value,rows,text,img:shCanvas(rows).toDataURL('image/jpeg',.88)};
   const tx=db.transaction('shifts','readwrite');tx.objectStore('shifts').add(rec);
   tx.oncomplete=()=>{say2('shMsg','Shift report saved. Use Share or Download below.');renderExtra();};
   tx.onerror=()=>say2('shMsg','Could not save the shift report.');};
 
-const xBtns=(s,id)=>`<div style="display:flex;flex-direction:column;gap:6px"><button class="xShare" data-s="${s}" data-id="${id}" style="padding:4px 8px;font-size:12px">Share</button><button class="xDl ghost" data-s="${s}" data-id="${id}" style="padding:4px 8px;font-size:12px">Download</button>${s==='stocks'?`<button class="editBtn ghost" data-s="stocks" data-id="${id}" style="padding:4px 8px;font-size:12px">Edit</button>`:''}<button class="delBtn danger" data-s="${s}" data-id="${id}" style="padding:4px 8px;font-size:12px">Delete</button></div>`;
+const xBtns=(s,id)=>`<div style="display:flex;flex-direction:column;gap:6px"><button class="xShare" data-s="${s}" data-id="${id}" style="padding:4px 8px;font-size:12px">Share</button><button class="xDl ghost" data-s="${s}" data-id="${id}" style="padding:4px 8px;font-size:12px">Download</button>${s==='stocks'?`<button class="editBtn ghost" data-s="stocks" data-id="${id}" style="padding:4px 8px;font-size:12px">Edit</button>`:''}${s==='shifts'?`<button class="csvBtn ghost" data-id="${id}" style="padding:4px 8px;font-size:12px">CSV</button>`:''}<button class="delBtn danger" data-s="${s}" data-id="${id}" style="padding:4px 8px;font-size:12px">Delete</button></div>`;
 async function renderExtra(){
   if(!db)return;
   const st=(await getAll('stocks')).sort((a,b)=>b.id-a.id),sh=(await getAll('shifts')).sort((a,b)=>b.id-a.id);
@@ -996,7 +1004,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('.xShare,.xDl');i
   db.transaction(b.dataset.s).objectStore(b.dataset.s).get(+b.dataset.id).onsuccess=async ev=>{const it=ev.target.result;if(!it)return;
     const n=(b.dataset.s==='stocks'?'Stock_':'Shift_')+it.id+'.jpg',file=dataUrlToFile(it.img,n);
     if(b.classList.contains('xShare')&&navigator.canShare&&navigator.canShare({files:[file]})){
-      try{await navigator.share({files:[file],text:it.text||'',title:'ROM Face Quality Monitoring'});}catch(err){}}
+      try{await navigator.share(b.dataset.s==='shifts'?{files:[file]}:{files:[file],text:it.text||'',title:'ROM Face Quality Monitoring'});}catch(err){}}
     else{const a=document.createElement('a');a.href=it.img;a.download=n;a.click();}};});
 
 
@@ -1006,7 +1014,7 @@ const destOf=it=>Array.isArray(it.dest)?it.dest:(it.destArr||(it.dest?String(it.
 function faceLines(it){
   const mp=[it.mine&&'Mine: '+it.mine,it.pit&&'Pit: '+it.pit,(it.mrl&&isFinite(+it.mrl))&&'MRL: '+(+it.mrl)+' m'].filter(Boolean).join('     ');
   const l=[it.title||'ROM quality at the loading face',`Fe ${it.fe}%   SiO2 ${it.si}%   Al2O3 ${it.al}%   P ${it.p}%`,'Material: '+it.mix];
-  if(mp)l.push(mp);if(it.dest)l.push('Destination: '+it.dest);l.push('Time: '+new Date(it.date).toLocaleString());return l;}
+  if(mp)l.push(mp);if(it.dest)l.push('Destination: '+it.dest);if(it.noPhoto)l.push('Field photo not taken: '+it.noPhoto);l.push('Time: '+new Date(it.date).toLocaleString());return l;}
 async function redrawFace(old,upd){
   const im=await loadDataImg(old.img);if(!im)return null;
   const top=im.height-(28+(faceLines(old).length-1)*30+14);if(top<50)return null;
@@ -1056,12 +1064,32 @@ document.addEventListener('click',e=>{const b=e.target.closest('.delBtn');if(!b|
   const tx=db.transaction(b.dataset.s,'readwrite');tx.objectStore(b.dataset.s).delete(+b.dataset.id);
   tx.oncomplete=()=>{renderLogList();renderExtra();shBuild();};});
 
+
+/* ---------- No-photo option and CSV export ---------- */
+const npChg=()=>{$('noReason').style.display=$('noPhoto').checked?'inline-block':'none';if(photoImg||$('noPhoto').checked)renderPreview();else $('prevWrap').style.display='none';};
+$('noPhoto').onchange=npChg;$('noReason').onchange=npChg;
+const csvq=v=>{v=String(v==null?'':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+const cn=(v,n)=>{const t=fx(v,n);return t==='-'?'':t;};
+const ymd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+function shCsv(rows,date,shift,mine){
+  const L=[['Date','Shift','Mine','Plant','Source','Trips','Fe %','SiO2 %','Al2O3 %','P %']],b=[date,SHL[shift],mine||''];
+  rows.forEach(r=>{L.push([...b,r.pl,'TOTAL (trip-weighted)',r.T,cn(r.fe,2),cn(r.si,2),cn(r.al,2),cn(r.p,3)]);
+    (r.src||[]).forEach(q=>L.push([...b,r.pl,q.lbl,q.t,cn(q.fe,2),cn(q.si,2),cn(q.al,2),cn(q.p,3)]));});
+  L.push([...b,'ALL PLANTS','Total trips',rows.reduce((a,r)=>a+r.T,0),'','','','']);
+  return '\ufeff'+L.map(a=>a.map(csvq).join(',')).join('\r\n');}
+function dlText(name,text){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/csv;charset=utf-8'}));a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000);}
+$('shCsv').onclick=()=>{const rows=shCalc();if(!rows.length){alert('Enter trips for at least one source first.');return;}
+  dlText('Shift_Report_'+$('shDate').value+'_'+$('shShift').value+'.csv',shCsv(rows,$('shDate').value,$('shShift').value,$('mineName').value));};
+document.addEventListener('click',e=>{const b=e.target.closest('.csvBtn');if(!b||!db)return;
+  db.transaction('shifts').objectStore('shifts').get(+b.dataset.id).onsuccess=ev=>{const it=ev.target.result;if(!it)return;
+    dlText('Shift_Report_'+ymd(new Date(it.date))+'_'+it.shift+'.csv',shCsv(it.rows,ymd(new Date(it.date)),it.shift,it.mine));};});
+
 const THEMES=[['green','Green','#0d5c63'],['blue','Blue','#1d4ed8'],['purple','Purple','#6d28d9'],['orange','Orange','#c2410c'],['maroon','Maroon','#b91c1c'],['light','Light','#e2e8f0'],['dark','Dark','#12191c']];
 $('themeMenu').innerHTML=THEMES.map(t=>`<button data-t="${t[0]}"><span class="sw" style="background:${t[2]}"></span>${t[1]}</button>`).join('');
 const markTheme=()=>document.querySelectorAll('#themeMenu button').forEach(b=>b.classList.toggle('sel',b.dataset.t===document.documentElement.dataset.theme));
 $('themeBtn').onclick=e=>{e.stopPropagation();$('themeMenu').hidden=!$('themeMenu').hidden;markTheme();};
 $('themeMenu').onclick=e=>{const b=e.target.closest('button');if(!b)return;
-  document.documentElement.dataset.theme=b.dataset.t;store('rom_theme',b.dataset.t);markTheme();$('themeMenu').hidden=true;if(photoImg)renderPreview();};
+  document.documentElement.dataset.theme=b.dataset.t;store('rom_theme',b.dataset.t);markTheme();$('themeMenu').hidden=true;if(photoImg||$('noPhoto').checked)renderPreview();};
 document.addEventListener('click',e=>{if(!e.target.closest('#themeWrap'))$('themeMenu').hidden=true;});
 </script>
 <script>
