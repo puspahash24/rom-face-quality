@@ -190,6 +190,7 @@ main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
     <h2 style="margin:0">Report history log</h2>
     <button id="clearLog" class="danger" style="padding:4px 8px;font-size:12px">Clear Log</button>
   </div>
+  <p class="note" style="margin:6px 0 0">Entries are removed automatically 2 hours after their shift ends (A shift at 4 PM, B shift at 12 AM, C shift at 8 AM). Share or download what you need before then.</p>
   <div id="logList" class="note" style="margin-top:8px">No reports saved yet.</div>
 </div>
 </section>
@@ -203,6 +204,7 @@ main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
   <div id="stDest" class="dest"></div>
   <div class="row"><label class="btn ghost">Take stock photo<input id="stPh" type="file" accept="image/*" capture="environment"></label><label class="btn ghost">Upload photo<input id="stPhUp" type="file" accept="image/*"></label><button id="stSave">Save stock entry</button></div>
   <div id="stMsg" class="note" style="color:var(--acc);font-weight:600"></div>
+  <p class="note" style="margin:6px 0 0">Entries are removed automatically 2 hours after their shift ends (A shift at 4 PM, B shift at 12 AM, C shift at 8 AM). Share or download what you need before then.</p>
   <div id="stList" class="note">No stock entries yet.</div>
 </section>
 
@@ -215,6 +217,7 @@ main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
   <img id="shPrev" style="display:none;width:100%;border-radius:6px;margin-top:10px" alt="Shift end report preview">
   <div class="row"><button id="shBuild" class="ghost">Refresh sources</button><button id="shSave">Save shift report</button><button id="shCsv" class="ghost">Export CSV (Excel)</button></div>
   <div id="shMsg" class="note" style="color:var(--acc);font-weight:600"></div>
+  <p class="note" style="margin:6px 0 0">Entries are removed automatically 2 hours after their shift ends (A shift at 4 PM, B shift at 12 AM, C shift at 8 AM). Share or download what you need before then.</p>
   <div id="shList" class="note">No shift reports yet.</div>
 </section>
 </main>
@@ -870,7 +873,7 @@ req.onupgradeneeded=e=>{
   const d=e.target.result;
   ['reports','stocks','shifts'].forEach(n=>{if(!d.objectStoreNames.contains(n))d.createObjectStore(n,{keyPath:'id',autoIncrement:true});});
 };
-req.onsuccess=e=>{db=e.target.result;renderLogList();renderExtra();shBuild();};
+req.onsuccess=e=>{db=e.target.result;renderLogList();renderExtra();shBuild();purgeOld();};
 
 function saveReportLog(blob,res,loc,canvas){
   if(!db)return;
@@ -1138,6 +1141,22 @@ $('shCsv').onclick=()=>{const rows=shCalc();if(!rows.length){alert('Enter trips 
 document.addEventListener('click',e=>{const b=e.target.closest('.csvBtn');if(!b||!db)return;
   db.transaction('shifts').objectStore('shifts').get(+b.dataset.id).onsuccess=ev=>{const it=ev.target.result;if(!it)return;
     dlText('Shift_Report_'+ymd(new Date(it.date))+'_'+it.shift+'.csv',shCsv(it.rows,ymd(new Date(it.date)),it.shift,it.mine));};});
+
+
+/* ---------- Auto-delete logs 2 hours after their shift ends ---------- */
+function shiftExpiry(t){const d=new Date(t),h=d.getHours(),b=new Date(d);b.setMinutes(0,0,0);
+  if(h>=6&&h<14)b.setHours(6);else if(h>=14&&h<22)b.setHours(14);else{if(h<6)b.setDate(b.getDate()-1);b.setHours(22);}
+  return b.getTime()+10*3600*1000;}
+async function purgeOld(){
+  if(!db)return;const now=Date.now();let n=0;
+  for(const sn of ['reports','stocks','shifts']){
+    const old=(await getAll(sn)).filter(r=>r.date&&!isNaN(new Date(r.date))&&shiftExpiry(r.date)<=now);
+    if(!old.length)continue;
+    const tx=db.transaction(sn,'readwrite');old.forEach(r=>tx.objectStore(sn).delete(r.id));
+    await new Promise(res=>{tx.oncomplete=res;tx.onerror=res;tx.onabort=res;});n+=old.length;}
+  if(n){renderLogList();renderExtra();shBuild();}}
+setInterval(purgeOld,5*60*1000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)purgeOld();});
 
 const THEMES=[['green','Green','#0d5c63'],['blue','Blue','#1d4ed8'],['purple','Purple','#6d28d9'],['orange','Orange','#c2410c'],['maroon','Maroon','#b91c1c'],['light','Light','#e2e8f0'],['dark','Dark','#12191c']];
 $('themeMenu').innerHTML=THEMES.map(t=>`<button data-t="${t[0]}"><span class="sw" style="background:${t[2]}"></span>${t[1]}</button>`).join('');
