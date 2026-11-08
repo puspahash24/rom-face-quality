@@ -85,7 +85,7 @@ body.fs #fsBar{display:block}
 .lbl{background:none;border:0;box-shadow:none;color:#fff;font-size:11px;font-weight:600;padding:0;text-shadow:0 0 3px #000,0 0 3px #000,0 0 2px #000}
 .lbl::before{display:none}
 #map{--unrot:0deg}
-.lbl{rotate:var(--unrot);transform-origin:-6px 50%}
+.lt{display:inline-block;rotate:var(--unrot);transform-origin:-12px 50%}
 .custom-pin-icon>*{rotate:var(--unrot);transform-origin:50% 95%}
 .leaflet-control-scale-line{background:rgba(255,255,255,.88);color:#111;font:700 12px system-ui,sans-serif;border:2px solid #111;border-top:0;padding:1px 6px;text-shadow:none}
 #prevWrap{margin-top:10px;display:none}
@@ -101,7 +101,7 @@ body.fs #fsBar{display:block}
 .map-opts{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:6px 8px;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
 .map-opts label{display:flex;align-items:center;justify-content:space-between;width:100%;gap:6px;color:var(--ink);font-size:12px}
 .map-opts input{width:46px;font:inherit;padding:3px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--ink)}
-body.fs .leaflet-bottom.leaflet-left{bottom:52px}
+body.fs .leaflet-control-scale{margin-bottom:64px!important}
 .q4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .q4 label{display:flex;flex-direction:column;gap:3px}
 .q4 input,.src input{width:100%;font:inherit;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
@@ -384,32 +384,19 @@ L.GridLayer.include({_getTiledPixelBounds(center){
   const m=this._map,z=m._animatingZoom?Math.max(m._animateToZoom,m.getZoom()):m.getZoom(),sc=m.getZoomScale(z,this._tileZoom),pc=m.project(center,this._tileZoom).floor(),sz=m.getSize(),d=ROT.on?Math.hypot(sz.x,sz.y):0,
     half=(d?new L.Point(d,d):sz).divideBy(sc*2);
   return new L.Bounds(pc.subtract(half),pc.add(half));}});
-function headingFrom(a,b,g){
-  const d=Math.PI/180,A=a*d,B=b*d,G=g*d,ca=Math.cos(A),sa=Math.sin(A),cb=Math.cos(B),sb=Math.sin(B),cg=Math.cos(G),sg=Math.sin(G);
-  const tE=-sa*cb,tN=ca*cb,bE=-(ca*sg+sa*sb*cg),bN=-(sa*sg-ca*sb*cg);
-  const v=Math.hypot(tE,tN)>=Math.hypot(bE,bN)?[tE,tN]:[bE,bN];
-  return (Math.atan2(v[0],v[1])/d+360)%360;}
-let hdg=null,hdgT=0,gotHdg=false;
-function onOri(e){
-  let h=null;
-  if(typeof e.webkitCompassHeading==='number')h=e.webkitCompassHeading;
-  else if((e.absolute||e.type==='deviceorientationabsolute')&&e.alpha!=null&&e.beta!=null&&e.gamma!=null)h=headingFrom(e.alpha,e.beta,e.gamma);
-  if(h===null||isNaN(h))return;
-  gotHdg=true;
-  hdg=hdg===null?h:(hdg+(((h-hdg+540)%360)-180)*0.25+360)%360;
-  const n=performance.now();if(n-hdgT<80)return;hdgT=n;
-  setRot(-hdg);}
-async function startRot(){
-  try{if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){
-    if(await DeviceOrientationEvent.requestPermission()!=='granted'){msg('Compass permission was denied');return false;}}}catch(err){msg('Could not get compass permission');return false;}
-  ROT.on=true;hdg=null;gotHdg=false;
-  window.addEventListener('deviceorientationabsolute',onOri,true);window.addEventListener('deviceorientation',onOri,true);
-  try{map.eachLayer(l=>{if(l instanceof L.GridLayer)l._update();});}catch(err){}
-  setTimeout(()=>{if(ROT.on&&!gotHdg)msg('No compass heading from this phone. Allow motion sensors for the site, or keep the map fixed.');},2500);
-  return true;}
-function stopRot(){
-  ROT.on=false;window.removeEventListener('deviceorientationabsolute',onOri,true);window.removeEventListener('deviceorientation',onOri,true);
-  setRot(0);map.invalidateSize();}
+const normDeg=d=>((d%360)+540)%360-180;
+let tw=null;
+const twAng=t=>Math.atan2(t[1].clientY-t[0].clientY,t[1].clientX-t[0].clientX)*180/Math.PI;
+(function(){const mc=map._container;
+  mc.addEventListener('touchstart',e=>{if(ROT.on&&e.touches.length===2)tw={a:twAng(e.touches),r:ROT.deg,act:false};else if(e.touches.length!==2)tw=null;},{passive:true});
+  mc.addEventListener('touchmove',e=>{if(!ROT.on||!tw||e.touches.length!==2)return;
+    const d=normDeg(twAng(e.touches)-tw.a);
+    if(!tw.act){if(Math.abs(d)<8)return;tw.act=true;tw.a=twAng(e.touches);tw.r=ROT.deg;return;}
+    setRot(normDeg(tw.r+d));},{passive:true});
+  mc.addEventListener('touchend',e=>{if(tw&&tw.act&&Math.abs(normDeg(ROT.deg))<5)setRot(0);if(e.touches.length<2)tw=null;},{passive:true});
+})();
+function startRot(){ROT.on=true;try{map.eachLayer(l=>{if(l instanceof L.GridLayer)l._update();});}catch(err){}}
+function stopRot(){ROT.on=false;tw=null;setRot(0);map.invalidateSize();}
 
 
 // ---- Full screen map ----
@@ -469,11 +456,14 @@ const IcoControl=L.Control.extend({options:{position:'topright'},onAdd(){
   return box;}});
 map.addControl(new IcoControl());
 const RotControl=L.Control.extend({options:{position:'topright'},onAdd(){
-  const box=L.DomUtil.create('div','leaflet-bar'),b=L.DomUtil.create('a','txt-btn',box);b.href='#';b.setAttribute('role','button');
+  const box=L.DomUtil.create('div','leaflet-bar'),b=L.DomUtil.create('a','txt-btn',box),r=L.DomUtil.create('a','txt-btn',box);
+  b.href='#';b.setAttribute('role','button');r.href='#';r.setAttribute('role','button');
   b.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" style="transition:none"><path d="M12 2L17 13H7Z" fill="#c0392b"/><path d="M12 22L17 13H7Z" fill="#555"/></svg><span></span>';
-  needleEl=b.querySelector('svg');const sp=b.querySelector('span'),lab=()=>{sp.textContent=ROT.on?'Map: Rotating':'Map: North fixed';};lab();
+  r.textContent='Reset to north';
+  needleEl=b.querySelector('svg');const sp=b.querySelector('span'),lab=()=>{sp.textContent=ROT.on?'Map: Free rotate':'Map: North fixed';r.style.display=ROT.on?'flex':'none';};lab();
   L.DomEvent.disableClickPropagation(box);
-  L.DomEvent.on(b,'click',async ev=>{L.DomEvent.preventDefault(ev);if(ROT.on)stopRot();else await startRot();lab();});
+  L.DomEvent.on(b,'click',ev=>{L.DomEvent.preventDefault(ev);if(ROT.on)stopRot();else startRot();lab();msg(ROT.on?'Twist two fingers on the map to rotate it':'Map fixed to north');});
+  L.DomEvent.on(r,'click',ev=>{L.DomEvent.preventDefault(ev);setRot(0);});
   return box;}});
 map.addControl(new RotControl());
 L.control.scale({position:'bottomleft',metric:true,imperial:false,maxWidth:130}).addTo(map);
@@ -541,7 +531,7 @@ function setData(d,fit){
   lines.forEach(l=>L.polyline(l.p,{color:l.c,opacity:l.o,weight:l.w,interactive:false}).addTo(lineLayer));
   pts.forEach(p=>L.circleMarker([p.lat,p.lon],{radius:5,color:'#000',weight:1,fillColor:colour(p.type),fillOpacity:.9})
     .bindPopup(`<b>${p.name}</b><br>Fe ${p.fe} | SiO2 ${p.si} | Al2O3 ${p.al} | P ${p.p}`)
-    .bindTooltip(p.name,{permanent:true,direction:'right',offset:[6,0],className:'lbl'}).addTo(ptLayer));
+    .bindTooltip('<span class="lt">'+escH(p.name)+'</span>',{permanent:true,direction:'right',offset:[6,0],className:'lbl'}).addTo(ptLayer));
   $('count').textContent=pts.length?pts.length+' blastholes, '+lines.length+' face lines':'No usable points found. Check the naming format.';
   $('status').textContent=pts.length?'Place the active shovel on the loading unit':'Load a blasthole map to start';
   if(fit&&pts.length)map.fitBounds(L.latLngBounds(pts.map(p=>[p.lat,p.lon])).pad(.1));
