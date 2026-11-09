@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "ROM Face Quality Monitoring",
-  "short_name": "ROM Face Check",
+  "name": "ROM Quality Monitoring",
+  "short_name": "ROM Quality",
   "description": "Shows the expected ROM grade at the loading face from blasthole data, with a one-image report.",
   "start_url": "./",
   "scope": "./",
@@ -31,5 +31,27 @@
       "type": "image/png",
       "purpose": "maskable"
     }
-  ]
+  ],
+  "share_target": {
+    "action": "./share-target",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "files": [
+        {
+          "name": "kmlfile",
+          "accept": [
+            ".kml",
+            ".kmz",
+            "application/vnd.google-earth.kml+xml",
+            "application/vnd.google-earth.kmz",
+            "application/xml",
+            "text/xml",
+            "application/zip",
+            "application/octet-stream"
+          ]
+        }
+      ]
+    }
+  }
 }
