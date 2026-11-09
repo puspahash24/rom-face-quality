@@ -189,6 +189,12 @@ main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
 </div>
 
 <div class="sub">
+  <h2>Ore type</h2>
+  <div class="fields"><label>Ore type <select id="faceOre"></select></label><label id="faceOreOtherL" style="display:none">Other ore type <input id="faceOreOther" type="text" maxlength="30" placeholder="Enter ore type" autocomplete="off"></label></div>
+  <p class="note" id="faceOreTxt"></p>
+</div>
+
+<div class="sub">
   <h2>Face photo and report</h2>
   <div class="fields">
     <label>Mine name <select id="mineName"></select></label>
@@ -223,6 +229,8 @@ main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
   <h2>Stock quality</h2>
   <p class="note">Photograph the stock, type its quality and select the plants it is feeding.</p>
   <div class="fields"><label>Mine <select id="stMine"><option value="">Select mine</option><option>Noamundi</option><option>Katamati</option></select></label><label>Stock name <input id="stName" type="text" maxlength="40" placeholder="e.g. Stock-2 Hill-3" autocomplete="off"></label></div>
+  <div class="fields"><label>Ore type <select id="stOre"></select></label><label id="stOreOtherL" style="display:none">Other ore type <input id="stOreOther" type="text" maxlength="30" placeholder="Enter ore type" autocomplete="off"></label></div>
+  <p class="note" id="stOreTxt"></p>
   <div class="q4"><label>Fe %<input id="stFe" type="number" step="any" inputmode="decimal"></label><label>SiO2 %<input id="stSi" type="number" step="any" inputmode="decimal"></label><label>Al2O3 %<input id="stAl" type="number" step="any" inputmode="decimal"></label><label>P %<input id="stP" type="number" step="any" inputmode="decimal"></label></div>
   <p class="note" style="margin:10px 0 6px">Feeding to</p>
   <div id="stDest" class="dest"></div>
@@ -239,7 +247,7 @@ main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
   <p class="note">Sources are the face reports and stock entries saved in this shift. Enter the trips fed from each source to each plant. Quality is the trip-weighted average.</p>
   <div id="shSrc"></div>
   <img id="shPrev" style="display:none;width:100%;border-radius:6px;margin-top:10px" alt="Shift end report preview">
-  <div class="row"><button id="shBuild" class="ghost">Refresh sources</button><button id="shSave">Save shift report</button><button id="shCsv" class="ghost">Export CSV (Excel)</button></div>
+  <div class="row"><button id="shBuild" class="ghost">Refresh sources</button><button id="shSave">Save Shift Report (Image)</button><button id="shPdf">Save Shift Report with Field Photographs (PDF)</button><button id="shCsv" class="ghost">Export CSV (Excel)</button></div>
   <div id="shMsg" class="note" style="color:var(--acc);font-weight:600"></div>
   <p class="note" style="margin:6px 0 0">Entries are removed automatically 2 hours after their shift ends (A shift at 4 PM, B shift at 12 AM, C shift at 8 AM). Share or download what you need before then.</p>
   <div id="shList" class="note">No shift reports yet.</div>
@@ -801,6 +809,7 @@ async function buildReportCanvas(){
       `Fe ${r.a.fe.toFixed(2)}%   SiO2 ${r.a.si.toFixed(2)}%   Al2O3 ${r.a.al.toFixed(2)}%   P ${isNaN(r.a.p)?'-':r.a.p.toFixed(3)}%`,
       'Material: '+r.mixTxt
     );
+    if($('faceOre').value)txt.push('Ore type: '+oreLine($('faceOre').value,$('faceOreOther').value.trim()));
     const dm=$('mineName').value.trim(),dp=$('pitName').value.trim(),dr=$('mrl').value.trim();
     const mp=[dm&&'Mine: '+dm,dp&&'Pit: '+dp,(dr&&isFinite(+dr))&&'MRL: '+(+dr)+' m'].filter(Boolean).join('     ');
     if(mp)txt.push(mp);
@@ -897,6 +906,8 @@ $('photoUp').onchange=onPhoto;
 const showSave=t=>{$('saveMsg').textContent=t;clearTimeout(showSave.t);showSave.t=setTimeout(()=>$('saveMsg').textContent='',9000);};
 $('save').onclick=async()=>{
   if(!last||!last.res){alert('Set a location with blastholes in range first.');return;}
+  if(!$('faceOre').value){alert('Select the ore type.');return;}
+  if($('faceOre').value==='Others'&&!$('faceOreOther').value.trim()){alert('Enter the ore type.');return;}
   if(!photoImg&&!$('noPhoto').checked&&!confirm('No field photo has been added. Save the report without a photo?'))return;
   const c=await buildReportCanvas();
   c.toBlob(blob=>{
@@ -933,7 +944,7 @@ function saveReportLog(blob,res,loc,canvas){
       mine:$('mineName').value.trim(),
       pit:$('pitName').value.trim(),
       mrl:$('mrl').value.trim(),
-      dest:destList().join(', '),destArr:destList(),noPhoto:(!photoImg&&$('noPhoto').checked)?$('noReason').value:'',title:'ROM quality (nearest '+res.n+' holes, '+(res.wt?'distance weighted':'simple average')+')',
+      dest:destList().join(', '),destArr:destList(),ore:$('faceOre').value,oreOther:$('faceOre').value==='Others'?$('faceOreOther').value.trim():'',noPhoto:(!photoImg&&$('noPhoto').checked)?$('noReason').value:'',title:'ROM quality (nearest '+res.n+' holes, '+(res.wt?'distance weighted':'simple average')+')',
       img:reader.result,
       thumb
     };
@@ -964,7 +975,7 @@ function renderLogList(){
         <div class="log-info">
           <b>Fe ${it.fe}% | SiO2 ${it.si}% | Al2O3 ${it.al}% | P ${it.p}</b>
           <span>${new Date(it.date).toLocaleString()}</span><br>
-          <span>Loc: ${it.loc} | Mix: ${it.mix}</span>${logDetails(it)}
+          <span>Loc: ${it.loc} | Mix: ${it.mix}${it.ore?' | Ore: '+escH(oreLabel(it.ore,it.oreOther)):''}</span>${logDetails(it)}
         </div>
         <div style="display:flex;flex-direction:column;gap:6px">
           <button class="shareBtn" data-id="${it.id}" style="padding:4px 8px;font-size:12px">Share</button>
@@ -1018,20 +1029,21 @@ $('stSave').onclick=()=>{
   const name=$('stName').value.trim(),q=['stFe','stSi','stAl','stP'].map(i=>{const t=$(i).value.trim();return t===''?NaN:+t;}),
     dest=[...document.querySelectorAll('#stDest input:checked')].map(c=>c.value);
   const mine=$('stMine').value;if(!mine){alert('Select the mine.');return;}
+  const ore=$('stOre').value,oreOt=$('stOreOther').value.trim();if(!ore){alert('Select the ore type.');return;}if(ore==='Others'&&!oreOt){alert('Enter the ore type.');return;}
   if(!name){alert('Enter the stock name.');return;}
   if(isNaN(q[0])){alert('Enter at least the Fe %.');return;}
   if(!db){alert('Storage is not available on this device.');return;}
   if(!dest.length&&!confirm('No plant selected. Save anyway?'))return;
   const W=1000,ph=stImg?Math.round(W*stImg.height/stImg.width):0,now=new Date(),
-    txt=['Stock: '+name+'   |   '+mine,`Fe ${fx(q[0],2)}%   SiO2 ${fx(q[1],2)}%   Al2O3 ${fx(q[2],2)}%   P ${fx(q[3],3)}%`,'Feeding to: '+(dest.join(', ')||'-'),'Time: '+now.toLocaleString()],
+    txt=['Stock: '+name+'   |   '+mine,`Fe ${fx(q[0],2)}%   SiO2 ${fx(q[1],2)}%   Al2O3 ${fx(q[2],2)}%   P ${fx(q[3],3)}%`,'Feeding to: '+(dest.join(', ')||'-'),'Ore type: '+oreLine(ore,oreOt),'Time: '+now.toLocaleString()],
     LH=32,H=ph+22+txt.length*LH+8,c=document.createElement('canvas');c.width=W;c.height=H;
   const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,W,H);if(stImg)x.drawImage(stImg,0,0,W,ph);
   x.fillStyle=repCol();x.fillRect(0,ph,W,H-ph);x.fillStyle='#fff';x.textAlign='left';x.textBaseline='alphabetic';
   txt.forEach((t,i)=>{let fs=i<2?28:22;const b=i<2?'bold ':'';x.font=b+fs+'px sans-serif';while(fs>14&&x.measureText(t).width>W-48){fs--;x.font=b+fs+'px sans-serif';}x.fillText(t,24,ph+34+i*LH);});
-  const rec={date:now.toISOString(),name,mine,fe:q[0],si:q[1],al:q[2],p:q[3],dest,img:c.toDataURL('image/jpeg',.88),text:'Stock '+name+' ('+mine+'): '+txt[1]+' | '+txt[2]};
+  const rec={date:now.toISOString(),name,mine,ore,oreOther:ore==='Others'?oreOt:'',fe:q[0],si:q[1],al:q[2],p:q[3],dest,img:c.toDataURL('image/jpeg',.88),text:'Stock '+name+' ('+mine+'): '+txt[1]+' | '+txt[2]};
   const tx=db.transaction('stocks','readwrite');tx.objectStore('stocks').add(rec);
   tx.oncomplete=()=>{say2('stMsg','Stock entry saved. It now appears as a source in the shift report.');
-    ['stName','stFe','stSi','stAl','stP'].forEach(i=>$(i).value='');document.querySelectorAll('#stDest input').forEach(c=>c.checked=false);stImg=null;renderExtra();shBuild();};
+    ['stName','stFe','stSi','stAl','stP'].forEach(i=>$(i).value='');setOre('st','');document.querySelectorAll('#stDest input').forEach(c=>c.checked=false);stImg=null;renderExtra();shBuild();};
   tx.onerror=()=>say2('stMsg','Could not save the stock entry.');};
 
 const SHL={A:'A shift (6 AM to 2 PM)',B:'B shift (2 PM to 10 PM)',C:'C shift (10 PM to 6 AM)'},SHS={A:6,B:14,C:22};
@@ -1045,26 +1057,28 @@ async function shBuild(){
   const prev={};document.querySelectorAll('#shSrc input').forEach(i=>prev[i.dataset.key]=i.value);
   const[w0,w1]=shWin(),inW=t=>{const d=new Date(t);return d>=w0&&d<w1;};
   const[fr,st]=await Promise.all([getAll('reports'),getAll('stocks')]);
-  const srcs=[...fr.filter(r=>inW(r.date)).map(r=>({k:'f'+r.id,lbl:'Face '+[r.mine,r.pit,r.mrl&&'MRL '+r.mrl].filter(Boolean).join(' '),tm:tm(r.date),fe:parseFloat(r.fe),si:parseFloat(r.si),al:parseFloat(r.al),p:parseFloat(r.p),dest:r.destArr||(r.dest?r.dest.split(', '):[])})),
-    ...st.filter(r=>inW(r.date)).map(r=>({k:'s'+r.id,lbl:'Stock '+r.name+(r.mine?' ('+r.mine+')':''),tm:tm(r.date),fe:r.fe,si:r.si,al:r.al,p:r.p,dest:r.dest||[]}))];
+  const srcs=[...fr.filter(r=>inW(r.date)).map(r=>({k:'f'+r.id,lbl:'Face '+[r.mine,r.pit,r.mrl&&'MRL '+r.mrl].filter(Boolean).join(' '),tm:tm(r.date),ore:oreMix(r.ore),hasOre:!!r.ore,oreLbl:r.ore?oreLabel(r.ore,r.oreOther):'',fe:parseFloat(r.fe),si:parseFloat(r.si),al:parseFloat(r.al),p:parseFloat(r.p),dest:r.destArr||(r.dest?r.dest.split(', '):[])})),
+    ...st.filter(r=>inW(r.date)).map(r=>({k:'s'+r.id,lbl:'Stock '+r.name+(r.mine?' ('+r.mine+')':''),tm:tm(r.date),ore:oreMix(r.ore),hasOre:!!r.ore,oreLbl:r.ore?oreLabel(r.ore,r.oreOther):'',fe:r.fe,si:r.si,al:r.al,p:r.p,dest:r.dest||[]}))];
   shRows=[];
   PLANTS.forEach(pl=>srcs.forEach(s=>{if(s.dest.some(d=>d===pl||(pl==='Others'&&d.startsWith('Others'))))shRows.push({pl,s});}));
   let h='',cur='';
   shRows.forEach((r,i)=>{if(r.pl!==cur){cur=r.pl;h+=`<b style="display:block;margin-top:8px">${escH(cur)}</b>`;}
     const key=r.pl+'|'+r.s.k;
-    h+=`<div class="src"><span>${escH(r.s.lbl)} <small class="note">(${r.s.tm})</small><br><small class="note">Fe ${fx(r.s.fe,2)} | SiO2 ${fx(r.s.si,2)} | Al2O3 ${fx(r.s.al,2)} | P ${fx(r.s.p,3)}</small></span><input type="number" min="0" inputmode="numeric" placeholder="trips" data-i="${i}" data-key="${escH(key)}" value="${escH(prev[key]||'')}"></div>`;});
+    h+=`<div class="src"><span>${escH(r.s.lbl)} <small class="note">(${r.s.tm})</small><br><small class="note">Fe ${fx(r.s.fe,2)} | SiO2 ${fx(r.s.si,2)} | Al2O3 ${fx(r.s.al,2)} | P ${fx(r.s.p,3)}</small><br><small class="note">${r.s.hasOre?'Ore: '+escH(r.s.oreLbl)+' ('+oreTxt(r.s.ore)+')':'Ore type not set'}</small></span><input type="number" min="0" inputmode="numeric" placeholder="trips" data-i="${i}" data-key="${escH(key)}" value="${escH(prev[key]||'')}"></div>`;});
   $('shSrc').innerHTML=h||'<p class="note">No face reports or stock entries with a destination were saved in this shift.</p>';
   shPrev();}
 function shCalc(){
   const out=[];
-  PLANTS.forEach(pl=>{let T=0;const a={fe:0,si:0,al:0,p:0},w={fe:0,si:0,al:0,p:0},src=[];
+  PLANTS.forEach(pl=>{let T=0,ow=0;const a={fe:0,si:0,al:0,p:0},w={fe:0,si:0,al:0,p:0},oa={HO:0,BD:0,FO:0,SO:0,Others:0},src=[];
     document.querySelectorAll('#shSrc input').forEach(inp=>{const r=shRows[+inp.dataset.i],t=+inp.value||0;if(!r||r.pl!==pl||t<=0)return;
-      T+=t;src.push({lbl:r.s.lbl,t,fe:r.s.fe,si:r.s.si,al:r.s.al,p:r.s.p});
-      ['fe','si','al','p'].forEach(k=>{if(!isNaN(r.s[k])){a[k]+=r.s[k]*t;w[k]+=t;}});});
-    if(T)out.push({pl,T,src,fe:w.fe?a.fe/w.fe:NaN,si:w.si?a.si/w.si:NaN,al:w.al?a.al/w.al:NaN,p:w.p?a.p/w.p:NaN});});
+      T+=t;src.push({lbl:r.s.lbl,t,fe:r.s.fe,si:r.s.si,al:r.s.al,p:r.s.p,ore:r.s.hasOre?r.s.ore:null,oreLbl:r.s.oreLbl});
+      ['fe','si','al','p'].forEach(k=>{if(!isNaN(r.s[k])){a[k]+=r.s[k]*t;w[k]+=t;}});
+      if(r.s.hasOre){ow+=t;ORE_KEYS.forEach(k=>{oa[k]+=r.s.ore[k]*t;});}});
+    if(T)out.push({pl,T,src,oreW:ow,ore:ow?Object.fromEntries(ORE_KEYS.map(k=>[k,oa[k]/ow])):null,fe:w.fe?a.fe/w.fe:NaN,si:w.si?a.si/w.si:NaN,al:w.al?a.al/w.al:NaN,p:w.p?a.p/w.p:NaN});});
   return out;}
 function shCanvas(rows){
-  const W=1000,PL=50,SL=44,top=120,H=top+24+rows.reduce((a,r)=>a+PL+r.src.length*SL,0)+PL+24,c=document.createElement('canvas');c.width=W;c.height=H;
+  const W=1000,PL=50,SL=44,top=120,hasOre=rows.some(r=>r.ore),H0=top+24+rows.reduce((a,r)=>a+PL+r.src.length*SL,0)+PL,
+    H=H0+(hasOre?44+PL*(rows.length+2):0)+24,c=document.createElement('canvas');c.width=W;c.height=H;
   const x=c.getContext('2d'),ink='#1b2a30';
   x.fillStyle='#fff';x.fillRect(0,0,W,H);x.fillStyle=repCol();x.fillRect(0,0,W,top-20);
   x.fillStyle='#fff';x.textAlign='left';x.font='bold 34px sans-serif';x.fillText('Shift End Report',24,46);
@@ -1078,6 +1092,14 @@ function shCanvas(rows){
     x.fillStyle=ink;put([r.pl,String(r.T),fx(r.fe,2),fx(r.si,2),fx(r.al,2),fx(r.p,3)],y,true,26);
     r.src.forEach(q=>{y+=SL;x.fillStyle=ink;put([q.lbl,String(q.t),fx(q.fe,2),fx(q.si,2),fx(q.al,2),fx(q.p,3)],y,false,24,22);});});
   y+=PL;x.fillStyle=ink;x.fillRect(0,y-36,W,2);put(['Total trips',String(rows.reduce((a,r)=>a+r.T,0))],y,true,26);
+  if(hasOre){
+    y+=44;x.fillStyle=repCol();x.fillRect(0,y-30,W,42);x.fillStyle='#fff';x.textAlign='left';x.font='bold 24px sans-serif';x.fillText('Ore mix fed to each plant (% of trips)',24,y);
+    const ox=[24,500,625,750,860,985],p2=(v,yy,b)=>{x.font=(b?'bold ':'')+'24px sans-serif';v.forEach((t,i)=>{x.textAlign=i?'right':'left';x.fillText(t,ox[i],yy);});},f1=v=>v>0.05?fx(v,1):'-';
+    y+=PL;x.fillStyle=ink;p2(['Plant','HO','BD','FO','SO','Others'],y,true);
+    rows.forEach((r,i)=>{y+=PL;if(i%2){x.fillStyle='#eef1f0';x.fillRect(0,y-35,W,PL);}x.fillStyle=ink;p2(r.ore?[r.pl,...ORE_KEYS.map(k=>f1(r.ore[k]))]:[r.pl,'-','-','-','-','-'],y);});
+    let tw=0;const ta={HO:0,BD:0,FO:0,SO:0,Others:0};rows.forEach(r=>{if(r.ore){tw+=r.oreW;ORE_KEYS.forEach(k=>{ta[k]+=r.ore[k]*r.oreW;});}});
+    y+=PL;x.fillStyle=ink;x.fillRect(0,y-36,W,2);p2(['All plants',...ORE_KEYS.map(k=>tw?f1(ta[k]/tw):'-')],y,true);
+  }
   return c;}
 function shPrev(){const r=shCalc();if(!r.length){$('shPrev').style.display='none';return;}$('shPrev').src=shCanvas(r).toDataURL('image/jpeg',.85);$('shPrev').style.display='block';}
 $('shSrc').oninput=()=>{clearTimeout(shT);shT=setTimeout(shPrev,300);};
@@ -1086,7 +1108,7 @@ $('shSave').onclick=()=>{
   const rows=shCalc();if(!rows.length){alert('Enter trips for at least one source first.');return;}
   if(!db){alert('Storage is not available on this device.');return;}
   const sl=q=>`   - ${q.lbl}: ${q.t} trips | Fe ${fx(q.fe,2)} | SiO2 ${fx(q.si,2)} | Al2O3 ${fx(q.al,2)} | P ${fx(q.p,3)}`;
-  const text=SHL[$('shShift').value]+' '+$('shDate').value+'\n'+rows.map(r=>[`${r.pl}: ${r.T} trips | Fe ${fx(r.fe,2)} | SiO2 ${fx(r.si,2)} | Al2O3 ${fx(r.al,2)} | P ${fx(r.p,3)}`,...r.src.map(sl)].join('\n')).join('\n');
+  const text=SHL[$('shShift').value]+' '+$('shDate').value+'\n'+rows.map(r=>[`${r.pl}: ${r.T} trips | Fe ${fx(r.fe,2)} | SiO2 ${fx(r.si,2)} | Al2O3 ${fx(r.al,2)} | P ${fx(r.p,3)}${r.ore?' | Ore '+oreTxt(r.ore):''}`,...r.src.map(sl)].join('\n')).join('\n');
   const rec={date:shWin()[0].toISOString(),shift:$('shShift').value,mine:$('mineName').value,rows,text,img:shCanvas(rows).toDataURL('image/jpeg',.88)};
   const tx=db.transaction('shifts','readwrite');tx.objectStore('shifts').add(rec);
   tx.oncomplete=()=>{say2('shMsg','Shift report saved. Use Share or Download below.');renderExtra();};
@@ -1096,7 +1118,7 @@ const xBtns=(s,id)=>`<div style="display:flex;flex-direction:column;gap:6px"><bu
 async function renderExtra(){
   if(!db)return;
   const st=(await getAll('stocks')).sort((a,b)=>b.id-a.id),sh=(await getAll('shifts')).sort((a,b)=>b.id-a.id);
-  $('stList').innerHTML=st.length?st.map(it=>`<div class="log-item"><img class="log-thumb" src="${it.img}" alt=""><div class="log-info"><b>${escH(it.name)}${it.mine?' ('+escH(it.mine)+')':''}: Fe ${fx(it.fe,2)} | SiO2 ${fx(it.si,2)} | Al2O3 ${fx(it.al,2)} | P ${fx(it.p,3)}</b><span>${new Date(it.date).toLocaleString()}</span><br><span>To: ${escH((it.dest||[]).join(', ')||'-')}</span></div>${xBtns('stocks',it.id)}</div>`).join(''):'No stock entries yet.';
+  $('stList').innerHTML=st.length?st.map(it=>`<div class="log-item"><img class="log-thumb" src="${it.img}" alt=""><div class="log-info"><b>${escH(it.name)}${it.mine?' ('+escH(it.mine)+')':''}: Fe ${fx(it.fe,2)} | SiO2 ${fx(it.si,2)} | Al2O3 ${fx(it.al,2)} | P ${fx(it.p,3)}</b><span>${new Date(it.date).toLocaleString()}</span><br><span>To: ${escH((it.dest||[]).join(', ')||'-')}</span><br><span>Ore: ${it.ore?escH(oreLine(it.ore,it.oreOther)):'not set'}</span></div>${xBtns('stocks',it.id)}</div>`).join(''):'No stock entries yet.';
   $('shList').innerHTML=sh.length?sh.map(it=>`<div class="log-item"><img class="log-thumb" src="${it.img}" alt=""><div class="log-info"><b>${SHL[it.shift]} | ${new Date(it.date).toLocaleDateString()}</b><span>${escH(it.text).split('\n').slice(1).join('<br>')}</span></div>${xBtns('shifts',it.id)}</div>`).join(''):'No shift reports yet.';}
 document.addEventListener('click',e=>{const b=e.target.closest('.xShare,.xDl');if(!b||!db)return;
   db.transaction(b.dataset.s).objectStore(b.dataset.s).get(+b.dataset.id).onsuccess=async ev=>{const it=ev.target.result;if(!it)return;
@@ -1112,7 +1134,7 @@ const destOf=it=>Array.isArray(it.dest)?it.dest:(it.destArr||(it.dest?String(it.
 function faceLines(it){
   const mp=[it.mine&&'Mine: '+it.mine,it.pit&&'Pit: '+it.pit,(it.mrl&&isFinite(+it.mrl))&&'MRL: '+(+it.mrl)+' m'].filter(Boolean).join('     ');
   const l=[it.title||'ROM quality at the loading face',`Fe ${it.fe}%   SiO2 ${it.si}%   Al2O3 ${it.al}%   P ${it.p}%`,'Material: '+it.mix];
-  if(mp)l.push(mp);if(it.dest)l.push('Destination: '+it.dest);if(it.noPhoto)l.push('Field photo not taken: '+it.noPhoto);l.push('Time: '+new Date(it.date).toLocaleString());return l;}
+  if(it.ore)l.push('Ore type: '+oreLine(it.ore,it.oreOther));if(mp)l.push(mp);if(it.dest)l.push('Destination: '+it.dest);if(it.noPhoto)l.push('Field photo not taken: '+it.noPhoto);l.push('Time: '+new Date(it.date).toLocaleString());return l;}
 async function redrawFace(old,upd){
   const im=await loadDataImg(old.img);if(!im)return null;
   const top=im.height-(28+(faceLines(old).length-1)*30+14);if(top<50)return null;
@@ -1122,13 +1144,14 @@ async function redrawFace(old,upd){
   lines.forEach((t,i)=>{let fs=i===1?28:22;const b=i<2?'bold ':'';x.font=b+fs+'px sans-serif';while(fs>14&&x.measureText(t).width>W-48){fs--;x.font=b+fs+'px sans-serif';}x.fillText(t,24,top+28+i*30);});
   const t=document.createElement('canvas');t.width=200;t.height=Math.round(200*H/W);t.getContext('2d').drawImage(c,0,0,t.width,t.height);
   return{img:c.toDataURL('image/jpeg',.88),thumb:t.toDataURL('image/jpeg',.7)};}
-async function redrawStock(oldImg,u){
-  const im=await loadDataImg(oldImg);if(!im)return null;
-  const W=im.width,H=im.height,top=H-(22+4*32+8);if(top<0)return null;
-  const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+async function redrawStock(old,u){
+  const im=await loadDataImg(old.img);if(!im)return null;
+  const W=im.width,top=im.height-(22+(old.ore?5:4)*32+8);if(top<0)return null;
+  const txt=['Stock: '+u.name+(u.mine?'   |   '+u.mine:''),`Fe ${fx(u.fe,2)}%   SiO2 ${fx(u.si,2)}%   Al2O3 ${fx(u.al,2)}%   P ${fx(u.p,3)}%`,'Feeding to: '+(u.dest.join(', ')||'-')];
+  if(u.ore)txt.push('Ore type: '+oreLine(u.ore,u.oreOther));txt.push('Time: '+new Date(u.date).toLocaleString());
+  const H=top+22+txt.length*32+8,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
   x.fillStyle='#fff';x.fillRect(0,0,W,H);if(top>0)x.drawImage(im,0,0,W,top,0,0,W,top);
   x.fillStyle=repCol();x.fillRect(0,top,W,H-top);x.fillStyle='#fff';x.textAlign='left';x.textBaseline='alphabetic';
-  const txt=['Stock: '+u.name+(u.mine?'   |   '+u.mine:''),`Fe ${fx(u.fe,2)}%   SiO2 ${fx(u.si,2)}%   Al2O3 ${fx(u.al,2)}%   P ${fx(u.p,3)}%`,'Feeding to: '+(u.dest.join(', ')||'-'),'Time: '+new Date(u.date).toLocaleString()];
   txt.forEach((t,i)=>{let fs=i<2?28:22;const b=i<2?'bold ':'';x.font=b+fs+'px sans-serif';while(fs>14&&x.measureText(t).width>W-48){fs--;x.font=b+fs+'px sans-serif';}x.fillText(t,24,top+34+i*32);});
   return{img:c.toDataURL('image/jpeg',.88),text:'Stock '+u.name+(u.mine?' ('+u.mine+')':'')+': '+txt[1]+' | '+txt[2]};}
 function openEdit(sn,id){
@@ -1140,19 +1163,23 @@ function openEdit(sn,id){
     let h=`<h2>Edit ${face?'face report':'stock entry'}</h2>`;
     h+=face?`<div class="fields"><label>Mine <select id="edMine"><option value="">Select mine</option>${Object.keys(PITS).map(n=>`<option${n===it.mine?' selected':''}>${n}</option>`).join('')}</select></label><label>Pit <select id="edPit"></select></label><label>MRL of loading unit (m) <input id="edMrl" type="number" step="any" inputmode="decimal" value="${escH(it.mrl||'')}"></label></div>`
       :`<div class="fields"><label>Mine <select id="edSMine"><option value="">Select mine</option>${['Noamundi','Katamati'].map(n=>`<option${n===it.mine?' selected':''}>${n}</option>`).join('')}</select></label><label>Stock name <input id="edName" type="text" maxlength="40" value="${escH(it.name)}"></label></div><div class="q4"><label>Fe %<input id="edFe" type="number" step="any" inputmode="decimal" value="${num(it.fe)}"></label><label>SiO2 %<input id="edSi" type="number" step="any" inputmode="decimal" value="${num(it.si)}"></label><label>Al2O3 %<input id="edAl" type="number" step="any" inputmode="decimal" value="${num(it.al)}"></label><label>P %<input id="edP" type="number" step="any" inputmode="decimal" value="${num(it.p)}"></label></div>`;
+    h+=`<div class="fields"><label>Ore type <select id="edOre">${oreOptions(it.ore)}</select></label><label id="edOreOtherL" style="display:${it.ore==='Others'?'block':'none'}">Other ore type <input id="edOreOther" type="text" maxlength="30" value="${escH(it.oreOther||'')}"></label></div>`;
     h+=`<p class="note" style="margin:10px 0 6px">Feeding to</p><div class="dest">${PLANTS.map(n=>`<label class="chk"><input type="checkbox" value="${escH(n)}"${dl.some(d=>d===n||(n==='Others'&&d.startsWith('Others')))?' checked':''}> ${escH(n)}</label>`).join('')}</div><input id="edOther" type="text" maxlength="40" placeholder="Others: stock name or dump name" value="${escH(ot)}" style="width:100%;margin-top:8px;font:inherit;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)"><div class="row" style="margin-top:12px"><button id="edSave">Save changes</button><button id="edCancel" class="ghost">Cancel</button></div><div id="edMsg" class="note warn"></div>`;
     $('edBox').innerHTML=h;$('edOv').style.display='block';
     if(face){const fill=sel=>{const m=$('edMine').value;$('edPit').innerHTML='<option value="">'+(m?'Select pit':'Select mine first')+'</option>'+(PITS[m]||[]).map(n=>`<option${n===sel?' selected':''}>${n}</option>`).join('');$('edPit').disabled=!m;};fill(it.pit);$('edMine').onchange=()=>fill('');}
+    $('edOre').onchange=()=>{$('edOreOtherL').style.display=$('edOre').value==='Others'?'block':'none';};
     $('edCancel').onclick=()=>{$('edOv').style.display='none';};
     $('edSave').onclick=async()=>{
       const d=[...document.querySelectorAll('#edBox .dest input:checked')].map(c=>{if(c.value!=='Others')return c.value;const o=$('edOther').value.trim();return o?'Others ('+o+')':'Others';});
       const old={...it},fail=t=>{$('edMsg').textContent=t;};
+      if($('edOre').value==='Others'&&!$('edOreOther').value.trim())return fail('Enter the ore type.');
+      it.ore=$('edOre').value;it.oreOther=it.ore==='Others'?$('edOreOther').value.trim():'';
       if(face){it.mine=$('edMine').value;it.pit=$('edPit').value;it.mrl=$('edMrl').value.trim();it.destArr=d;it.dest=d.join(', ');
         const r=await redrawFace(old,it);if(!r)return fail('Could not redraw the report image.');it.img=r.img;it.thumb=r.thumb;}
       else{const q=['edFe','edSi','edAl','edP'].map(i=>{const t=$(i).value.trim();return t===''?NaN:+t;}),nm=$('edName').value.trim();
         if(!nm||isNaN(q[0]))return fail('Enter the stock name and at least Fe %.');
         it.name=nm;it.mine=$('edSMine').value;it.fe=q[0];it.si=q[1];it.al=q[2];it.p=q[3];it.dest=d;
-        const r=await redrawStock(old.img,it);if(!r)return fail('Could not redraw the stock image.');it.img=r.img;it.text=r.text;}
+        const r=await redrawStock(old,it);if(!r)return fail('Could not redraw the stock image.');it.img=r.img;it.text=r.text;}
       const tx=db.transaction(sn,'readwrite');tx.objectStore(sn).put(it);
       tx.oncomplete=()=>{$('edOv').style.display='none';renderLogList();renderExtra();shBuild();};
       tx.onerror=()=>fail('Could not save the changes.');};};}
@@ -1170,10 +1197,11 @@ const csvq=v=>{v=String(v==null?'':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g
 const cn=(v,n)=>{const t=fx(v,n);return t==='-'?'':t;};
 const ymd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 function shCsv(rows,date,shift,mine){
-  const L=[['Date','Shift','Mine','Plant','Source','Trips','Fe %','SiO2 %','Al2O3 %','P %']],b=[date,SHL[shift],mine||''];
-  rows.forEach(r=>{L.push([...b,r.pl,'TOTAL (trip-weighted)',r.T,cn(r.fe,2),cn(r.si,2),cn(r.al,2),cn(r.p,3)]);
-    (r.src||[]).forEach(q=>L.push([...b,r.pl,q.lbl,q.t,cn(q.fe,2),cn(q.si,2),cn(q.al,2),cn(q.p,3)]));});
-  L.push([...b,'ALL PLANTS','Total trips',rows.reduce((a,r)=>a+r.T,0),'','','','']);
+  const L=[['Date','Shift','Mine','Plant','Source','Ore type','Trips','Fe %','SiO2 %','Al2O3 %','P %','HO %','BD %','FO %','SO %','Others %']],b=[date,SHL[shift],mine||''];
+  const om=o=>ORE_KEYS.map(k=>o?cn(o[k],1):'');
+  rows.forEach(r=>{L.push([...b,r.pl,'TOTAL (trip-weighted)','',r.T,cn(r.fe,2),cn(r.si,2),cn(r.al,2),cn(r.p,3),...om(r.ore)]);
+    (r.src||[]).forEach(q=>L.push([...b,r.pl,q.lbl,q.oreLbl||'',q.t,cn(q.fe,2),cn(q.si,2),cn(q.al,2),cn(q.p,3),...om(q.ore)]));});
+  L.push([...b,'ALL PLANTS','Total trips','',rows.reduce((a,r)=>a+r.T,0),'','','','',...om(null)]);
   return '\ufeff'+L.map(a=>a.map(csvq).join(',')).join('\r\n');}
 function dlText(name,text){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/csv;charset=utf-8'}));a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000);}
 $('shCsv').onclick=()=>{const rows=shCalc();if(!rows.length){alert('Enter trips for at least one source first.');return;}
@@ -1197,6 +1225,64 @@ async function purgeOld(){
   if(n){renderLogList();renderExtra();shBuild();}}
 setInterval(purgeOld,5*60*1000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)purgeOld();});
+
+
+/* ---------- Ore type ---------- */
+const ORES=['HO','BD','FO','HO+FO','BD+HO','BD+FO','SO','2HO+FO','HO+2FO','Others'],ORE_KEYS=['HO','BD','FO','SO','Others'];
+function oreMix(sel){const m={HO:0,BD:0,FO:0,SO:0,Others:0};if(!sel)return m;if(sel==='Others'){m.Others=100;return m;}
+  const ps=sel.split('+').map(t=>{const x=/^(\d*)([A-Za-z]+)$/.exec(t.trim());return x?{c:+(x[1]||1),k:x[2].toUpperCase()}:null;}).filter(Boolean),sum=ps.reduce((a,q)=>a+q.c,0)||1;
+  ps.forEach(q=>{const k=m[q.k]!==undefined?q.k:'Others';m[k]+=q.c/sum*100;});return m;}
+const oreTxt=m=>ORE_KEYS.filter(k=>m[k]>0.05).map(k=>k+' '+(Math.round(m[k]*10)/10)+'%').join(' | ');
+const oreLabel=(sel,other)=>sel==='Others'?'Others'+(other?' ('+other+')':''):sel;
+const oreLine=(sel,other)=>sel==='Others'?oreLabel(sel,other)+' 100%':(sel.indexOf('+')>=0?sel+'  =  ':'')+oreTxt(oreMix(sel));
+const oreOptions=sel=>'<option value="">Select ore type</option>'+ORES.map(o=>`<option value="${o}"${o===sel?' selected':''}>${o==='Others'?'Others (enter ore type)':o}</option>`).join('');
+function setOre(p,val,other){const sl=$(p+'Ore'),o=$(p+'OreOther');sl.value=val||'';if(o.value!==(other||''))o.value=other||'';
+  $(p+'OreOtherL').style.display=sl.value==='Others'?'block':'none';$(p+'OreTxt').textContent=sl.value?'Proportion: '+oreLine(sl.value,o.value.trim()):'';}
+['face','st'].forEach(p=>{$(p+'Ore').innerHTML=oreOptions('');
+  const ch=()=>{setOre(p,$(p+'Ore').value,$(p+'OreOther').value);if(p==='face'&&(photoImg||$('noPhoto').checked))renderPreview();};
+  $(p+'Ore').onchange=ch;$(p+'OreOther').oninput=ch;});
+
+
+/* ---------- Shift report PDF with field photographs ---------- */
+function b64ToBytes(u){const b=atob(u.split(',')[1]),a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a;}
+async function jpegOf(u){
+  if(u.indexOf('data:image/jpeg')===0)return u;
+  const i=await loadDataImg(u);if(!i)return null;
+  const c=document.createElement('canvas');c.width=i.naturalWidth;c.height=i.naturalHeight;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(i,0,0);
+  return c.toDataURL('image/jpeg',.9);}
+function buildPdf(imgs){
+  const enc=new TextEncoder(),parts=[],offs=[];let len=0;
+  const push=d=>{const a=typeof d==='string'?enc.encode(d):d;parts.push(a);len+=a.length;};
+  const PW=595.28,PH=841.89,M=24,n=imgs.length;
+  push(new Uint8Array([37,80,68,70,45,49,46,52,10,37,226,227,207,211,10]));
+  const obj=(k,body)=>{offs[k]=len;push(k+' 0 obj\n'+body+'\nendobj\n');};
+  obj(1,'<< /Type /Catalog /Pages 2 0 R >>');
+  obj(2,'<< /Type /Pages /Kids ['+imgs.map((_,i)=>(3+3*i)+' 0 R').join(' ')+'] /Count '+n+' >>');
+  imgs.forEach((im,i)=>{
+    const pg=3+3*i,ct=pg+1,ix=pg+2,sc=Math.min((PW-2*M)/im.w,(PH-2*M)/im.h),dw=im.w*sc,dh=im.h*sc,x=(PW-dw)/2,y=PH-M-dh;
+    obj(pg,'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 '+PW+' '+PH+'] /Resources << /XObject << /Im0 '+ix+' 0 R >> >> /Contents '+ct+' 0 R >>');
+    const cs='q '+dw.toFixed(2)+' 0 0 '+dh.toFixed(2)+' '+x.toFixed(2)+' '+y.toFixed(2)+' cm /Im0 Do Q';
+    obj(ct,'<< /Length '+cs.length+' >>\nstream\n'+cs+'\nendstream');
+    offs[ix]=len;push(ix+' 0 obj\n<< /Type /XObject /Subtype /Image /Width '+im.w+' /Height '+im.h+' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length '+im.bytes.length+' >>\nstream\n');
+    push(im.bytes);push('\nendstream\nendobj\n');});
+  const total=3+3*n,xr=len;let t='xref\n0 '+total+'\n0000000000 65535 f \n';
+  for(let k=1;k<total;k++)t+=String(offs[k]).padStart(10,'0')+' 00000 n \n';
+  push(t+'trailer\n<< /Size '+total+' /Root 1 0 R >>\nstartxref\n'+xr+'\n%%EOF');
+  return new Blob(parts,{type:'application/pdf'});}
+function dlBlob(name,blob){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),8000);}
+$('shPdf').onclick=async()=>{
+  const rows=shCalc();if(!rows.length){alert('Enter trips for at least one source first.');return;}
+  if(!db){alert('Storage is not available on this device.');return;}
+  say2('shMsg','Building the PDF, please wait...');
+  try{
+    const[w0,w1]=shWin(),inW=t=>{const d=new Date(t);return d>=w0&&d<w1;},byT=(a,b)=>new Date(a.date)-new Date(b.date);
+    const[fr,st]=await Promise.all([getAll('reports'),getAll('stocks')]);
+    const logs=[...fr.filter(r=>inW(r.date)).sort(byT),...st.filter(r=>inW(r.date)).sort(byT)];
+    const urls=[shCanvas(rows).toDataURL('image/jpeg',.9),...logs.map(r=>r.img)],imgs=[];
+    for(const u of urls){const j=await jpegOf(u);if(!j)continue;const im=await loadDataImg(j);if(!im)continue;imgs.push({bytes:b64ToBytes(j),w:im.naturalWidth,h:im.naturalHeight});}
+    dlBlob('Shift_Report_'+$('shDate').value+'_'+$('shShift').value+'_with_photos.pdf',buildPdf(imgs));
+    say2('shMsg','PDF saved: shift table plus '+(imgs.length-1)+' face/stock log image(s).');
+  }catch(err){say2('shMsg','Could not build the PDF.');}};
 
 const THEMES=[['green','Green','#0d5c63'],['blue','Blue','#1d4ed8'],['purple','Purple','#6d28d9'],['orange','Orange','#c2410c'],['maroon','Maroon','#b91c1c'],['light','Light','#e2e8f0'],['dark','Dark','#12191c']];
 $('themeMenu').innerHTML=THEMES.map(t=>`<button data-t="${t[0]}"><span class="sw" style="background:${t[2]}"></span>${t[1]}</button>`).join('');
