@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>ROM Quality Monitoring</title>
+<title>ROM Face Quality Monitoring</title>
 <script>try{document.documentElement.dataset.theme=localStorage.getItem('rom_theme')||'green'}catch(e){document.documentElement.dataset.theme='green'}</script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -39,6 +39,9 @@ header .ttl{display:flex;flex-direction:column;min-width:0}
 .opt-pop[hidden]{display:none}
 .opt-pop input{width:54px;font:inherit;padding:4px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--ink);text-align:center}
 .opt-pop button{width:28px;height:28px;padding:0;font-size:16px;line-height:1;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:6px}
+.sched{margin-top:4px}
+.schedRow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:4px 0;font-size:14px}
+.schedRow input{width:96px;font:inherit;padding:6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
 .bdg{position:absolute;right:2px;bottom:1px;font:700 9px system-ui,sans-serif;line-height:1;color:var(--ink);background:var(--card);border-radius:3px;padding:1px 2px}
 .leaflet-bar a.ico-btn.on{background-color:var(--acc)!important;color:var(--acc-ink)!important}
 .tip{position:absolute;left:calc(100% + 6px);top:50%;transform:translateY(-50%);background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:5px 9px;font:600 12px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;white-space:nowrap;pointer-events:none;z-index:10;line-height:1.2}
@@ -140,12 +143,12 @@ main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
 <meta name="theme-color" content="#0d5c63">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="ROM Quality Monitoring">
+<meta name="apple-mobile-web-app-title" content="ROM Face Check">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 </head>
 <body>
-<header><div class="ttl"><h1>ROM Quality Monitoring</h1><span id="status">Load a blasthole map to start</span></div>
+<header><div class="ttl"><h1>ROM Face Quality Monitoring</h1><span id="status">Load a blasthole map to start</span></div>
 <div id="themeWrap"><button id="themeBtn" class="ghost" title="Change theme" aria-label="Change theme"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.2 0 2-.8 2-1.8 0-.5-.2-.9-.5-1.3-.3-.4-.5-.8-.5-1.300 0-1 .8-1.800 1.800-1.800H17a4 4 0 0 0 4-4C21 6.100 17 3 12 3z"/><circle cx="7.500" cy="11" r="1"/><circle cx="10" cy="7.500" r="1"/><circle cx="14.500" cy="7.500" r="1"/></svg></button><div id="themeMenu" hidden></div></div></header>
 <div id="map"></div>
 <div id="fsBar">Tap the map to place the loading unit</div>
@@ -186,6 +189,7 @@ main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
   <p class="note">Select the plant(s) this face is supplying ROM to. You can choose more than one.</p>
   <div id="destBox" class="dest"></div>
   <input id="destOther" type="text" maxlength="40" placeholder="Stock name or dump name" autocomplete="off">
+  <div id="schedBox" class="sched"></div>
 </div>
 
 <div class="sub">
@@ -234,16 +238,11 @@ main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
   <div class="q4"><label>Fe %<input id="stFe" type="number" step="any" inputmode="decimal"></label><label>SiO2 %<input id="stSi" type="number" step="any" inputmode="decimal"></label><label>Al2O3 %<input id="stAl" type="number" step="any" inputmode="decimal"></label><label>P %<input id="stP" type="number" step="any" inputmode="decimal"></label></div>
   <p class="note" style="margin:10px 0 6px">Feeding to</p>
   <div id="stDest" class="dest"></div>
+  <div id="stSchedBox" class="sched"></div>
   <div class="row"><label class="btn ghost">Take stock photo<input id="stPh" type="file" accept="image/*" capture="environment"></label><label class="btn ghost">Upload photo<input id="stPhUp" type="file" accept="image/*"></label><button id="stSave">Save stock entry</button></div>
   <div id="stMsg" class="note" style="color:var(--acc);font-weight:600"></div>
-  <div class="sub">
-    <div class="row" style="justify-content:space-between">
-      <h2 style="margin:0">Report history log</h2>
-      <button id="clearStock" class="danger" style="padding:4px 8px;font-size:12px">Clear Log</button>
-    </div>
-    <p class="note" style="margin:6px 0 0">Entries are removed automatically 2 hours after their shift ends (A shift at 4 PM, B shift at 12 AM, C shift at 8 AM). Share or download what you need before then.</p>
-    <div id="stList" class="note" style="margin-top:8px">No stock entries yet.</div>
-  </div>
+  <p class="note" style="margin:6px 0 0">Entries are removed automatically 2 hours after their shift ends (A shift at 4 PM, B shift at 12 AM, C shift at 8 AM). Share or download what you need before then.</p>
+  <div id="stList" class="note">No stock entries yet.</div>
 </section>
 
 <section>
@@ -257,6 +256,19 @@ main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
   <div id="shMsg" class="note" style="color:var(--acc);font-weight:600"></div>
   <p class="note" style="margin:6px 0 0">Entries are removed automatically 2 hours after their shift ends (A shift at 4 PM, B shift at 12 AM, C shift at 8 AM). Share or download what you need before then.</p>
   <div id="shList" class="note">No shift reports yet.</div>
+</section>
+<section>
+  <h2>Schedule compliance</h2>
+  <p class="note">Uses the date and shift chosen in the Shift end report. Faces and stocks you fed are listed with their trips. Enter or correct the scheduled feed % for each (optional), and add any scheduled face or stock that was not operated.</p>
+  <div id="cpSrc"></div>
+  <p class="note" style="margin:12px 0 4px"><b>Add a scheduled face or stock that was not operated</b></p>
+  <div class="fields"><label>Plant <select id="cpPl"></select></label><label>Type <select id="cpType"><option>Face</option><option>Stock</option></select></label><label>Mine <select id="cpMine"><option value="">Select mine</option><option>Noamundi</option><option>Katamati</option></select></label><label>Face / stock name <input id="cpName" type="text" maxlength="40" autocomplete="off" placeholder="e.g. WP-528 (DB Side)"></label><label>Scheduled feed % <input id="cpSch" type="number" min="0" max="100" step="any" inputmode="decimal"></label></div>
+  <div class="row"><button id="cpAdd" class="ghost">Add to schedule list</button></div>
+  <img id="cpPrev" style="display:none;width:100%;border-radius:6px;margin-top:10px" alt="Schedule compliance report preview">
+  <div class="row"><button id="cpGen">Generate compliance report</button><button id="cpSave">Save report (Image)</button><button id="cpCsv" class="ghost">Export CSV (Excel)</button></div>
+  <div id="cpMsg" class="note" style="color:var(--acc);font-weight:600"></div>
+  <p class="note" style="margin:6px 0 0">Entries are removed automatically 2 hours after their shift ends (A shift at 4 PM, B shift at 12 AM, C shift at 8 AM). Share or download what you need before then.</p>
+  <div id="cpList" class="note">No compliance reports yet.</div>
 </section>
 </main>
 
@@ -395,10 +407,10 @@ const curIcon=()=>iconMode==='loader'?loaderIcon:animatedShovelIcon;
 let flipPrev=null;
 
 // Map Initialization
-const map=L.map('map',{preferCanvas:true,renderer:L.canvas({padding:0.5}),maxZoom:24}).setView([22.12,85.49],14);
-const osm=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:24,maxNativeZoom:19,crossOrigin:true,attribution:'&copy; OpenStreetMap'});
-const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:24,maxNativeZoom:17,crossOrigin:true,attribution:'Esri'}).addTo(map);
-const satHi=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:24,maxNativeZoom:19,crossOrigin:true,attribution:'Esri'});
+const map=L.map('map',{preferCanvas:true,renderer:L.canvas({padding:0.5}),maxZoom:21}).setView([22.12,85.49],14);
+const osm=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:21,maxNativeZoom:19,crossOrigin:true,attribution:'&copy; OpenStreetMap'});
+const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:21,maxNativeZoom:17,crossOrigin:true,attribution:'Esri'}).addTo(map);
+const satHi=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:21,maxNativeZoom:19,crossOrigin:true,attribution:'Esri'});
 const lc=L.control.layers({Satellite:sat,'Satellite (sharper, if available)':satHi,Street:osm}).addTo(map);
 
 /* ---------- Map rotation (heading up) ---------- */
@@ -461,7 +473,7 @@ const FsControl=L.Control.extend({options:{position:'topleft'},onAdd(){
   fsBtn=L.DomUtil.create('a','fs-btn ico-btn',box);fsBtn.href='#';fsBtn.setAttribute('role','button');
   fsBtn.innerHTML=ICON_IN;fsBtn.title='Full screen map';fsBtn.setAttribute('aria-label','Full screen map');
   L.DomEvent.disableClickPropagation(box);
-  L.DomEvent.on(fsBtn,'click',ev=>{L.DomEvent.stop(ev);setFull(!document.body.classList.contains('fs'));flash(fsBtn,document.body.classList.contains('fs')?'Exit full screen':'Full screen');});
+  L.DomEvent.on(fsBtn,'click',ev=>{L.DomEvent.preventDefault(ev);setFull(!document.body.classList.contains('fs'));flash(fsBtn,document.body.classList.contains('fs')?'Exit full screen':'Full screen');});
   return box;}});
 map.addControl(new FsControl());
 const ICON_LOCK='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
@@ -480,7 +492,7 @@ const LockControl=L.Control.extend({options:{position:'topleft'},onAdd(){
   lockBtn=L.DomUtil.create('a','lock-btn ico-btn',box);lockBtn.href='#';lockBtn.setAttribute('role','button');
   lockBtn.innerHTML=ICON_UNLOCK;lockBtn.title='Lock shovel position';lockBtn.setAttribute('aria-label',lockBtn.title);
   L.DomEvent.disableClickPropagation(box);
-  L.DomEvent.on(lockBtn,'click',ev=>{L.DomEvent.stop(ev);setLock(!pinLocked);flash(lockBtn,pinLocked?'Pin locked':'Pin unlocked');});
+  L.DomEvent.on(lockBtn,'click',ev=>{L.DomEvent.preventDefault(ev);setLock(!pinLocked);flash(lockBtn,pinLocked?'Pin locked':'Pin unlocked');});
   return box;}});
 map.addControl(new LockControl());
 const ACT_ICONS={gps:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>',tome:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5.4-6.5-10.5a6.5 6.5 0 0 1 13 0C18.5 15.6 12 21 12 21z"/><circle cx="12" cy="10.5" r="2.2" fill="currentColor"/></svg>',drop:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v9M8.5 8.5L12 12l3.5-3.5"/><path d="M5 18c0-1.7 3.1-3 7-3s7 1.3 7 3-3.1 3-7 3-7-1.3-7-3z"/></svg>'};
@@ -497,7 +509,7 @@ const IcoControl=L.Control.extend({options:{position:'topright'},onAdd(){
   const box=L.DomUtil.create('div','leaflet-bar'),b=L.DomUtil.create('a','ico-btn',box);b.href='#';b.setAttribute('role','button');
   const lab=()=>{b.innerHTML=icoHtml();b.title='Icon: '+(iconMode==='loader'?'Loader':'Shovel');b.setAttribute('aria-label',b.title);};lab();
   L.DomEvent.disableClickPropagation(box);
-  L.DomEvent.on(b,'click',ev=>{L.DomEvent.stop(ev);iconMode=iconMode==='loader'?'shovel':'loader';try{localStorage.setItem('rom_icon',iconMode);}catch(e){}lab();if(pin)pin.setIcon(curIcon());flash(b,b.title,true);});
+  L.DomEvent.on(b,'click',ev=>{L.DomEvent.preventDefault(ev);iconMode=iconMode==='loader'?'shovel':'loader';try{localStorage.setItem('rom_icon',iconMode);}catch(e){}lab();if(pin)pin.setIcon(curIcon());flash(b,b.title,true);});
   return box;}});
 map.addControl(new IcoControl());
 const ICON_COMPASS='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="transition:none"><circle cx="12" cy="12" r="10"/><path d="M12 4.5L15.2 12H8.8Z" fill="#c0392b" stroke="none"/><path d="M12 19.5L15.2 12H8.8Z" fill="currentColor" fill-opacity=".6" stroke="none"/></svg>';
@@ -506,7 +518,7 @@ const RotControl=L.Control.extend({options:{position:'topright'},onAdd(){
   b.innerHTML=ICON_COMPASS;needleEl=b.querySelector('svg');
   const lab=()=>{b.classList.toggle('on',ROT.on);b.title=ROT.on?'Free rotate (tap to fix north)':'North fixed (tap for free rotate)';b.setAttribute('aria-label',b.title);};lab();
   L.DomEvent.disableClickPropagation(box);
-  L.DomEvent.on(b,'click',ev=>{L.DomEvent.stop(ev);if(ROT.on)stopRot();else startRot();lab();flash(b,ROT.on?'Free rotate: twist with 2 fingers':'North fixed',true);msg(ROT.on?'Twist two fingers on the map to rotate it':'Map fixed to north');});
+  L.DomEvent.on(b,'click',ev=>{L.DomEvent.preventDefault(ev);if(ROT.on)stopRot();else startRot();lab();flash(b,ROT.on?'Free rotate: twist with 2 fingers':'North fixed',true);msg(ROT.on?'Twist two fingers on the map to rotate it':'Map fixed to north');});
   return box;}});
 map.addControl(new RotControl());
 map._controlCorners.topcenter=L.DomUtil.create('div','leaflet-top leaflet-center',map._controlContainer);
@@ -564,6 +576,7 @@ async function loadFile(f){
     const k=Object.keys(z.files).find(n=>n.toLowerCase().endsWith('.kml'));txt=await z.files[k].async('string');}
   else txt=await f.text();
   const d=parseKml(txt);setData(d,true);
+  try{localStorage.setItem('rom_data',JSON.stringify(d));}catch(e){try{localStorage.setItem('rom_data',JSON.stringify({pts:d.pts,lines:[]}));$('count').textContent+=' (lines too large to save for next visit)';}catch(e2){}}
 }
 
 function lblVis(){$('map').classList.toggle('nolbl',!$('lbl').checked||map.getZoom()<18);}
@@ -580,7 +593,7 @@ function setData(d,fit){
   if(fit&&pts.length)map.fitBounds(L.latLngBounds(pts.map(p=>[p.lat,p.lon])).pad(.1));
   lblVis();if(last)update(last);}
 
-try{localStorage.removeItem('rom_data');}catch(e){}   // older versions kept a copy of the last map; remove it
+try{const s=localStorage.getItem('rom_data');if(s)setData(JSON.parse(s),true);}catch(e){}
 $('kml').onchange=e=>e.target.files[0]&&loadFile(e.target.files[0]).catch(err=>$('count').textContent='Could not read file: '+err.message);
 
 function setPos(lat,lon){
@@ -608,9 +621,7 @@ function setPos(lat,lon){
 
 const lockedWarn=()=>{msg('Shovel is locked. Tap the lock on the map to unlock');$('gpsinfo').textContent='Shovel is locked. Tap the lock button on the map to move it.';};
 $('drop').onclick=()=>{if(pinLocked){lockedWarn();return;}const c=map.getCenter();setPos(c.lat,c.lng);};
-let ctlTs=0;   // a tap on any map button must never place the pin underneath it
-['pointerdown','click'].forEach(t=>document.addEventListener(t,e=>{if(e.target.closest&&e.target.closest('.leaflet-control'))ctlTs=Date.now();},true));
-map.on('click',e=>{if(pinLocked||Date.now()-fsTs<700||Date.now()-ctlTs<700)return;setPos(e.latlng.lat,e.latlng.lng);});
+map.on('click',e=>{if(pinLocked||Date.now()-fsTs<700)return;setPos(e.latlng.lat,e.latlng.lng);});
 
 $('gps').onclick=()=>{
   if(!navigator.geolocation){$('gpsinfo').textContent='GPS is not available in this browser.';return;}
@@ -825,7 +836,7 @@ async function buildReportCanvas(){
     txt.push('Time: '+new Date().toLocaleString());
   } else {
     txt.push(
-      'ROM Quality Monitoring Report',
+      'ROM Face Quality Monitoring Report',
       'No loading unit position or blasthole data available',
       'Time: '+new Date().toLocaleString()
     );
@@ -901,6 +912,7 @@ function destList(){
     if(c.value!=='Others')return c.value;
     const o=$('destOther').value.trim();return o?'Others ('+o+')':'Others';});}
 $('destBox').onchange=()=>{
+  refreshSched('#destBox','schedBox');
   const oth=[...document.querySelectorAll('#destBox input')].find(c=>c.value==='Others').checked;
   $('destOther').style.display=oth?'block':'none';if(!oth)$('destOther').value='';
   if(photoImg||$('noPhoto').checked)renderPreview();};
@@ -926,10 +938,10 @@ $('save').onclick=async()=>{
 
 /* --- IndexedDB Storage for Face Photos & Reports Log --- */
 let db;
-const req=indexedDB.open('rom_face_db',2);
+const req=indexedDB.open('rom_face_db',3);
 req.onupgradeneeded=e=>{
   const d=e.target.result;
-  ['reports','stocks','shifts'].forEach(n=>{if(!d.objectStoreNames.contains(n))d.createObjectStore(n,{keyPath:'id',autoIncrement:true});});
+  ['reports','stocks','shifts','comps'].forEach(n=>{if(!d.objectStoreNames.contains(n))d.createObjectStore(n,{keyPath:'id',autoIncrement:true});});
 };
 req.onsuccess=e=>{db=e.target.result;renderLogList();renderExtra();shBuild();purgeOld();};
 
@@ -951,7 +963,7 @@ function saveReportLog(blob,res,loc,canvas){
       mine:$('mineName').value.trim(),
       pit:$('pitName').value.trim(),
       mrl:$('mrl').value.trim(),
-      dest:destList().join(', '),destArr:destList(),ore:$('faceOre').value,oreOther:$('faceOre').value==='Others'?$('faceOreOther').value.trim():'',noPhoto:(!photoImg&&$('noPhoto').checked)?$('noReason').value:'',title:'ROM quality (nearest '+res.n+' holes, '+(res.wt?'distance weighted':'simple average')+')',
+      dest:destList().join(', '),destArr:destList(),sched:readSched('schedBox'),ore:$('faceOre').value,oreOther:$('faceOre').value==='Others'?$('faceOreOther').value.trim():'',noPhoto:(!photoImg&&$('noPhoto').checked)?$('noReason').value:'',title:'ROM quality (nearest '+res.n+' holes, '+(res.wt?'distance weighted':'simple average')+')',
       img:reader.result,
       thumb
     };
@@ -1004,17 +1016,10 @@ $('logList').onclick=e=>{
     const file=dataUrlToFile(it.img,'ROM_Report_'+it.id+'.'+(/^data:image\/png/.test(it.img)?'png':'jpg'));
     const text='ROM face quality: Fe '+it.fe+'% | SiO2 '+it.si+'% | Al2O3 '+it.al+'% | P '+it.p+(it.mine?' | '+it.mine:'')+(it.pit?' '+it.pit:'')+(it.mrl?' | MRL: '+it.mrl+' m':'')+(it.dest?' | Destination: '+it.dest:'');
     try{
-      if(navigator.canShare&&navigator.canShare({files:[file]}))await navigator.share({files:[file],text,title:'ROM Quality Monitoring'});
+      if(navigator.canShare&&navigator.canShare({files:[file]}))await navigator.share({files:[file],text,title:'ROM Face Quality Monitoring'});
       else{const a=document.createElement('a');a.href=it.img;a.download=file.name;a.click();alert('This browser cannot share files directly, so the image was downloaded instead.');}
     }catch(err){if(!err||err.name!=='AbortError')alert('Could not open the share menu: '+(err&&err.message));}
   };};
-$('clearStock').onclick=()=>{
-  if(!confirm('Clear all stock entries and photos from this device?'))return;
-  if(!db)return;
-  const tx=db.transaction('stocks','readwrite');
-  tx.objectStore('stocks').clear();
-  tx.oncomplete=()=>{renderExtra();shBuild();};
-};
 $('clearLog').onclick=()=>{
   if(!confirm('Clear all stored reports and photos from this device?'))return;
   if(!db)return;
@@ -1035,6 +1040,7 @@ async function readImg(f){let s,w,h;
   const k=Math.min(1,1400/w),c=document.createElement('canvas');c.width=Math.round(w*k);c.height=Math.round(h*k);c.getContext('2d').drawImage(s,0,0,c.width,c.height);return c;}
 
 $('stDest').innerHTML=PLANTS.map(n=>`<label class="chk"><input type="checkbox" value="${escH(n)}"> ${escH(n)}</label>`).join('');
+$('stDest').onchange=()=>refreshSched('#stDest','stSchedBox');
 let stImg=null;{const m=recall('rom_mineName');if(PITS[m])$('stMine').value=m;}
 $('stPh').onchange=$('stPhUp').onchange=async e=>{const f=e.target.files[0];if(!f)return;
   try{stImg=await readImg(f);say2('stMsg','Stock photo added.');}catch(err){stImg=null;say2('stMsg','Could not read this photo. Try again.');}
@@ -1054,13 +1060,12 @@ $('stSave').onclick=()=>{
   const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,W,H);if(stImg)x.drawImage(stImg,0,0,W,ph);
   x.fillStyle=repCol();x.fillRect(0,ph,W,H-ph);x.fillStyle='#fff';x.textAlign='left';x.textBaseline='alphabetic';
   txt.forEach((t,i)=>{let fs=i<2?28:22;const b=i<2?'bold ':'';x.font=b+fs+'px sans-serif';while(fs>14&&x.measureText(t).width>W-48){fs--;x.font=b+fs+'px sans-serif';}x.fillText(t,24,ph+34+i*LH);});
-  const rec={date:now.toISOString(),name,mine,ore,oreOther:ore==='Others'?oreOt:'',fe:q[0],si:q[1],al:q[2],p:q[3],dest,img:c.toDataURL('image/jpeg',.88),text:'Stock '+name+' ('+mine+'): '+txt[1]+' | '+txt[2]};
+  const rec={date:now.toISOString(),name,mine,sched:readSched('stSchedBox'),ore,oreOther:ore==='Others'?oreOt:'',fe:q[0],si:q[1],al:q[2],p:q[3],dest,img:c.toDataURL('image/jpeg',.88),text:'Stock '+name+' ('+mine+'): '+txt[1]+' | '+txt[2]};
   const tx=db.transaction('stocks','readwrite');tx.objectStore('stocks').add(rec);
   tx.oncomplete=()=>{say2('stMsg','Stock entry saved. It now appears as a source in the shift report.');
-    ['stName','stFe','stSi','stAl','stP'].forEach(i=>$(i).value='');setOre('st','');document.querySelectorAll('#stDest input').forEach(c=>c.checked=false);stImg=null;renderExtra();shBuild();};
+    ['stName','stFe','stSi','stAl','stP'].forEach(i=>$(i).value='');setOre('st','');document.querySelectorAll('#stDest input').forEach(c=>c.checked=false);$('stSchedBox').innerHTML='';stImg=null;renderExtra();shBuild();};
   tx.onerror=()=>say2('stMsg','Could not save the stock entry.');};
 
-const BOTH_MINES='Noamundi & Katamati';
 const SHL={A:'A shift (6 AM to 2 PM)',B:'B shift (2 PM to 10 PM)',C:'C shift (10 PM to 6 AM)'},SHS={A:6,B:14,C:22};
 {const n=new Date(),h=n.getHours(),d=new Date(n);if(h<6)d.setDate(d.getDate()-1);
  $('shDate').value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
@@ -1072,8 +1077,8 @@ async function shBuild(){
   const prev={};document.querySelectorAll('#shSrc input').forEach(i=>prev[i.dataset.key]=i.value);
   const[w0,w1]=shWin(),inW=t=>{const d=new Date(t);return d>=w0&&d<w1;};
   const[fr,st]=await Promise.all([getAll('reports'),getAll('stocks')]);
-  const srcs=[...fr.filter(r=>inW(r.date)).map(r=>({k:'f'+r.id,lbl:'Face '+[r.mine,r.pit,r.mrl&&'MRL '+r.mrl].filter(Boolean).join(' '),tm:tm(r.date),ore:oreMix(r.ore),hasOre:!!r.ore,oreLbl:r.ore?oreLabel(r.ore,r.oreOther):'',fe:parseFloat(r.fe),si:parseFloat(r.si),al:parseFloat(r.al),p:parseFloat(r.p),dest:r.destArr||(r.dest?r.dest.split(', '):[])})),
-    ...st.filter(r=>inW(r.date)).map(r=>({k:'s'+r.id,lbl:'Stock '+[r.mine,r.name].filter(Boolean).join(' '),tm:tm(r.date),ore:oreMix(r.ore),hasOre:!!r.ore,oreLbl:r.ore?oreLabel(r.ore,r.oreOther):'',fe:r.fe,si:r.si,al:r.al,p:r.p,dest:r.dest||[]}))];
+  const srcs=[...fr.filter(r=>inW(r.date)).map(r=>({k:'f'+r.id,mine:r.mine||'',sched:r.sched||{},lbl:'Face '+[r.mine,r.pit,r.mrl&&'MRL '+r.mrl].filter(Boolean).join(' '),tm:tm(r.date),ore:oreMix(r.ore),hasOre:!!r.ore,oreLbl:r.ore?oreLabel(r.ore,r.oreOther):'',fe:parseFloat(r.fe),si:parseFloat(r.si),al:parseFloat(r.al),p:parseFloat(r.p),dest:r.destArr||(r.dest?r.dest.split(', '):[])})),
+    ...st.filter(r=>inW(r.date)).map(r=>({k:'s'+r.id,mine:r.mine||'',sched:r.sched||{},lbl:'Stock '+r.name+(r.mine?' ('+r.mine+')':''),tm:tm(r.date),ore:oreMix(r.ore),hasOre:!!r.ore,oreLbl:r.ore?oreLabel(r.ore,r.oreOther):'',fe:r.fe,si:r.si,al:r.al,p:r.p,dest:r.dest||[]}))];
   shRows=[];
   PLANTS.forEach(pl=>srcs.forEach(s=>{if(s.dest.some(d=>d===pl||(pl==='Others'&&d.startsWith('Others'))))shRows.push({pl,s});}));
   let h='',cur='';
@@ -1081,7 +1086,7 @@ async function shBuild(){
     const key=r.pl+'|'+r.s.k;
     h+=`<div class="src"><span>${escH(r.s.lbl)} <small class="note">(${r.s.tm})</small><br><small class="note">Fe ${fx(r.s.fe,2)} | SiO2 ${fx(r.s.si,2)} | Al2O3 ${fx(r.s.al,2)} | P ${fx(r.s.p,3)}</small><br><small class="note">${r.s.hasOre?'Ore: '+escH(r.s.oreLbl)+' ('+oreTxt(r.s.ore)+')':'Ore type not set'}</small></span><input type="number" min="0" inputmode="numeric" placeholder="trips" data-i="${i}" data-key="${escH(key)}" value="${escH(prev[key]||'')}"></div>`;});
   $('shSrc').innerHTML=h||'<p class="note">No face reports or stock entries with a destination were saved in this shift.</p>';
-  shPrev();}
+  shPrev();cpRender();}
 function shCalc(){
   const out=[];
   PLANTS.forEach(pl=>{let T=0,ow=0;const a={fe:0,si:0,al:0,p:0},w={fe:0,si:0,al:0,p:0},oa={HO:0,BD:0,FO:0,SO:0,Others:0},src=[];
@@ -1097,7 +1102,7 @@ function shCanvas(rows){
   const x=c.getContext('2d'),ink='#1b2a30';
   x.fillStyle='#fff';x.fillRect(0,0,W,H);x.fillStyle=repCol();x.fillRect(0,0,W,top-20);
   x.fillStyle='#fff';x.textAlign='left';x.font='bold 34px sans-serif';x.fillText('Shift End Report',24,46);
-  x.font='21px sans-serif';x.fillText([$('shDate').value.split('-').reverse().join('-'),SHL[$('shShift').value],BOTH_MINES].filter(Boolean).join('   |   '),24,84);
+  x.font='21px sans-serif';x.fillText([$('shDate').value.split('-').reverse().join('-'),SHL[$('shShift').value],$('mineName').value].filter(Boolean).join('   |   '),24,84);
   const xs=[24,480,625,745,870,985],put=(v,y,b,fs,ind)=>{fs=fs||24;ind=ind||0;v.forEach((t,i)=>{let f=fs;const bw=b?'bold ':'';x.font=bw+f+'px sans-serif';
     if(!i){while(f>14&&x.measureText(t).width>418-xs[0]-ind){f--;x.font=bw+f+'px sans-serif';}x.textAlign='left';x.fillText(t,xs[0]+ind,y);}
     else{x.textAlign='right';x.fillText(t,xs[i],y);}});};
@@ -1117,29 +1122,31 @@ function shCanvas(rows){
   }
   return c;}
 function shPrev(){const r=shCalc();if(!r.length){$('shPrev').style.display='none';return;}$('shPrev').src=shCanvas(r).toDataURL('image/jpeg',.85);$('shPrev').style.display='block';}
-$('shSrc').oninput=()=>{clearTimeout(shT);shT=setTimeout(shPrev,300);};
+$('shSrc').oninput=()=>{clearTimeout(shT);shT=setTimeout(()=>{shPrev();cpRender();},300);};
 $('shDate').onchange=$('shShift').onchange=$('shBuild').onclick=shBuild;
 $('shSave').onclick=()=>{
   const rows=shCalc();if(!rows.length){alert('Enter trips for at least one source first.');return;}
   if(!db){alert('Storage is not available on this device.');return;}
   const sl=q=>`   - ${q.lbl}: ${q.t} trips | Fe ${fx(q.fe,2)} | SiO2 ${fx(q.si,2)} | Al2O3 ${fx(q.al,2)} | P ${fx(q.p,3)}`;
   const text=SHL[$('shShift').value]+' '+$('shDate').value+'\n'+rows.map(r=>[`${r.pl}: ${r.T} trips | Fe ${fx(r.fe,2)} | SiO2 ${fx(r.si,2)} | Al2O3 ${fx(r.al,2)} | P ${fx(r.p,3)}${r.ore?' | Ore '+oreTxt(r.ore):''}`,...r.src.map(sl)].join('\n')).join('\n');
-  const rec={date:shWin()[0].toISOString(),shift:$('shShift').value,mine:BOTH_MINES,rows,text,img:shCanvas(rows).toDataURL('image/jpeg',.88)};
+  const rec={date:shWin()[0].toISOString(),shift:$('shShift').value,mine:$('mineName').value,rows,text,img:shCanvas(rows).toDataURL('image/jpeg',.88)};
   const tx=db.transaction('shifts','readwrite');tx.objectStore('shifts').add(rec);
   tx.oncomplete=()=>{say2('shMsg','Shift report saved. Use Share or Download below.');renderExtra();};
   tx.onerror=()=>say2('shMsg','Could not save the shift report.');};
 
-const xBtns=(s,id)=>`<div style="display:flex;flex-direction:column;gap:6px"><button class="xShare" data-s="${s}" data-id="${id}" style="padding:4px 8px;font-size:12px">Share</button><button class="xDl ghost" data-s="${s}" data-id="${id}" style="padding:4px 8px;font-size:12px">Download</button>${s==='stocks'?`<button class="editBtn ghost" data-s="stocks" data-id="${id}" style="padding:4px 8px;font-size:12px">Edit</button>`:''}${s==='shifts'?`<button class="csvBtn ghost" data-id="${id}" style="padding:4px 8px;font-size:12px">CSV</button>`:''}<button class="delBtn danger" data-s="${s}" data-id="${id}" style="padding:4px 8px;font-size:12px">Delete</button></div>`;
+const xBtns=(s,id)=>`<div style="display:flex;flex-direction:column;gap:6px"><button class="xShare" data-s="${s}" data-id="${id}" style="padding:4px 8px;font-size:12px">Share</button><button class="xDl ghost" data-s="${s}" data-id="${id}" style="padding:4px 8px;font-size:12px">Download</button>${s==='stocks'?`<button class="editBtn ghost" data-s="stocks" data-id="${id}" style="padding:4px 8px;font-size:12px">Edit</button>`:''}${s==='shifts'?`<button class="csvBtn ghost" data-id="${id}" style="padding:4px 8px;font-size:12px">CSV</button>`:''}${s==='comps'?`<button class="cpCsvBtn ghost" data-id="${id}" style="padding:4px 8px;font-size:12px">CSV</button>`:''}<button class="delBtn danger" data-s="${s}" data-id="${id}" style="padding:4px 8px;font-size:12px">Delete</button></div>`;
 async function renderExtra(){
   if(!db)return;
   const st=(await getAll('stocks')).sort((a,b)=>b.id-a.id),sh=(await getAll('shifts')).sort((a,b)=>b.id-a.id);
   $('stList').innerHTML=st.length?st.map(it=>`<div class="log-item"><img class="log-thumb" src="${it.img}" alt=""><div class="log-info"><b>${escH(it.name)}${it.mine?' ('+escH(it.mine)+')':''}: Fe ${fx(it.fe,2)} | SiO2 ${fx(it.si,2)} | Al2O3 ${fx(it.al,2)} | P ${fx(it.p,3)}</b><span>${new Date(it.date).toLocaleString()}</span><br><span>To: ${escH((it.dest||[]).join(', ')||'-')}</span><br><span>Ore: ${it.ore?escH(oreLine(it.ore,it.oreOther)):'not set'}</span></div>${xBtns('stocks',it.id)}</div>`).join(''):'No stock entries yet.';
-  $('shList').innerHTML=sh.length?sh.map(it=>`<div class="log-item"><img class="log-thumb" src="${it.img}" alt=""><div class="log-info"><b>${SHL[it.shift]} | ${new Date(it.date).toLocaleDateString()}</b><span>${escH(it.text).split('\n').slice(1).join('<br>')}</span></div>${xBtns('shifts',it.id)}</div>`).join(''):'No shift reports yet.';}
+  $('shList').innerHTML=sh.length?sh.map(it=>`<div class="log-item"><img class="log-thumb" src="${it.img}" alt=""><div class="log-info"><b>${SHL[it.shift]} | ${new Date(it.date).toLocaleDateString()}</b><span>${escH(it.text).split('\n').slice(1).join('<br>')}</span></div>${xBtns('shifts',it.id)}</div>`).join(''):'No shift reports yet.';
+  const cp=(await getAll('comps')).sort((a,b)=>b.id-a.id);
+  $('cpList').innerHTML=cp.length?cp.map(it=>`<div class="log-item"><img class="log-thumb" src="${it.img}" alt=""><div class="log-info"><b>${SHL[it.shift]} | ${new Date(it.date).toLocaleDateString()}</b><span>${escH(it.text).split('\n').slice(1).join('<br>')}</span></div>${xBtns('comps',it.id)}</div>`).join(''):'No compliance reports yet.';}
 document.addEventListener('click',e=>{const b=e.target.closest('.xShare,.xDl');if(!b||!db)return;
   db.transaction(b.dataset.s).objectStore(b.dataset.s).get(+b.dataset.id).onsuccess=async ev=>{const it=ev.target.result;if(!it)return;
-    const n=(b.dataset.s==='stocks'?'Stock_':'Shift_')+it.id+'.jpg',file=dataUrlToFile(it.img,n);
+    const n=(b.dataset.s==='stocks'?'Stock_':b.dataset.s==='comps'?'Compliance_':'Shift_')+it.id+'.jpg',file=dataUrlToFile(it.img,n);
     if(b.classList.contains('xShare')&&navigator.canShare&&navigator.canShare({files:[file]})){
-      try{await navigator.share(b.dataset.s==='shifts'?{files:[file]}:{files:[file],text:it.text||'',title:'ROM Quality Monitoring'});}catch(err){}}
+      try{await navigator.share(b.dataset.s==='shifts'||b.dataset.s==='comps'?{files:[file]}:{files:[file],text:it.text||'',title:'ROM Face Quality Monitoring'});}catch(err){}}
     else{const a=document.createElement('a');a.href=it.img;a.download=n;a.click();}};});
 
 
@@ -1179,8 +1186,10 @@ function openEdit(sn,id){
     h+=face?`<div class="fields"><label>Mine <select id="edMine"><option value="">Select mine</option>${Object.keys(PITS).map(n=>`<option${n===it.mine?' selected':''}>${n}</option>`).join('')}</select></label><label>Pit <select id="edPit"></select></label><label>MRL of loading unit (m) <input id="edMrl" type="number" step="any" inputmode="decimal" value="${escH(it.mrl||'')}"></label></div>`
       :`<div class="fields"><label>Mine <select id="edSMine"><option value="">Select mine</option>${['Noamundi','Katamati'].map(n=>`<option${n===it.mine?' selected':''}>${n}</option>`).join('')}</select></label><label>Stock name <input id="edName" type="text" maxlength="40" value="${escH(it.name)}"></label></div><div class="q4"><label>Fe %<input id="edFe" type="number" step="any" inputmode="decimal" value="${num(it.fe)}"></label><label>SiO2 %<input id="edSi" type="number" step="any" inputmode="decimal" value="${num(it.si)}"></label><label>Al2O3 %<input id="edAl" type="number" step="any" inputmode="decimal" value="${num(it.al)}"></label><label>P %<input id="edP" type="number" step="any" inputmode="decimal" value="${num(it.p)}"></label></div>`;
     h+=`<div class="fields"><label>Ore type <select id="edOre">${oreOptions(it.ore)}</select></label><label id="edOreOtherL" style="display:${it.ore==='Others'?'block':'none'}">Other ore type <input id="edOreOther" type="text" maxlength="30" value="${escH(it.oreOther||'')}"></label></div>`;
-    h+=`<p class="note" style="margin:10px 0 6px">Feeding to</p><div class="dest">${PLANTS.map(n=>`<label class="chk"><input type="checkbox" value="${escH(n)}"${dl.some(d=>d===n||(n==='Others'&&d.startsWith('Others')))?' checked':''}> ${escH(n)}</label>`).join('')}</div><input id="edOther" type="text" maxlength="40" placeholder="Others: stock name or dump name" value="${escH(ot)}" style="width:100%;margin-top:8px;font:inherit;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)"><div class="row" style="margin-top:12px"><button id="edSave">Save changes</button><button id="edCancel" class="ghost">Cancel</button></div><div id="edMsg" class="note warn"></div>`;
+    h+=`<p class="note" style="margin:10px 0 6px">Feeding to</p><div class="dest">${PLANTS.map(n=>`<label class="chk"><input type="checkbox" value="${escH(n)}"${dl.some(d=>d===n||(n==='Others'&&d.startsWith('Others')))?' checked':''}> ${escH(n)}</label>`).join('')}</div><input id="edOther" type="text" maxlength="40" placeholder="Others: stock name or dump name" value="${escH(ot)}" style="width:100%;margin-top:8px;font:inherit;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)"><div id="edSchedBox" class="sched"></div><div class="row" style="margin-top:12px"><button id="edSave">Save changes</button><button id="edCancel" class="ghost">Cancel</button></div><div id="edMsg" class="note warn"></div>`;
     $('edBox').innerHTML=h;$('edOv').style.display='block';
+    $('edSchedBox').innerHTML=schedHtml(PLANTS.filter(n=>dl.some(d=>d===n||(n==='Others'&&d.startsWith('Others')))),it.sched||{});
+    $('edBox').querySelector('.dest').onchange=()=>refreshSched('#edBox .dest','edSchedBox');
     if(face){const fill=sel=>{const m=$('edMine').value;$('edPit').innerHTML='<option value="">'+(m?'Select pit':'Select mine first')+'</option>'+(PITS[m]||[]).map(n=>`<option${n===sel?' selected':''}>${n}</option>`).join('');$('edPit').disabled=!m;};fill(it.pit);$('edMine').onchange=()=>fill('');}
     $('edOre').onchange=()=>{$('edOreOtherL').style.display=$('edOre').value==='Others'?'block':'none';};
     $('edCancel').onclick=()=>{$('edOv').style.display='none';};
@@ -1188,6 +1197,7 @@ function openEdit(sn,id){
       const d=[...document.querySelectorAll('#edBox .dest input:checked')].map(c=>{if(c.value!=='Others')return c.value;const o=$('edOther').value.trim();return o?'Others ('+o+')':'Others';});
       const old={...it},fail=t=>{$('edMsg').textContent=t;};
       if($('edOre').value==='Others'&&!$('edOreOther').value.trim())return fail('Enter the ore type.');
+      it.sched=readSched('edSchedBox');
       it.ore=$('edOre').value;it.oreOther=it.ore==='Others'?$('edOreOther').value.trim():'';
       if(face){it.mine=$('edMine').value;it.pit=$('edPit').value;it.mrl=$('edMrl').value.trim();it.destArr=d;it.dest=d.join(', ');
         const r=await redrawFace(old,it);if(!r)return fail('Could not redraw the report image.');it.img=r.img;it.thumb=r.thumb;}
@@ -1220,10 +1230,10 @@ function shCsv(rows,date,shift,mine){
   return '\ufeff'+L.map(a=>a.map(csvq).join(',')).join('\r\n');}
 function dlText(name,text){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/csv;charset=utf-8'}));a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000);}
 $('shCsv').onclick=()=>{const rows=shCalc();if(!rows.length){alert('Enter trips for at least one source first.');return;}
-  dlText('Shift_Report_'+$('shDate').value+'_'+$('shShift').value+'.csv',shCsv(rows,$('shDate').value,$('shShift').value,BOTH_MINES));};
+  dlText('Shift_Report_'+$('shDate').value+'_'+$('shShift').value+'.csv',shCsv(rows,$('shDate').value,$('shShift').value,$('mineName').value));};
 document.addEventListener('click',e=>{const b=e.target.closest('.csvBtn');if(!b||!db)return;
   db.transaction('shifts').objectStore('shifts').get(+b.dataset.id).onsuccess=ev=>{const it=ev.target.result;if(!it)return;
-    dlText('Shift_Report_'+ymd(new Date(it.date))+'_'+it.shift+'.csv',shCsv(it.rows,ymd(new Date(it.date)),it.shift,BOTH_MINES));};});
+    dlText('Shift_Report_'+ymd(new Date(it.date))+'_'+it.shift+'.csv',shCsv(it.rows,ymd(new Date(it.date)),it.shift,it.mine));};});
 
 
 /* ---------- Auto-delete logs 2 hours after their shift ends ---------- */
@@ -1232,7 +1242,7 @@ function shiftExpiry(t){const d=new Date(t),h=d.getHours(),b=new Date(d);b.setMi
   return b.getTime()+10*3600*1000;}
 async function purgeOld(){
   if(!db)return;const now=Date.now();let n=0;
-  for(const sn of ['reports','stocks','shifts']){
+  for(const sn of ['reports','stocks','shifts','comps']){
     const old=(await getAll(sn)).filter(r=>r.date&&!isNaN(new Date(r.date))&&shiftExpiry(r.date)<=now);
     if(!old.length)continue;
     const tx=db.transaction(sn,'readwrite');old.forEach(r=>tx.objectStore(sn).delete(r.id));
@@ -1298,6 +1308,104 @@ $('shPdf').onclick=async()=>{
     dlBlob('Shift_Report_'+$('shDate').value+'_'+$('shShift').value+'_with_photos.pdf',buildPdf(imgs));
     say2('shMsg','PDF saved: shift table plus '+(imgs.length-1)+' face/stock log image(s).');
   }catch(err){say2('shMsg','Could not build the PDF.');}};
+
+
+/* ---------- Scheduled feed % (optional) on faces and stocks ---------- */
+function schedHtml(plants,vals){
+  return plants.length?'<p class="note" style="margin:8px 0 4px">Scheduled feed % (optional): planned share of the plant feed from this face or stock</p>'+plants.map(pl=>`<label class="schedRow"><span>${escH(pl)}</span><input type="number" min="0" max="100" step="any" inputmode="decimal" placeholder="%" data-pl="${escH(pl)}" value="${vals&&vals[pl]!=null?vals[pl]:''}"></label>`).join(''):'';}
+function readSched(boxId){const o={};document.querySelectorAll('#'+boxId+' input[data-pl]').forEach(i=>{const v=i.value.trim();if(v!==''&&!isNaN(+v))o[i.dataset.pl]=+v;});return o;}
+function refreshSched(destSel,boxId){const cur=readSched(boxId),pl=[...document.querySelectorAll(destSel+' input:checked')].map(c=>c.value);$(boxId).innerHTML=schedHtml(pl,cur);}
+
+/* ---------- Schedule compliance ---------- */
+let cpDraft={sched:{},extra:[]},cpKey='',cpOn=false,cpT=null;
+$('cpPl').innerHTML=PLANTS.map(n=>`<option>${escH(n)}</option>`).join('');
+function cpLoad(){const k='rom_cp_'+$('shDate').value+'_'+$('shShift').value;if(k===cpKey)return;cpKey=k;
+  try{cpDraft=JSON.parse(localStorage.getItem(k))||{};}catch(e){cpDraft={};}cpDraft.sched=cpDraft.sched||{};cpDraft.extra=cpDraft.extra||[];}
+function cpSaveDraft(){try{localStorage.setItem(cpKey,JSON.stringify(cpDraft));}catch(e){}}
+function cpItems(){
+  const items=[],trips=i=>+((document.querySelector('#shSrc input[data-i="'+i+'"]')||{}).value)||0;
+  shRows.forEach((r,i)=>{const key=r.pl+'|'+r.s.k,ov=cpDraft.sched[key],sc=r.s.sched&&r.s.sched[r.pl]!==undefined?r.s.sched[r.pl]:null;
+    items.push({pl:r.pl,key,lbl:r.s.lbl,mine:r.s.mine||'',type:r.s.k[0]==='s'?'Stock':'Face',trips:trips(i),sched:ov!==undefined?ov:sc,extra:false});});
+  cpDraft.extra.forEach((e,j)=>items.push({pl:e.pl,key:'x#'+j,lbl:e.type+' '+e.name+(e.mine?' ('+e.mine+')':''),mine:e.mine,type:e.type,trips:0,sched:e.sched,extra:true,xi:j}));
+  return items;}
+function cpCompute(){
+  const items=cpItems(),plants=[];
+  PLANTS.forEach(pl=>{const it=items.filter(x=>x.pl===pl);if(!it.length)return;
+    const T=it.reduce((a,x)=>a+x.trips,0),S=it.reduce((a,x)=>a+(+x.sched||0),0);
+    const rows=it.map(x=>{const act=T?x.trips/T*100:0,plan=S>0?(+x.sched||0)/S*100:null,
+      status=x.trips>0?((plan!==null&&plan<=0)?'Unscheduled':'Operated'):((+x.sched||0)>0?'Not operated':'No feed');return{...x,act,plan,status};});
+    plants.push({pl,T,S,rows,score:S>0?(T>0?rows.reduce((a,x)=>a+Math.min(x.act,x.plan||0),0):0):null});});
+  const mm={};
+  plants.forEach(p=>{if(!(p.S>0))return;p.rows.forEach(x=>{const mine=x.mine||'Unassigned',o=mm[mine]||(mm[mine]={plan:0,act:0,met:0}),pt=p.T*(x.plan||0)/100;o.plan+=pt;o.act+=x.trips;o.met+=Math.min(pt,x.trips);});});
+  const mines=Object.keys(mm).map(k=>({mine:k,plan:mm[k].plan,act:mm[k].act,score:mm[k].plan>0?mm[k].met/mm[k].plan*100:null}));
+  let ws=0,wt=0;plants.forEach(p=>{if(p.score!==null&&p.T>0){ws+=p.score*p.T;wt+=p.T;}});
+  return{plants,mines,overall:wt?ws/wt:null,has:plants.some(p=>p.S>0)};}
+function cpRender(){
+  if(!$('cpSrc'))return;cpLoad();
+  const items=cpItems(),pls=PLANTS.filter(pl=>items.some(x=>x.pl===pl));let h='';
+  pls.forEach(pl=>{h+=`<b style="display:block;margin-top:10px">${escH(pl)}</b>`;
+    items.filter(x=>x.pl===pl).forEach(x=>{h+=`<div class="src"><span>${escH(x.lbl)}<br><small class="note">${x.extra?'Scheduled, not operated':'Trips fed: '+x.trips}</small></span><span style="display:flex;gap:6px;align-items:center"><input type="number" min="0" max="100" step="any" inputmode="decimal" placeholder="Sched %" data-ck="${escH(x.key)}" value="${x.sched==null?'':x.sched}">${x.extra?`<button class="cpDel ghost" data-xi="${x.xi}" style="padding:4px 8px" aria-label="Remove">\u00d7</button>`:''}</span></div>`;});});
+  $('cpSrc').innerHTML=h||'<p class="note">No faces or stocks with a destination in this shift yet. You can still add scheduled ones below.</p>';
+  cpPrev();}
+$('cpSrc').oninput=e=>{const i=e.target.closest('input[data-ck]');if(!i)return;const k=i.dataset.ck,v=i.value.trim(),val=v===''||isNaN(+v)?null:+v;
+  if(k.indexOf('x#')===0)cpDraft.extra[+k.slice(2)].sched=val;else cpDraft.sched[k]=val;
+  cpSaveDraft();clearTimeout(cpT);cpT=setTimeout(cpPrev,300);};
+$('cpSrc').onclick=e=>{const b=e.target.closest('.cpDel');if(!b)return;cpDraft.extra.splice(+b.dataset.xi,1);cpSaveDraft();cpRender();};
+$('cpAdd').onclick=()=>{cpLoad();
+  const pl=$('cpPl').value,type=$('cpType').value,mine=$('cpMine').value,name=$('cpName').value.trim(),sv=$('cpSch').value.trim();
+  if(!name){alert('Enter the face or stock name.');return;}if(!mine){alert('Select the mine.');return;}if(sv===''||isNaN(+sv)){alert('Enter the scheduled feed %.');return;}
+  cpDraft.extra.push({pl,type,mine,name,sched:+sv});cpSaveDraft();$('cpName').value='';$('cpSch').value='';cpRender();say2('cpMsg','Added to '+pl+'.');};
+function cpCanvas(r){
+  const W=1000,PH=56,CH=38,RH=42,top=118,ink='#1b2a30',cx=[24,600,730,860,985],need=r.plants.some(p=>p.S>0&&Math.abs(p.S-100)>0.5);
+  let H=top;r.plants.forEach(p=>{H+=PH+CH+p.rows.length*RH+RH+18;});
+  if(r.mines.length)H+=46+CH+r.mines.length*RH+18;H+=56+(need?34:0)+10;
+  const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+  const col=v=>v===null?'#666':v>=90?'#1e7d32':v>=75?'#b26a00':'#b3261e',sg=v=>(v>0?'+':'')+fx(v,1);
+  x.fillStyle='#fff';x.fillRect(0,0,W,H);x.fillStyle=repCol();x.fillRect(0,0,W,top-20);
+  x.fillStyle='#fff';x.textAlign='left';x.font='bold 34px sans-serif';x.fillText('Schedule Compliance Report',24,46);
+  x.font='21px sans-serif';x.fillText([$('shDate').value.split('-').reverse().join('-'),SHL[$('shShift').value],$('mineName').value].filter(Boolean).join('   |   '),24,84);
+  const cell=(t,i,yy,fs,b,color)=>{x.font=(b?'bold ':'')+fs+'px sans-serif';x.fillStyle=color||ink;x.textAlign=i?'right':'left';x.fillText(t,cx[i],yy);};
+  const lab=(t,yy,color)=>{let f=22;x.font=f+'px sans-serif';while(f>13&&x.measureText(t).width>480){f--;x.font=f+'px sans-serif';}x.fillStyle=color||ink;x.textAlign='left';x.fillText(t,24,yy);};
+  let y=top;
+  r.plants.forEach(p=>{
+    x.fillStyle='#e8eef0';x.fillRect(0,y,W,PH);cell(p.pl,0,y+38,28,true);
+    x.font='bold 26px sans-serif';x.fillStyle=col(p.score);x.textAlign='right';x.fillText(p.score===null?'No schedule entered':'Compliance '+p.score.toFixed(0)+'%',985,y+38);
+    y+=PH;['Face / Stock','Trips','Sched %','Actual %','Var (pp)'].forEach((t,i)=>cell(t,i,y+26,20,true,'#555'));y+=CH;
+    p.rows.forEach((q,i)=>{if(i%2){x.fillStyle='#f3f6f6';x.fillRect(0,y,W,RH);}
+      const bad=q.status==='Not operated',unsch=q.status==='Unscheduled';
+      lab(q.lbl+(bad?' (not operated)':unsch?' (unscheduled)':''),y+29,bad?'#b3261e':unsch?'#b26a00':ink);
+      cell(String(q.trips),1,y+29,22);cell(q.sched==null?'-':fx(q.sched,1),2,y+29,22);cell(fx(q.act,1),3,y+29,22);cell(q.plan==null?'-':sg(q.act-q.plan),4,y+29,22);y+=RH;});
+    x.fillStyle=ink;x.fillRect(0,y,W,2);cell('Total',0,y+30,22,true);cell(String(p.T),1,y+30,22,true);cell(p.S>0?fx(p.S,1):'-',2,y+30,22,true);cell(p.T?'100.0':'-',3,y+30,22,true);y+=RH+18;});
+  if(r.mines.length){
+    x.fillStyle=repCol();x.fillRect(0,y,W,46);x.fillStyle='#fff';x.textAlign='left';x.font='bold 26px sans-serif';x.fillText('Mine-wise compliance',24,y+32);y+=46;
+    const mx=[24,640,810,985],mc=(t,i,yy,b,color)=>{x.font=(b?'bold ':'')+'22px sans-serif';x.fillStyle=color||ink;x.textAlign=i?'right':'left';x.fillText(t,mx[i],yy);};
+    ['Mine','Planned trips','Actual trips','Compliance'].forEach((t,i)=>{x.font='bold 20px sans-serif';x.fillStyle='#555';x.textAlign=i?'right':'left';x.fillText(t,mx[i],y+26);});y+=CH;
+    r.mines.forEach((m,i)=>{if(i%2){x.fillStyle='#f3f6f6';x.fillRect(0,y,W,RH);}mc(m.mine,0,y+29,true);mc(fx(m.plan,1),1,y+29);mc(fx(m.act,0),2,y+29);mc(m.score==null?'-':m.score.toFixed(0)+'%',3,y+29,true,col(m.score));y+=RH;});y+=18;}
+  x.fillStyle=ink;x.fillRect(0,y,W,2);x.textAlign='left';x.font='bold 26px sans-serif';x.fillText('Overall shift compliance (trip-weighted): ',24,y+38);
+  const lw=x.measureText('Overall shift compliance (trip-weighted): ').width;x.fillStyle=col(r.overall);x.fillText(r.overall==null?'-':r.overall.toFixed(0)+'%',24+lw,y+38);y+=56;
+  if(need){x.fillStyle='#555';x.font='18px sans-serif';x.fillText('* Scheduled % did not total 100 for some plants; compared after scaling to 100.',24,y+16);}
+  return c;}
+function cpPrev(){const im=$('cpPrev');if(!cpOn){im.style.display='none';return;}const r=cpCompute();if(!r.has){im.style.display='none';return;}im.src=cpCanvas(r).toDataURL('image/jpeg',.88);im.style.display='block';}
+$('cpGen').onclick=()=>{const r=cpCompute();if(!r.has){alert('Enter the scheduled feed % for at least one face or stock first.');return;}cpOn=true;cpPrev();say2('cpMsg','Compliance report generated. Save it or export the CSV.');};
+function cpText(r){return SHL[$('shShift').value]+' '+$('shDate').value+'\n'+r.plants.map(p=>p.pl+': '+(p.score==null?'no schedule':p.score.toFixed(0)+'%')).join(' | ')+'\nOverall: '+(r.overall==null?'-':r.overall.toFixed(0)+'%');}
+$('cpSave').onclick=()=>{const r=cpCompute();if(!r.has){alert('Enter the scheduled feed % for at least one face or stock first.');return;}
+  if(!db){alert('Storage is not available on this device.');return;}
+  const rec={date:shWin()[0].toISOString(),shift:$('shShift').value,mine:$('mineName').value,plants:r.plants,mines:r.mines,overall:r.overall,text:cpText(r),img:cpCanvas(r).toDataURL('image/jpeg',.88)};
+  const tx=db.transaction('comps','readwrite');tx.objectStore('comps').add(rec);
+  tx.oncomplete=()=>{cpOn=true;cpPrev();say2('cpMsg','Compliance report saved. Use Share or Download below.');renderExtra();};
+  tx.onerror=()=>say2('cpMsg','Could not save the compliance report.');};
+function cpCsvText(date,shift,r){
+  const L=[['Date','Shift','Plant','Type','Source','Mine','Status','Scheduled %','Scheduled % (scaled to 100)','Trips','Actual %','Variance (pp)','Plant trips','Plant scheduled total %','Plant compliance %']],b=[date,SHL[shift]];
+  r.plants.forEach(p=>p.rows.forEach(x=>L.push([...b,p.pl,x.type,x.lbl,x.mine,x.status,x.sched==null?'':x.sched,x.plan==null?'':cn(x.plan,1),x.trips,cn(x.act,1),x.plan==null?'':cn(x.act-x.plan,1),p.T,p.S||'',p.score==null?'':cn(p.score,1)])));
+  L.push([]);L.push(['Date','Shift','Mine','Planned trips','Actual trips','Mine compliance %']);
+  r.mines.forEach(m=>L.push([...b,m.mine,cn(m.plan,1),cn(m.act,1),m.score==null?'':cn(m.score,1)]));
+  L.push([...b,'OVERALL','','',r.overall==null?'':cn(r.overall,1)]);
+  return '\ufeff'+L.map(a=>a.map(csvq).join(',')).join('\r\n');}
+$('cpCsv').onclick=()=>{const r=cpCompute();if(!r.has){alert('Enter the scheduled feed % for at least one face or stock first.');return;}
+  dlText('Schedule_Compliance_'+$('shDate').value+'_'+$('shShift').value+'.csv',cpCsvText($('shDate').value,$('shShift').value,r));};
+document.addEventListener('click',e=>{const b=e.target.closest('.cpCsvBtn');if(!b||!db)return;
+  db.transaction('comps').objectStore('comps').get(+b.dataset.id).onsuccess=ev=>{const it=ev.target.result;if(!it)return;
+    dlText('Schedule_Compliance_'+ymd(new Date(it.date))+'_'+it.shift+'.csv',cpCsvText(ymd(new Date(it.date)),it.shift,it));};});
 
 const THEMES=[['green','Green','#0d5c63'],['blue','Blue','#1d4ed8'],['purple','Purple','#6d28d9'],['orange','Orange','#c2410c'],['maroon','Maroon','#b91c1c'],['light','Light','#e2e8f0'],['dark','Dark','#12191c']];
 $('themeMenu').innerHTML=THEMES.map(t=>`<button data-t="${t[0]}"><span class="sw" style="background:${t[2]}"></span>${t[1]}</button>`).join('');
