@@ -246,6 +246,15 @@ main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
 </section>
 
 <section>
+  <h2>Import entries by code</h2>
+  <p class="note">The sampler of the other mine can send you the code of one entry (Code button in the history list) or of all their entries for the shift (button below), as a message or as a file. Paste the code(s) here or open the file. The quality, ore type, destination and scheduled % are added to your lists and shift report. Photos and maps are not copied. Imported entries show a plain text card, and you enter the trips as usual.</p>
+  <textarea id="impTxt" rows="4" placeholder="Paste code(s) here" style="width:100%;font:13px ui-monospace,Menlo,monospace;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)"></textarea>
+  <div class="row"><button id="impBtn">Import</button><label class="btn ghost">Open file<input id="impFileIn" type="file" accept=".txt,text/plain"></label></div>
+  <div class="row"><button id="impShare" class="ghost">Share codes of my entries (this shift)</button><button id="impFile" class="ghost">Share my entries as a file</button></div>
+  <div id="impMsg" class="note" style="color:var(--acc);font-weight:600"></div>
+</section>
+
+<section>
   <h2>Shift end report</h2>
   <div class="fields"><label>Date (shift start) <input id="shDate" type="date"></label>
   <label>Shift <select id="shShift"><option value="A">A shift (6 AM to 2 PM)</option><option value="B">B shift (2 PM to 10 PM)</option><option value="C">C shift (10 PM to 6 AM)</option></select></label></div>
@@ -963,7 +972,7 @@ function saveReportLog(blob,res,loc,canvas){
       mine:$('mineName').value.trim(),
       pit:$('pitName').value.trim(),
       mrl:$('mrl').value.trim(),
-      dest:destList().join(', '),destArr:destList(),sched:readSched('schedBox'),ore:$('faceOre').value,oreOther:$('faceOre').value==='Others'?$('faceOreOther').value.trim():'',noPhoto:(!photoImg&&$('noPhoto').checked)?$('noReason').value:'',title:'ROM quality (nearest '+res.n+' holes, '+(res.wt?'distance weighted':'simple average')+')',
+      dest:destList().join(', '),destArr:destList(),uid:newUid($('mineName').value.trim()),sched:readSched('schedBox'),ore:$('faceOre').value,oreOther:$('faceOre').value==='Others'?$('faceOreOther').value.trim():'',noPhoto:(!photoImg&&$('noPhoto').checked)?$('noReason').value:'',title:'ROM quality (nearest '+res.n+' holes, '+(res.wt?'distance weighted':'simple average')+')',
       img:reader.result,
       thumb
     };
@@ -994,10 +1003,11 @@ function renderLogList(){
         <div class="log-info">
           <b>Fe ${it.fe}% | SiO2 ${it.si}% | Al2O3 ${it.al}% | P ${it.p}</b>
           <span>${new Date(it.date).toLocaleString()}</span><br>
-          <span>Loc: ${it.loc} | Mix: ${it.mix}${it.ore?' | Ore: '+escH(oreLabel(it.ore,it.oreOther)):''}</span>${logDetails(it)}
+          <span>Loc: ${it.loc} | Mix: ${it.mix}${it.ore?' | Ore: '+escH(oreLabel(it.ore,it.oreOther)):''}${it.uid?' | ID: '+escH(it.uid):''}${it.imported?' | Imported':''}</span>${logDetails(it)}
         </div>
         <div style="display:flex;flex-direction:column;gap:6px">
           <button class="shareBtn" data-id="${it.id}" style="padding:4px 8px;font-size:12px">Share</button>
+          <button class="codeBtn ghost" data-s="reports" data-id="${it.id}" style="padding:4px 8px;font-size:12px">Code</button>
           <button class="editBtn ghost" data-s="reports" data-id="${it.id}" style="padding:4px 8px;font-size:12px">Edit</button>
           <button class="delBtn danger" data-s="reports" data-id="${it.id}" style="padding:4px 8px;font-size:12px">Delete</button>
           <a href="${it.img}" download="ROM_Report_${it.id}.${/^data:image\/png/.test(it.img)?'png':'jpg'}" class="btn ghost" style="padding:4px 8px;font-size:12px;text-decoration:none">Download</a>
@@ -1060,7 +1070,7 @@ $('stSave').onclick=()=>{
   const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,W,H);if(stImg)x.drawImage(stImg,0,0,W,ph);
   x.fillStyle=repCol();x.fillRect(0,ph,W,H-ph);x.fillStyle='#fff';x.textAlign='left';x.textBaseline='alphabetic';
   txt.forEach((t,i)=>{let fs=i<2?28:22;const b=i<2?'bold ':'';x.font=b+fs+'px sans-serif';while(fs>14&&x.measureText(t).width>W-48){fs--;x.font=b+fs+'px sans-serif';}x.fillText(t,24,ph+34+i*LH);});
-  const rec={date:now.toISOString(),name,mine,sched:readSched('stSchedBox'),ore,oreOther:ore==='Others'?oreOt:'',fe:q[0],si:q[1],al:q[2],p:q[3],dest,img:c.toDataURL('image/jpeg',.88),text:'Stock '+name+' ('+mine+'): '+txt[1]+' | '+txt[2]};
+  const rec={date:now.toISOString(),uid:newUid(mine),name,mine,sched:readSched('stSchedBox'),ore,oreOther:ore==='Others'?oreOt:'',fe:q[0],si:q[1],al:q[2],p:q[3],dest,img:c.toDataURL('image/jpeg',.88),text:'Stock '+name+' ('+mine+'): '+txt[1]+' | '+txt[2]};
   const tx=db.transaction('stocks','readwrite');tx.objectStore('stocks').add(rec);
   tx.oncomplete=()=>{say2('stMsg','Stock entry saved. It now appears as a source in the shift report.');
     ['stName','stFe','stSi','stAl','stP'].forEach(i=>$(i).value='');setOre('st','');document.querySelectorAll('#stDest input').forEach(c=>c.checked=false);$('stSchedBox').innerHTML='';stImg=null;renderExtra();shBuild();};
@@ -1134,11 +1144,11 @@ $('shSave').onclick=()=>{
   tx.oncomplete=()=>{say2('shMsg','Shift report saved. Use Share or Download below.');renderExtra();};
   tx.onerror=()=>say2('shMsg','Could not save the shift report.');};
 
-const xBtns=(s,id)=>`<div style="display:flex;flex-direction:column;gap:6px"><button class="xShare" data-s="${s}" data-id="${id}" style="padding:4px 8px;font-size:12px">Share</button><button class="xDl ghost" data-s="${s}" data-id="${id}" style="padding:4px 8px;font-size:12px">Download</button>${s==='stocks'?`<button class="editBtn ghost" data-s="stocks" data-id="${id}" style="padding:4px 8px;font-size:12px">Edit</button>`:''}${s==='shifts'?`<button class="csvBtn ghost" data-id="${id}" style="padding:4px 8px;font-size:12px">CSV</button>`:''}${s==='comps'?`<button class="cpCsvBtn ghost" data-id="${id}" style="padding:4px 8px;font-size:12px">CSV</button>`:''}<button class="delBtn danger" data-s="${s}" data-id="${id}" style="padding:4px 8px;font-size:12px">Delete</button></div>`;
+const xBtns=(s,id)=>`<div style="display:flex;flex-direction:column;gap:6px"><button class="xShare" data-s="${s}" data-id="${id}" style="padding:4px 8px;font-size:12px">Share</button><button class="xDl ghost" data-s="${s}" data-id="${id}" style="padding:4px 8px;font-size:12px">Download</button>${s==='stocks'?`<button class="editBtn ghost" data-s="stocks" data-id="${id}" style="padding:4px 8px;font-size:12px">Edit</button>`:''}${s==='shifts'?`<button class="csvBtn ghost" data-id="${id}" style="padding:4px 8px;font-size:12px">CSV</button>`:''}${s==='stocks'?`<button class="codeBtn ghost" data-s="stocks" data-id="${id}" style="padding:4px 8px;font-size:12px">Code</button>`:''}${s==='comps'?`<button class="cpCsvBtn ghost" data-id="${id}" style="padding:4px 8px;font-size:12px">CSV</button>`:''}<button class="delBtn danger" data-s="${s}" data-id="${id}" style="padding:4px 8px;font-size:12px">Delete</button></div>`;
 async function renderExtra(){
   if(!db)return;
   const st=(await getAll('stocks')).sort((a,b)=>b.id-a.id),sh=(await getAll('shifts')).sort((a,b)=>b.id-a.id);
-  $('stList').innerHTML=st.length?st.map(it=>`<div class="log-item"><img class="log-thumb" src="${it.img}" alt=""><div class="log-info"><b>${escH(it.name)}${it.mine?' ('+escH(it.mine)+')':''}: Fe ${fx(it.fe,2)} | SiO2 ${fx(it.si,2)} | Al2O3 ${fx(it.al,2)} | P ${fx(it.p,3)}</b><span>${new Date(it.date).toLocaleString()}</span><br><span>To: ${escH((it.dest||[]).join(', ')||'-')}</span><br><span>Ore: ${it.ore?escH(oreLine(it.ore,it.oreOther)):'not set'}</span></div>${xBtns('stocks',it.id)}</div>`).join(''):'No stock entries yet.';
+  $('stList').innerHTML=st.length?st.map(it=>`<div class="log-item"><img class="log-thumb" src="${it.img}" alt=""><div class="log-info"><b>${escH(it.name)}${it.mine?' ('+escH(it.mine)+')':''}: Fe ${fx(it.fe,2)} | SiO2 ${fx(it.si,2)} | Al2O3 ${fx(it.al,2)} | P ${fx(it.p,3)}</b><span>${new Date(it.date).toLocaleString()}</span><br><span>To: ${escH((it.dest||[]).join(', ')||'-')}</span><br><span>Ore: ${it.ore?escH(oreLine(it.ore,it.oreOther)):'not set'}${it.uid?' | ID: '+escH(it.uid):''}${it.imported?' | Imported':''}</span></div>${xBtns('stocks',it.id)}</div>`).join(''):'No stock entries yet.';
   $('shList').innerHTML=sh.length?sh.map(it=>`<div class="log-item"><img class="log-thumb" src="${it.img}" alt=""><div class="log-info"><b>${SHL[it.shift]} | ${new Date(it.date).toLocaleDateString()}</b><span>${escH(it.text).split('\n').slice(1).join('<br>')}</span></div>${xBtns('shifts',it.id)}</div>`).join(''):'No shift reports yet.';
   const cp=(await getAll('comps')).sort((a,b)=>b.id-a.id);
   $('cpList').innerHTML=cp.length?cp.map(it=>`<div class="log-item"><img class="log-thumb" src="${it.img}" alt=""><div class="log-info"><b>${SHL[it.shift]} | ${new Date(it.date).toLocaleDateString()}</b><span>${escH(it.text).split('\n').slice(1).join('<br>')}</span></div>${xBtns('comps',it.id)}</div>`).join(''):'No compliance reports yet.';}
@@ -1406,6 +1416,90 @@ $('cpCsv').onclick=()=>{const r=cpCompute();if(!r.has){alert('Enter the schedule
 document.addEventListener('click',e=>{const b=e.target.closest('.cpCsvBtn');if(!b||!db)return;
   db.transaction('comps').objectStore('comps').get(+b.dataset.id).onsuccess=ev=>{const it=ev.target.result;if(!it)return;
     dlText('Schedule_Compliance_'+ymd(new Date(it.date))+'_'+it.shift+'.csv',cpCsvText(ymd(new Date(it.date)),it.shift,it));};});
+
+
+/* ---------- Entry codes: share quality and destination between samplers ---------- */
+const newUid=m=>(m==='Noamundi'?'N':m==='Katamati'?'K':'X')+'-'+Date.now().toString(36).toUpperCase().slice(-6)+Math.floor(Math.random()*1296).toString(36).toUpperCase().padStart(2,'0');
+const b64u=a=>{let t='';a.forEach(c=>{t+=String.fromCharCode(c);});return btoa(t).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
+const unb64u=t=>{t=t.replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const b=atob(t),a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a;};
+const chk=t=>{let h=2166136261;for(let i=0;i<t.length;i++){h^=t.charCodeAt(i);h=Math.imul(h,16777619);}return (h>>>0).toString(36).toUpperCase().padStart(4,'0').slice(-4);};
+function makeCode(r,sn){
+  const nn=v=>(v===undefined||v===null||(typeof v==='number'&&isNaN(v)))?null:v;
+  const o=sn==='reports'?{v:1,t:'F',u:r.uid,d:r.date,m:r.mine,pt:r.pit,r:r.mrl,l:r.loc,q:[r.fe,r.si,r.al,r.p],x:r.mix,de:destOf(r),s:r.sched,o:r.ore,oo:r.oreOther,ti:r.title}
+    :{v:1,t:'S',u:r.uid,d:r.date,m:r.mine,n:r.name,q:[nn(r.fe),nn(r.si),nn(r.al),nn(r.p)],de:destOf(r),s:r.sched,o:r.ore,oo:r.oreOther};
+  Object.keys(o).forEach(k=>{const v=o[k];if(v===undefined||v===''||(Array.isArray(v)&&!v.length)||(v&&typeof v==='object'&&!Array.isArray(v)&&!Object.keys(v).length))delete o[k];});
+  const p=b64u(new TextEncoder().encode(JSON.stringify(o)));return 'ROM1.'+p+'.'+chk(p);}
+function decodeCode(c){
+  const m=/^ROM1\.([A-Za-z0-9_-]+)\.([0-9A-Z]{4})$/.exec(c);if(!m||chk(m[1])!==m[2])return null;
+  try{const o=JSON.parse(new TextDecoder().decode(unb64u(m[1])));return(o&&o.v===1&&o.u&&(o.t==='F'||o.t==='S')&&Array.isArray(o.q))?o:null;}catch(e){return null;}}
+function codeLine(r,sn,code){
+  const who=sn==='reports'?'Face '+[r.mine,r.pit,r.mrl&&'MRL '+r.mrl].filter(Boolean).join(' '):'Stock '+r.name+(r.mine?' ('+r.mine+')':'');
+  return who+' | Fe '+fx(r.fe,2)+' SiO2 '+fx(r.si,2)+' Al2O3 '+fx(r.al,2)+' P '+fx(r.p,3)+' | To: '+(destOf(r).join(', ')||'-')+' | ID '+r.uid+'\n'+code;}
+function stockLines(r){
+  const l=['Stock: '+r.name+(r.mine?'   |   '+r.mine:''),`Fe ${fx(r.fe,2)}%   SiO2 ${fx(r.si,2)}%   Al2O3 ${fx(r.al,2)}%   P ${fx(r.p,3)}%`,'Feeding to: '+((r.dest||[]).join(', ')||'-')];
+  if(r.ore)l.push('Ore type: '+oreLine(r.ore,r.oreOther));l.push('Time: '+new Date(r.date).toLocaleString());return l;}
+function importCard(rec,face){
+  const W=1000,top=70,lines=face?faceLines(rec):stockLines(rec),LH=face?30:32,H=face?top+28+(lines.length-1)*30+14:top+22+lines.length*32+8;
+  const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+  x.fillStyle='#e6eaea';x.fillRect(0,0,W,top);x.fillStyle='#1b2a30';x.textAlign='left';x.textBaseline='alphabetic';x.font='22px sans-serif';
+  x.fillText('Imported by code from the '+(rec.mine||'other')+' sampler. Photo and map not included.',24,42);
+  x.fillStyle=repCol();x.fillRect(0,top,W,H-top);x.fillStyle='#fff';
+  lines.forEach((t,i)=>{let fs=(face?i===1:i<2)?28:22;const b=i<2?'bold ':'';x.font=b+fs+'px sans-serif';while(fs>14&&x.measureText(t).width>W-48){fs--;x.font=b+fs+'px sans-serif';}x.fillText(t,24,top+(face?28:34)+i*LH);});
+  return c;}
+async function storeImported(o){
+  const q=o.q,face=o.t==='F',nv=v=>v==null?NaN:v;let rec,sn;
+  if(face){sn='reports';rec={date:o.d,loc:o.l||'',fe:q[0],si:q[1],al:q[2],p:q[3],mix:o.x||'',mine:o.m||'',pit:o.pt||'',mrl:o.r||'',dest:(o.de||[]).join(', '),destArr:o.de||[],sched:o.s||{},ore:o.o||'',oreOther:o.oo||'',noPhoto:'',title:o.ti||'',uid:o.u,imported:true};}
+  else{sn='stocks';rec={date:o.d,name:o.n||'',mine:o.m||'',sched:o.s||{},ore:o.o||'',oreOther:o.oo||'',fe:nv(q[0]),si:nv(q[1]),al:nv(q[2]),p:nv(q[3]),dest:o.de||[],uid:o.u,imported:true};}
+  const c=importCard(rec,face);rec.img=c.toDataURL('image/jpeg',.88);
+  if(face){const t=document.createElement('canvas');t.width=200;t.height=Math.round(200*c.height/c.width);t.getContext('2d').drawImage(c,0,0,t.width,t.height);rec.thumb=t.toDataURL('image/jpeg',.7);}
+  else{const sl=stockLines(rec);rec.text='Stock '+rec.name+(rec.mine?' ('+rec.mine+')':'')+': '+sl[1]+' | '+sl[2];}
+  await new Promise(res=>{const tx=db.transaction(sn,'readwrite');tx.objectStore(sn).add(rec);tx.oncomplete=res;tx.onerror=res;tx.onabort=res;});}
+$('impBtn').onclick=async()=>{
+  if(!db){alert('Storage is not available on this device.');return;}
+  const codes=$('impTxt').value.match(/ROM1\.[A-Za-z0-9_-]+\.[0-9A-Z]{4}/g)||[];
+  if(!codes.length){say2('impMsg','No entry code found. Paste the code that starts with ROM1.');return;}
+  const[fr,st]=await Promise.all([getAll('reports'),getAll('stocks')]),have=new Set([...fr,...st].map(r=>r.uid).filter(Boolean));
+  let nf=0,ns=0,dup=0,bad=0;
+  for(const c of codes){const o=decodeCode(c);if(!o){bad++;continue;}if(have.has(o.u)){dup++;continue;}have.add(o.u);await storeImported(o);if(o.t==='F')nf++;else ns++;}
+  renderLogList();renderExtra();shBuild();
+  say2('impMsg',(nf+ns?'Imported '+nf+' face and '+ns+' stock entr'+(nf+ns===1?'y':'ies')+'. ':'')+(dup?dup+' already in this app. ':'')+(bad?bad+' code(s) could not be read. ':'')+(nf+ns?'They appear under the shift in which they were saved.':''));
+  if(nf+ns)$('impTxt').value='';};
+function showCode(title,msg,note){
+  $('edBox').innerHTML=`<h2>${title}</h2><p class="note">${note}</p><textarea id="cdTxt" readonly rows="8" style="width:100%;font:12px ui-monospace,Menlo,monospace;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)">${escH(msg)}</textarea><div class="row" style="margin-top:10px"><button id="cdCopy">Copy</button><button id="cdShare" class="ghost">Share</button><button id="cdClose" class="ghost">Close</button></div><div id="cdMsg" class="note" style="color:var(--acc);font-weight:600"></div>`;
+  $('edOv').style.display='block';
+  $('cdClose').onclick=()=>{$('edOv').style.display='none';};
+  $('cdCopy').onclick=async()=>{let ok=false;try{await navigator.clipboard.writeText(msg);ok=true;}catch(e){$('cdTxt').select();try{ok=document.execCommand('copy');}catch(e2){}}$('cdMsg').textContent=ok?'Copied. Paste it in WhatsApp or any message.':'Select the text and copy it.';};
+  $('cdShare').onclick=async()=>{if(navigator.share){try{await navigator.share({text:msg});}catch(e){}}else $('cdMsg').textContent='Sharing is not available here. Use Copy.';};}
+document.addEventListener('click',e=>{const b=e.target.closest('.codeBtn');if(!b||!db)return;
+  const sn=b.dataset.s;db.transaction(sn).objectStore(sn).get(+b.dataset.id).onsuccess=ev=>{const it=ev.target.result;if(!it)return;
+    const go=()=>showCode('Entry code',codeLine(it,sn,makeCode(it,sn)),'Send this to the sampler of the other mine. When they paste it in Import entries by code, the quality, ore type and destination are added to their app. The photo and map are not sent.');
+    if(it.uid)go();else{it.uid=newUid(it.mine);const tx=db.transaction(sn,'readwrite');tx.objectStore(sn).put(it);tx.oncomplete=()=>{go();renderLogList();renderExtra();};tx.onerror=go;}};});
+$('impShare').onclick=async()=>{
+  if(!db){alert('Storage is not available on this device.');return;}
+  const[w0,w1]=shWin(),inW=t=>{const d=new Date(t);return d>=w0&&d<w1;};
+  const[fr,st]=await Promise.all([getAll('reports'),getAll('stocks')]);
+  const mine=[...fr.filter(r=>inW(r.date)&&!r.imported).map(r=>['reports',r]),...st.filter(r=>inW(r.date)&&!r.imported).map(r=>['stocks',r])].sort((a,b)=>new Date(a[1].date)-new Date(b[1].date));
+  if(!mine.length){say2('impMsg','No entries of your own were saved in this shift.');return;}
+  for(const [sn,r] of mine){if(!r.uid){r.uid=newUid(r.mine);await new Promise(res=>{const tx=db.transaction(sn,'readwrite');tx.objectStore(sn).put(r);tx.oncomplete=res;tx.onerror=res;tx.onabort=res;});}}
+  const msg='ROM entries | '+$('shDate').value+' | '+SHL[$('shShift').value]+' | '+mine.length+' entr'+(mine.length===1?'y':'ies')+'\n\n'+mine.map(([sn,r])=>codeLine(r,sn,makeCode(r,sn))).join('\n\n');
+  showCode('Codes for this shift',msg,'Send this whole message to the other mine\u2019s sampler. They paste it in Import entries by code and all your entries are added at once.');renderLogList();renderExtra();};
+
+/* ---------- Share entries as a file / open a file ---------- */
+$('impFile').onclick=async()=>{
+  if(!db){alert('Storage is not available on this device.');return;}
+  const[w0,w1]=shWin(),inW=t=>{const d=new Date(t);return d>=w0&&d<w1;};
+  const[fr,st]=await Promise.all([getAll('reports'),getAll('stocks')]);
+  const mine=[...fr.filter(r=>inW(r.date)&&!r.imported).map(r=>['reports',r]),...st.filter(r=>inW(r.date)&&!r.imported).map(r=>['stocks',r])].sort((a,b)=>new Date(a[1].date)-new Date(b[1].date));
+  if(!mine.length){say2('impMsg','No entries of your own were saved in this shift.');return;}
+  for(const [sn,r] of mine){if(!r.uid){r.uid=newUid(r.mine);await new Promise(res=>{const tx=db.transaction(sn,'readwrite');tx.objectStore(sn).put(r);tx.oncomplete=res;tx.onerror=res;tx.onabort=res;});}}
+  const txt='ROM entries | '+$('shDate').value+' | '+SHL[$('shShift').value]+' | '+mine.length+' entr'+(mine.length===1?'y':'ies')+'\n\n'+mine.map(([sn,r])=>codeLine(r,sn,makeCode(r,sn))).join('\n\n')+'\n',
+    mn=[...new Set(mine.map(([sn,r])=>r.mine).filter(Boolean))].join('-')||'entries',name='ROM_entries_'+mn+'_'+$('shDate').value+'_'+$('shShift').value+'.txt',file=new File([txt],name,{type:'text/plain'});
+  renderLogList();renderExtra();
+  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file]});say2('impMsg','File shared.');return;}catch(e){if(e&&e.name==='AbortError')return;}}
+  dlBlob(name,new Blob([txt],{type:'text/plain'}));say2('impMsg','File saved to Downloads: '+name+'. Send it to the other sampler.');};
+$('impFileIn').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+  let t='';try{t=await f.text();}catch(err){say2('impMsg','Could not read that file.');return;}
+  $('impTxt').value=t;$('impBtn').onclick();};
 
 const THEMES=[['green','Green','#0d5c63'],['blue','Blue','#1d4ed8'],['purple','Purple','#6d28d9'],['orange','Orange','#c2410c'],['maroon','Maroon','#b91c1c'],['light','Light','#e2e8f0'],['dark','Dark','#12191c']];
 $('themeMenu').innerHTML=THEMES.map(t=>`<button data-t="${t[0]}"><span class="sw" style="background:${t[2]}"></span>${t[1]}</button>`).join('');
