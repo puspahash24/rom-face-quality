@@ -138,6 +138,12 @@ main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
 .leaflet-control-layers,.leaflet-control-layers-expanded,.leaflet-touch .leaflet-control-layers{background:var(--card)!important;color:var(--ink)!important;border:1px solid var(--line)!important;border-radius:6px;box-shadow:none}
 .leaflet-control-layers-toggle{background-color:transparent!important;filter:invert(var(--inv))}
 .leaflet-control-layers-separator{border-top-color:var(--line)}
+.log-info b.ident{font-size:17px;font-weight:800;line-height:1.3;color:var(--ink);margin-bottom:3px}
+.plhead{display:block;margin-top:12px;font-size:21px;font-weight:800;color:var(--acc);line-height:1.25}
+.src .lbl{font-size:17px;font-weight:800;color:var(--ink);line-height:1.3}
+#zoomWrap{display:flex;align-items:center;gap:4px;flex-shrink:0;margin-left:auto;margin-right:8px}
+#zoomWrap button{padding:5px 8px;font-size:13px;line-height:1.1;min-width:34px}
+#zoomWrap button:disabled{opacity:.4}
 </style>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0d5c63">
@@ -149,6 +155,7 @@ main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
 </head>
 <body>
 <header><div class="ttl"><h1>ROM Face Quality Monitoring</h1><span id="status">Load a blasthole map to start</span></div>
+<div id="zoomWrap" role="group" aria-label="Interface size"><button id="zoomOut" class="ghost" title="Smaller" aria-label="Make the interface smaller">A&minus;</button><button id="zoomPct" class="ghost" title="Reset to 100%" aria-label="Reset the interface size">100%</button><button id="zoomIn" class="ghost" title="Larger" aria-label="Make the interface larger">A+</button></div>
 <div id="themeWrap"><button id="themeBtn" class="ghost" title="Change theme" aria-label="Change theme"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.2 0 2-.8 2-1.8 0-.5-.2-.9-.5-1.3-.3-.4-.5-.8-.5-1.300 0-1 .8-1.800 1.800-1.800H17a4 4 0 0 0 4-4C21 6.100 17 3 12 3z"/><circle cx="7.500" cy="11" r="1"/><circle cx="10" cy="7.500" r="1"/><circle cx="14.500" cy="7.500" r="1"/></svg></button><div id="themeMenu" hidden></div></div></header>
 <div id="map"></div>
 <div id="fsBar">Tap the map to place the loading unit</div>
@@ -984,8 +991,9 @@ function saveReportLog(blob,res,loc,canvas){
   reader.readAsDataURL(blob);
 }
 
+const idLine=it=>[it.mine,it.pit,it.mrl&&'MRL '+it.mrl+' m'].filter(Boolean).join(' | ');
 function logDetails(it){
-  const t=[it.mine&&'Mine: '+it.mine,it.pit&&'Pit: '+it.pit,it.mrl&&'MRL: '+it.mrl+' m',it.dest&&'Destination: '+it.dest].filter(Boolean).join(' | ');
+  const t=[it.dest&&'Destination: '+it.dest].filter(Boolean).join(' | ');
   return t?'<br><span>'+escH(t)+'</span>':'';}
 function renderLogList(){
   if(!db)return;
@@ -1001,6 +1009,7 @@ function renderLogList(){
       <div class="log-item">
         <img class="log-thumb" src="${it.thumb||it.img}" alt="Thumb">
         <div class="log-info">
+          ${idLine(it)?'<b class="ident">'+escH(idLine(it))+'</b>':''}
           <b>Fe ${it.fe}% | SiO2 ${it.si}% | Al2O3 ${it.al}% | P ${it.p}</b>
           <span>${new Date(it.date).toLocaleString()}</span><br>
           <span>Loc: ${it.loc} | Mix: ${it.mix}${it.ore?' | Ore: '+escH(oreLabel(it.ore,it.oreOther)):''}${it.uid?' | ID: '+escH(it.uid):''}${it.imported?' | Imported':''}</span>${logDetails(it)}
@@ -1092,9 +1101,9 @@ async function shBuild(){
   shRows=[];
   PLANTS.forEach(pl=>srcs.forEach(s=>{if(s.dest.some(d=>d===pl||(pl==='Others'&&d.startsWith('Others'))))shRows.push({pl,s});}));
   let h='',cur='';
-  shRows.forEach((r,i)=>{if(r.pl!==cur){cur=r.pl;h+=`<b style="display:block;margin-top:8px">${escH(cur)}</b>`;}
+  shRows.forEach((r,i)=>{if(r.pl!==cur){cur=r.pl;h+=`<b class="plhead">${escH(cur)}</b>`;}
     const key=r.pl+'|'+r.s.k;
-    h+=`<div class="src"><span>${escH(r.s.lbl)} <small class="note">(${r.s.tm})</small><br><small class="note">Fe ${fx(r.s.fe,2)} | SiO2 ${fx(r.s.si,2)} | Al2O3 ${fx(r.s.al,2)} | P ${fx(r.s.p,3)}</small><br><small class="note">${r.s.hasOre?'Ore: '+escH(r.s.oreLbl)+' ('+oreTxt(r.s.ore)+')':'Ore type not set'}</small></span><input type="number" min="0" inputmode="numeric" placeholder="trips" data-i="${i}" data-key="${escH(key)}" value="${escH(prev[key]||'')}"></div>`;});
+    h+=`<div class="src"><span><span class="lbl">${escH(r.s.lbl)}</span> <small class="note">(${r.s.tm})</small><br><small class="note">Fe ${fx(r.s.fe,2)} | SiO2 ${fx(r.s.si,2)} | Al2O3 ${fx(r.s.al,2)} | P ${fx(r.s.p,3)}</small><br><small class="note">${r.s.hasOre?'Ore: '+escH(r.s.oreLbl)+' ('+oreTxt(r.s.ore)+')':'Ore type not set'}</small></span><input type="number" min="0" inputmode="numeric" placeholder="trips" data-i="${i}" data-key="${escH(key)}" value="${escH(prev[key]||'')}"></div>`;});
   $('shSrc').innerHTML=h||'<p class="note">No face reports or stock entries with a destination were saved in this shift.</p>';
   shPrev();cpRender();}
 function shCalc(){
@@ -1107,20 +1116,20 @@ function shCalc(){
     if(T)out.push({pl,T,src,oreW:ow,ore:ow?Object.fromEntries(ORE_KEYS.map(k=>[k,oa[k]/ow])):null,fe:w.fe?a.fe/w.fe:NaN,si:w.si?a.si/w.si:NaN,al:w.al?a.al/w.al:NaN,p:w.p?a.p/w.p:NaN});});
   return out;}
 function shCanvas(rows){
-  const W=1000,PL=50,SL=44,top=120,hasOre=rows.some(r=>r.ore),H0=top+24+rows.reduce((a,r)=>a+PL+r.src.length*SL,0)+PL,
+  const W=1000,PL=56,SL=44,top=120,hasOre=rows.some(r=>r.ore),H0=top+24+rows.reduce((a,r)=>a+PL+r.src.length*SL,0)+PL,
     H=H0+(hasOre?44+PL*(rows.length+2):0)+24,c=document.createElement('canvas');c.width=W;c.height=H;
   const x=c.getContext('2d'),ink='#1b2a30';
   x.fillStyle='#fff';x.fillRect(0,0,W,H);x.fillStyle=repCol();x.fillRect(0,0,W,top-20);
   x.fillStyle='#fff';x.textAlign='left';x.font='bold 34px sans-serif';x.fillText('Shift End Report',24,46);
   x.font='21px sans-serif';x.fillText([$('shDate').value.split('-').reverse().join('-'),SHL[$('shShift').value],$('mineName').value].filter(Boolean).join('   |   '),24,84);
-  const xs=[24,480,625,745,870,985],put=(v,y,b,fs,ind)=>{fs=fs||24;ind=ind||0;v.forEach((t,i)=>{let f=fs;const bw=b?'bold ':'';x.font=bw+f+'px sans-serif';
+  const xs=[24,480,625,745,870,985],put=(v,y,b,fs,ind,fs0)=>{fs=fs||24;ind=ind||0;v.forEach((t,i)=>{let f=(!i&&fs0)?fs0:fs;const bw=b?'bold ':'';x.font=bw+f+'px sans-serif';
     if(!i){while(f>14&&x.measureText(t).width>418-xs[0]-ind){f--;x.font=bw+f+'px sans-serif';}x.textAlign='left';x.fillText(t,xs[0]+ind,y);}
     else{x.textAlign='right';x.fillText(t,xs[i],y);}});};
   x.fillStyle=ink;put(['Plant','Trips','Fe %','SiO2 %','Al2O3 %','P %'],top+24,true);
   let y=top+24;
   rows.forEach((r,i)=>{y+=PL;if(i%2){x.fillStyle='#eef1f0';x.fillRect(0,y-35,W,PL+r.src.length*SL);}
-    x.fillStyle=ink;put([r.pl,String(r.T),fx(r.fe,2),fx(r.si,2),fx(r.al,2),fx(r.p,3)],y,true,26);
-    r.src.forEach(q=>{y+=SL;x.fillStyle=ink;put([q.lbl,String(q.t),fx(q.fe,2),fx(q.si,2),fx(q.al,2),fx(q.p,3)],y,false,24,22);});});
+    x.fillStyle=ink;put([r.pl,String(r.T),fx(r.fe,2),fx(r.si,2),fx(r.al,2),fx(r.p,3)],y,true,26,0,34);
+    r.src.forEach(q=>{y+=SL;x.fillStyle=ink;put([q.lbl,String(q.t),fx(q.fe,2),fx(q.si,2),fx(q.al,2),fx(q.p,3)],y,false,24,22,21);});});
   y+=PL;x.fillStyle=ink;x.fillRect(0,y-36,W,2);put(['Total trips',String(rows.reduce((a,r)=>a+r.T,0))],y,true,26);
   if(hasOre){
     y+=44;x.fillStyle=repCol();x.fillRect(0,y-30,W,42);x.fillStyle='#fff';x.textAlign='left';x.font='bold 24px sans-serif';x.fillText('Ore mix fed to each plant (% of trips)',24,y);
@@ -1148,7 +1157,7 @@ const xBtns=(s,id)=>`<div style="display:flex;flex-direction:column;gap:6px"><bu
 async function renderExtra(){
   if(!db)return;
   const st=(await getAll('stocks')).sort((a,b)=>b.id-a.id),sh=(await getAll('shifts')).sort((a,b)=>b.id-a.id);
-  $('stList').innerHTML=st.length?st.map(it=>`<div class="log-item"><img class="log-thumb" src="${it.img}" alt=""><div class="log-info"><b>${escH(it.name)}${it.mine?' ('+escH(it.mine)+')':''}: Fe ${fx(it.fe,2)} | SiO2 ${fx(it.si,2)} | Al2O3 ${fx(it.al,2)} | P ${fx(it.p,3)}</b><span>${new Date(it.date).toLocaleString()}</span><br><span>To: ${escH((it.dest||[]).join(', ')||'-')}</span><br><span>Ore: ${it.ore?escH(oreLine(it.ore,it.oreOther)):'not set'}${it.uid?' | ID: '+escH(it.uid):''}${it.imported?' | Imported':''}</span></div>${xBtns('stocks',it.id)}</div>`).join(''):'No stock entries yet.';
+  $('stList').innerHTML=st.length?st.map(it=>`<div class="log-item"><img class="log-thumb" src="${it.img}" alt=""><div class="log-info"><b class="ident">${escH([it.mine,it.name].filter(Boolean).join(' | '))}</b><b>Fe ${fx(it.fe,2)} | SiO2 ${fx(it.si,2)} | Al2O3 ${fx(it.al,2)} | P ${fx(it.p,3)}</b><span>${new Date(it.date).toLocaleString()}</span><br><span>To: ${escH((it.dest||[]).join(', ')||'-')}</span><br><span>Ore: ${it.ore?escH(oreLine(it.ore,it.oreOther)):'not set'}${it.uid?' | ID: '+escH(it.uid):''}${it.imported?' | Imported':''}</span></div>${xBtns('stocks',it.id)}</div>`).join(''):'No stock entries yet.';
   $('shList').innerHTML=sh.length?sh.map(it=>`<div class="log-item"><img class="log-thumb" src="${it.img}" alt=""><div class="log-info"><b>${SHL[it.shift]} | ${new Date(it.date).toLocaleDateString()}</b><span>${escH(it.text).split('\n').slice(1).join('<br>')}</span></div>${xBtns('shifts',it.id)}</div>`).join(''):'No shift reports yet.';
   const cp=(await getAll('comps')).sort((a,b)=>b.id-a.id);
   $('cpList').innerHTML=cp.length?cp.map(it=>`<div class="log-item"><img class="log-thumb" src="${it.img}" alt=""><div class="log-info"><b>${SHL[it.shift]} | ${new Date(it.date).toLocaleDateString()}</b><span>${escH(it.text).split('\n').slice(1).join('<br>')}</span></div>${xBtns('comps',it.id)}</div>`).join(''):'No compliance reports yet.';}
@@ -1353,7 +1362,7 @@ function cpCompute(){
 function cpRender(){
   if(!$('cpSrc'))return;cpLoad();
   const items=cpItems(),pls=PLANTS.filter(pl=>items.some(x=>x.pl===pl));let h='';
-  pls.forEach(pl=>{h+=`<b style="display:block;margin-top:10px">${escH(pl)}</b>`;
+  pls.forEach(pl=>{h+=`<b class="plhead">${escH(pl)}</b>`;
     items.filter(x=>x.pl===pl).forEach(x=>{h+=`<div class="src"><span>${escH(x.lbl)}<br><small class="note">${x.extra?'Scheduled, not operated':'Trips fed: '+x.trips}</small></span><span style="display:flex;gap:6px;align-items:center"><input type="number" min="0" max="100" step="any" inputmode="decimal" placeholder="Sched %" data-ck="${escH(x.key)}" value="${x.sched==null?'':x.sched}">${x.extra?`<button class="cpDel ghost" data-xi="${x.xi}" style="padding:4px 8px" aria-label="Remove">\u00d7</button>`:''}</span></div>`;});});
   $('cpSrc').innerHTML=h||'<p class="note">No faces or stocks with a destination in this shift yet. You can still add scheduled ones below.</p>';
   cpPrev();}
@@ -1366,7 +1375,7 @@ $('cpAdd').onclick=()=>{cpLoad();
   if(!name){alert('Enter the face or stock name.');return;}if(!mine){alert('Select the mine.');return;}if(sv===''||isNaN(+sv)){alert('Enter the scheduled feed %.');return;}
   cpDraft.extra.push({pl,type,mine,name,sched:+sv});cpSaveDraft();$('cpName').value='';$('cpSch').value='';cpRender();say2('cpMsg','Added to '+pl+'.');};
 function cpCanvas(r){
-  const W=1000,PH=56,CH=38,RH=42,top=118,ink='#1b2a30',cx=[24,600,730,860,985],need=r.plants.some(p=>p.S>0&&Math.abs(p.S-100)>0.5);
+  const W=1000,PH=62,CH=38,RH=42,top=118,ink='#1b2a30',cx=[24,600,730,860,985],need=r.plants.some(p=>p.S>0&&Math.abs(p.S-100)>0.5);
   let H=top;r.plants.forEach(p=>{H+=PH+CH+p.rows.length*RH+RH+18;});
   if(r.mines.length)H+=46+CH+r.mines.length*RH+18;H+=56+(need?34:0)+10;
   const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
@@ -1375,11 +1384,11 @@ function cpCanvas(r){
   x.fillStyle='#fff';x.textAlign='left';x.font='bold 34px sans-serif';x.fillText('Schedule Compliance Report',24,46);
   x.font='21px sans-serif';x.fillText([$('shDate').value.split('-').reverse().join('-'),SHL[$('shShift').value],$('mineName').value].filter(Boolean).join('   |   '),24,84);
   const cell=(t,i,yy,fs,b,color)=>{x.font=(b?'bold ':'')+fs+'px sans-serif';x.fillStyle=color||ink;x.textAlign=i?'right':'left';x.fillText(t,cx[i],yy);};
-  const lab=(t,yy,color)=>{let f=22;x.font=f+'px sans-serif';while(f>13&&x.measureText(t).width>480){f--;x.font=f+'px sans-serif';}x.fillStyle=color||ink;x.textAlign='left';x.fillText(t,24,yy);};
+  const lab=(t,yy,color)=>{let f=21;x.font=f+'px sans-serif';while(f>13&&x.measureText(t).width>480){f--;x.font=f+'px sans-serif';}x.fillStyle=color||ink;x.textAlign='left';x.fillText(t,24,yy);};
   let y=top;
   r.plants.forEach(p=>{
-    x.fillStyle='#e8eef0';x.fillRect(0,y,W,PH);cell(p.pl,0,y+38,28,true);
-    x.font='bold 26px sans-serif';x.fillStyle=col(p.score);x.textAlign='right';x.fillText(p.score===null?'No schedule entered':'Compliance '+p.score.toFixed(0)+'%',985,y+38);
+    x.fillStyle='#e8eef0';x.fillRect(0,y,W,PH);cell(p.pl,0,y+43,34,true);
+    x.font='bold 26px sans-serif';x.fillStyle=col(p.score);x.textAlign='right';x.fillText(p.score===null?'No schedule entered':'Compliance '+p.score.toFixed(0)+'%',985,y+42);
     y+=PH;['Face / Stock','Trips','Sched %','Actual %','Var (pp)'].forEach((t,i)=>cell(t,i,y+26,20,true,'#555'));y+=CH;
     p.rows.forEach((q,i)=>{if(i%2){x.fillStyle='#f3f6f6';x.fillRect(0,y,W,RH);}
       const bad=q.status==='Not operated',unsch=q.status==='Unscheduled';
@@ -1508,6 +1517,16 @@ $('themeBtn').onclick=e=>{e.stopPropagation();$('themeMenu').hidden=!$('themeMen
 $('themeMenu').onclick=e=>{const b=e.target.closest('button');if(!b)return;
   document.documentElement.dataset.theme=b.dataset.t;store('rom_theme',b.dataset.t);markTheme();$('themeMenu').hidden=true;if(photoImg||$('noPhoto').checked)renderPreview();};
 document.addEventListener('click',e=>{if(!e.target.closest('#themeWrap'))$('themeMenu').hidden=true;});
+/* ---------- Interface size: scales all the panels below the map (the map has its own zoom) ---------- */
+{const Z=[80,90,100,110,125,150,175,200];let zi=Z.indexOf(100);
+  try{const v=+localStorage.getItem('rom_ui_zoom');if(Z.includes(v))zi=Z.indexOf(v);}catch(e){}
+  const apply=()=>{const v=Z[zi];document.querySelectorAll('main,#edOv').forEach(el=>{el.style.zoom=v===100?'':String(v/100);});
+    $('zoomPct').textContent=v+'%';$('zoomOut').disabled=zi===0;$('zoomIn').disabled=zi===Z.length-1;
+    try{localStorage.setItem('rom_ui_zoom',String(v));}catch(e){}};
+  $('zoomIn').onclick=()=>{if(zi<Z.length-1){zi++;apply();}};
+  $('zoomOut').onclick=()=>{if(zi>0){zi--;apply();}};
+  $('zoomPct').onclick=()=>{zi=Z.indexOf(100);apply();};
+  apply();}
 </script>
 <script>
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./service-worker.js').catch(()=>{});});}
