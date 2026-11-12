@@ -586,13 +586,30 @@ function parseKml(txt){
     out.push({name,lon:+c[0],lat:+c[1],...v});}
   return{pts:out,lines:ln};}
 
+/* Keep the last loaded blasthole file across app restarts (IndexedDB has no 5 MB limit like localStorage) */
+const KDB={
+  open(){return new Promise((res,rej)=>{const r=indexedDB.open('rom_kml_db',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});},
+  async set(k,v){const db=await this.open();return new Promise((res,rej)=>{const tx=db.transaction('kv','readwrite');tx.objectStore('kv').put(v,k);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);tx.onabort=()=>rej(tx.error);});},
+  async get(k){const db=await this.open();return new Promise((res,rej)=>{const q=db.transaction('kv').objectStore('kv').get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error);});}
+};
+async function kmlPersist(d,name){
+  try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}
+  try{await KDB.set('data',{d,name,saved:Date.now()});$('count').textContent+=' | saved for next time';}
+  catch(e){try{localStorage.setItem('rom_data',JSON.stringify(d));$('count').textContent+=' | saved for next time';}
+    catch(e2){$('count').textContent+=' | could not be saved on this device, the file will be needed again after closing the app';}}}
+async function kmlRestore(){
+  let rec=null;try{rec=await KDB.get('data');}catch(e){}
+  if(rec&&rec.d&&rec.d.pts&&rec.d.pts.length){setData(rec.d,true);
+    $('count').textContent+=' | last file: '+(rec.name||'saved file')+' ('+new Date(rec.saved).toLocaleString([],{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})+')';return;}
+  try{const t=localStorage.getItem('rom_data');if(t)setData(JSON.parse(t),true);}catch(e){}}
+
 async function loadFile(f){
   let txt;
   if(f.name.toLowerCase().endsWith('.kmz')){const z=await JSZip.loadAsync(f);
     const k=Object.keys(z.files).find(n=>n.toLowerCase().endsWith('.kml'));txt=await z.files[k].async('string');}
   else txt=await f.text();
   const d=parseKml(txt);setData(d,true);
-  try{localStorage.setItem('rom_data',JSON.stringify(d));}catch(e){try{localStorage.setItem('rom_data',JSON.stringify({pts:d.pts,lines:[]}));$('count').textContent+=' (lines too large to save for next visit)';}catch(e2){}}
+  kmlPersist(d,f.name);
 }
 
 function lblVis(){$('map').classList.toggle('nolbl',!$('lbl').checked||map.getZoom()<18);}
@@ -609,7 +626,7 @@ function setData(d,fit){
   if(fit&&pts.length)map.fitBounds(L.latLngBounds(pts.map(p=>[p.lat,p.lon])).pad(.1));
   lblVis();if(last)update(last);}
 
-try{const s=localStorage.getItem('rom_data');if(s)setData(JSON.parse(s),true);}catch(e){}
+kmlRestore();
 $('kml').onchange=e=>e.target.files[0]&&loadFile(e.target.files[0]).catch(err=>$('count').textContent='Could not read file: '+err.message);
 
 function setPos(lat,lon){
