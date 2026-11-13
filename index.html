@@ -138,6 +138,8 @@ main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
 .leaflet-control-layers,.leaflet-control-layers-expanded,.leaflet-touch .leaflet-control-layers{background:var(--card)!important;color:var(--ink)!important;border:1px solid var(--line)!important;border-radius:6px;box-shadow:none}
 .leaflet-control-layers-toggle{background-color:transparent!important;filter:invert(var(--inv))}
 .leaflet-control-layers-separator{border-top-color:var(--line)}
+.cpdet>summary{font-size:18px;font-weight:700;cursor:pointer;padding:2px 0}
+.cpdet[open]>summary{margin-bottom:8px}
 .srcname{font-size:16px;font-weight:800;line-height:1.3;color:var(--ink)}
 .log-info b.ident{font-size:17px;font-weight:800;line-height:1.3;color:var(--ink);margin-bottom:3px}
 .plhead{display:block;margin-top:12px;font-size:21px;font-weight:800;color:var(--acc);line-height:1.25}
@@ -197,7 +199,6 @@ main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
   <p class="note">Select the plant(s) this face is supplying ROM to. You can choose more than one.</p>
   <div id="destBox" class="dest"></div>
   <input id="destOther" type="text" maxlength="40" placeholder="Stock name or dump name" autocomplete="off">
-  <div id="schedBox" class="sched"></div>
 </div>
 
 <div class="sub">
@@ -246,7 +247,6 @@ main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
   <div class="q4"><label>Fe %<input id="stFe" type="number" step="any" inputmode="decimal"></label><label>SiO2 %<input id="stSi" type="number" step="any" inputmode="decimal"></label><label>Al2O3 %<input id="stAl" type="number" step="any" inputmode="decimal"></label><label>P %<input id="stP" type="number" step="any" inputmode="decimal"></label></div>
   <p class="note" style="margin:10px 0 6px">Feeding to</p>
   <div id="stDest" class="dest"></div>
-  <div id="stSchedBox" class="sched"></div>
   <div class="row"><label class="btn ghost">Take stock photo<input id="stPh" type="file" accept="image/*" capture="environment"></label><label class="btn ghost">Upload photo<input id="stPhUp" type="file" accept="image/*"></label><button id="stSave">Save stock entry</button></div>
   <div id="stMsg" class="note" style="color:var(--acc);font-weight:600"></div>
   <div class="sub">
@@ -257,12 +257,21 @@ main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
 </section>
 
 <section>
-  <h2>Import entries by code</h2>
-  <p class="note">The sampler of the other mine can send you the code of one entry (Code button in the history list) or of all their entries for the shift (button below), as a message or as a file. Paste the code(s) here or open the file. The quality, ore type, destination and scheduled % are added to your lists and shift report. Photos and maps are not copied. Imported entries show a plain text card, and you enter the trips as usual.</p>
-  <textarea id="impTxt" rows="4" placeholder="Paste code(s) here" style="width:100%;font:13px ui-monospace,Menlo,monospace;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)"></textarea>
-  <div class="row"><button id="impBtn">Import</button><label class="btn ghost">Open file<input id="impFileIn" type="file" accept=".txt,text/plain"></label></div>
-  <div class="row"><button id="impShare" class="ghost">Share codes of my entries (this shift)</button><button id="impFile" class="ghost">Share my entries as a file</button></div>
-  <div id="impMsg" class="note" style="color:var(--acc);font-weight:600"></div>
+  <h2>Share and import entries</h2>
+  <div class="sub">
+    <h2>1. Send my entries to the other sampler</h2>
+    <p class="note">Sends the faces and stocks you saved in the shift chosen in the Shift end report. To send just one entry, tap Code on it in its history list.</p>
+    <div class="row"><button id="impShare" style="width:100%">Share my entries (this shift)</button></div>
+    <div class="row"><button id="impFile" class="ghost" style="width:100%">Share my entries as a file</button></div>
+    <div id="impMsgS" class="note" style="color:var(--acc);font-weight:600"></div>
+  </div>
+  <div class="sub">
+    <h2>2. Import entries I received</h2>
+    <p class="note">Paste the message you received below and tap Import, or open the file you received. The quality, ore type and destination are added to your lists and the shift report. Photos and maps are not copied, and you enter the trips as usual.</p>
+    <textarea id="impTxt" rows="4" placeholder="Paste the received code(s) here" style="width:100%;font:13px ui-monospace,Menlo,monospace;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)"></textarea>
+    <div class="row"><button id="impBtn" style="flex:1">Import</button><label class="btn ghost" style="flex:1;text-align:center">Open file<input id="impFileIn" type="file" accept=".txt,text/plain"></label></div>
+    <div id="impMsg" class="note" style="color:var(--acc);font-weight:600"></div>
+  </div>
 </section>
 
 <section>
@@ -278,7 +287,7 @@ main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
   <div id="shList" class="note">No shift reports yet.</div>
 </section>
 <section>
-  <h2>Schedule compliance</h2>
+  <details class="cpdet" id="cpDet"><summary>Schedule compliance <span class="note" style="font-size:12px;font-weight:400">(tap to open, only when asked)</span></summary>
   <p class="note">Uses the date and shift chosen in the Shift end report. Faces and stocks you fed are listed with their trips. Enter or correct the scheduled feed % for each (optional), and add any scheduled face or stock that was not operated.</p>
   <div id="cpSrc"></div>
   <p class="note" style="margin:12px 0 4px"><b>Add a scheduled face or stock that was not operated</b></p>
@@ -289,6 +298,7 @@ main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
   <div id="cpMsg" class="note" style="color:var(--acc);font-weight:600"></div>
   <p class="note" style="margin:6px 0 0">Entries are removed automatically 2 hours after their shift ends (A shift at 4 PM, B shift at 12 AM, C shift at 8 AM). Share or download what you need before then.</p>
   <div id="cpList" class="note">No compliance reports yet.</div>
+</details>
 </section>
 </main>
 
@@ -949,7 +959,6 @@ function destList(){
     if(c.value!=='Others')return c.value;
     const o=$('destOther').value.trim();return o?'Others ('+o+')':'Others';});}
 $('destBox').onchange=()=>{
-  refreshSched('#destBox','schedBox');
   const oth=[...document.querySelectorAll('#destBox input')].find(c=>c.value==='Others').checked;
   $('destOther').style.display=oth?'block':'none';if(!oth)$('destOther').value='';
   if(photoImg||$('noPhoto').checked)renderPreview();};
@@ -1000,7 +1009,7 @@ function saveReportLog(blob,res,loc,canvas){
       mine:$('mineName').value.trim(),
       pit:$('pitName').value.trim(),
       mrl:$('mrl').value.trim(),
-      dest:destList().join(', '),destArr:destList(),uid:newUid($('mineName').value.trim()),sched:readSched('schedBox'),ore:$('faceOre').value,oreOther:$('faceOre').value==='Others'?$('faceOreOther').value.trim():'',noPhoto:(!photoImg&&$('noPhoto').checked)?$('noReason').value:'',title:'ROM quality (nearest '+res.n+' holes, '+(res.wt?'distance weighted':'simple average')+')',
+      dest:destList().join(', '),destArr:destList(),uid:newUid($('mineName').value.trim()),ore:$('faceOre').value,oreOther:$('faceOre').value==='Others'?$('faceOreOther').value.trim():'',noPhoto:(!photoImg&&$('noPhoto').checked)?$('noReason').value:'',title:'ROM quality (nearest '+res.n+' holes, '+(res.wt?'distance weighted':'simple average')+')',
       img:reader.result,
       thumb
     };
@@ -1087,7 +1096,6 @@ async function readImg(f){let s,w,h;
   const k=Math.min(1,1400/w),c=document.createElement('canvas');c.width=Math.round(w*k);c.height=Math.round(h*k);c.getContext('2d').drawImage(s,0,0,c.width,c.height);return c;}
 
 $('stDest').innerHTML=PLANTS.map(n=>`<label class="chk"><input type="checkbox" value="${escH(n)}"> ${escH(n)}</label>`).join('');
-$('stDest').onchange=()=>refreshSched('#stDest','stSchedBox');
 let stImg=null;{const m=recall('rom_mineName');if(PITS[m])$('stMine').value=m;}
 $('stPh').onchange=$('stPhUp').onchange=async e=>{const f=e.target.files[0];if(!f)return;
   try{stImg=await readImg(f);say2('stMsg','Stock photo added.');}catch(err){stImg=null;say2('stMsg','Could not read this photo. Try again.');}
@@ -1107,10 +1115,10 @@ $('stSave').onclick=()=>{
   const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,W,H);if(stImg)x.drawImage(stImg,0,0,W,ph);
   x.fillStyle=repCol();x.fillRect(0,ph,W,H-ph);x.fillStyle='#fff';x.textAlign='left';x.textBaseline='alphabetic';
   txt.forEach((t,i)=>{let fs=i<2?28:22;const b=i<2?'bold ':'';x.font=b+fs+'px sans-serif';while(fs>14&&x.measureText(t).width>W-48){fs--;x.font=b+fs+'px sans-serif';}x.fillText(t,24,ph+34+i*LH);});
-  const rec={date:now.toISOString(),uid:newUid(mine),name,mine,sched:readSched('stSchedBox'),ore,oreOther:ore==='Others'?oreOt:'',fe:q[0],si:q[1],al:q[2],p:q[3],dest,img:c.toDataURL('image/jpeg',.88),text:'Stock '+name+' ('+mine+'): '+txt[1]+' | '+txt[2]};
+  const rec={date:now.toISOString(),uid:newUid(mine),name,mine,ore,oreOther:ore==='Others'?oreOt:'',fe:q[0],si:q[1],al:q[2],p:q[3],dest,img:c.toDataURL('image/jpeg',.88),text:'Stock '+name+' ('+mine+'): '+txt[1]+' | '+txt[2]};
   const tx=db.transaction('stocks','readwrite');tx.objectStore('stocks').add(rec);
   tx.oncomplete=()=>{say2('stMsg','Stock entry saved. It now appears as a source in the shift report.');
-    ['stName','stFe','stSi','stAl','stP'].forEach(i=>$(i).value='');setOre('st','');document.querySelectorAll('#stDest input').forEach(c=>c.checked=false);$('stSchedBox').innerHTML='';stImg=null;renderExtra();shBuild();};
+    ['stName','stFe','stSi','stAl','stP'].forEach(i=>$(i).value='');setOre('st','');document.querySelectorAll('#stDest input').forEach(c=>c.checked=false);stImg=null;renderExtra();shBuild();};
   tx.onerror=()=>say2('stMsg','Could not save the stock entry.');};
 
 const SHL={A:'A shift (6 AM to 2 PM)',B:'B shift (2 PM to 10 PM)',C:'C shift (10 PM to 6 AM)'},SHS={A:6,B:14,C:22};
@@ -1233,10 +1241,8 @@ function openEdit(sn,id){
     h+=face?`<div class="fields"><label>Mine <select id="edMine"><option value="">Select mine</option>${Object.keys(PITS).map(n=>`<option${n===it.mine?' selected':''}>${n}</option>`).join('')}</select></label><label>Pit <select id="edPit"></select></label><label>MRL of loading unit (m) <input id="edMrl" type="number" step="any" inputmode="decimal" value="${escH(it.mrl||'')}"></label></div>`
       :`<div class="fields"><label>Mine <select id="edSMine"><option value="">Select mine</option>${['Noamundi','Katamati'].map(n=>`<option${n===it.mine?' selected':''}>${n}</option>`).join('')}</select></label><label>Stock name <input id="edName" type="text" maxlength="40" value="${escH(it.name)}"></label></div><div class="q4"><label>Fe %<input id="edFe" type="number" step="any" inputmode="decimal" value="${num(it.fe)}"></label><label>SiO2 %<input id="edSi" type="number" step="any" inputmode="decimal" value="${num(it.si)}"></label><label>Al2O3 %<input id="edAl" type="number" step="any" inputmode="decimal" value="${num(it.al)}"></label><label>P %<input id="edP" type="number" step="any" inputmode="decimal" value="${num(it.p)}"></label></div>`;
     h+=`<div class="fields"><label>Ore type <select id="edOre">${oreOptions(it.ore)}</select></label><label id="edOreOtherL" style="display:${it.ore==='Others'?'block':'none'}">Other ore type <input id="edOreOther" type="text" maxlength="30" value="${escH(it.oreOther||'')}"></label></div>`;
-    h+=`<p class="note" style="margin:10px 0 6px">Feeding to</p><div class="dest">${PLANTS.map(n=>`<label class="chk"><input type="checkbox" value="${escH(n)}"${dl.some(d=>d===n||(n==='Others'&&d.startsWith('Others')))?' checked':''}> ${escH(n)}</label>`).join('')}</div><input id="edOther" type="text" maxlength="40" placeholder="Others: stock name or dump name" value="${escH(ot)}" style="width:100%;margin-top:8px;font:inherit;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)"><div id="edSchedBox" class="sched"></div><div class="row" style="margin-top:12px"><button id="edSave">Save changes</button><button id="edCancel" class="ghost">Cancel</button></div><div id="edMsg" class="note warn"></div>`;
+    h+=`<p class="note" style="margin:10px 0 6px">Feeding to</p><div class="dest">${PLANTS.map(n=>`<label class="chk"><input type="checkbox" value="${escH(n)}"${dl.some(d=>d===n||(n==='Others'&&d.startsWith('Others')))?' checked':''}> ${escH(n)}</label>`).join('')}</div><input id="edOther" type="text" maxlength="40" placeholder="Others: stock name or dump name" value="${escH(ot)}" style="width:100%;margin-top:8px;font:inherit;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)"><div class="row" style="margin-top:12px"><button id="edSave">Save changes</button><button id="edCancel" class="ghost">Cancel</button></div><div id="edMsg" class="note warn"></div>`;
     $('edBox').innerHTML=h;$('edOv').style.display='block';
-    $('edSchedBox').innerHTML=schedHtml(PLANTS.filter(n=>dl.some(d=>d===n||(n==='Others'&&d.startsWith('Others')))),it.sched||{});
-    $('edBox').querySelector('.dest').onchange=()=>refreshSched('#edBox .dest','edSchedBox');
     if(face){const fill=sel=>{const m=$('edMine').value;$('edPit').innerHTML='<option value="">'+(m?'Select pit':'Select mine first')+'</option>'+(PITS[m]||[]).map(n=>`<option${n===sel?' selected':''}>${n}</option>`).join('');$('edPit').disabled=!m;};fill(it.pit);$('edMine').onchange=()=>fill('');}
     $('edOre').onchange=()=>{$('edOreOtherL').style.display=$('edOre').value==='Others'?'block':'none';};
     $('edCancel').onclick=()=>{$('edOv').style.display='none';};
@@ -1244,7 +1250,6 @@ function openEdit(sn,id){
       const d=[...document.querySelectorAll('#edBox .dest input:checked')].map(c=>{if(c.value!=='Others')return c.value;const o=$('edOther').value.trim();return o?'Others ('+o+')':'Others';});
       const old={...it},fail=t=>{$('edMsg').textContent=t;};
       if($('edOre').value==='Others'&&!$('edOreOther').value.trim())return fail('Enter the ore type.');
-      it.sched=readSched('edSchedBox');
       it.ore=$('edOre').value;it.oreOther=it.ore==='Others'?$('edOreOther').value.trim():'';
       if(face){it.mine=$('edMine').value;it.pit=$('edPit').value;it.mrl=$('edMrl').value.trim();it.destArr=d;it.dest=d.join(', ');
         const r=await redrawFace(old,it);if(!r)return fail('Could not redraw the report image.');it.img=r.img;it.thumb=r.thumb;}
@@ -1516,7 +1521,7 @@ $('impShare').onclick=async()=>{
   const[w0,w1]=shWin(),inW=t=>{const d=new Date(t);return d>=w0&&d<w1;};
   const[fr,st]=await Promise.all([getAll('reports'),getAll('stocks')]);
   const mine=[...fr.filter(r=>inW(r.date)&&!r.imported).map(r=>['reports',r]),...st.filter(r=>inW(r.date)&&!r.imported).map(r=>['stocks',r])].sort((a,b)=>new Date(a[1].date)-new Date(b[1].date));
-  if(!mine.length){say2('impMsg','No entries of your own were saved in this shift.');return;}
+  if(!mine.length){say2('impMsgS','No entries of your own were saved in this shift.');return;}
   for(const [sn,r] of mine){if(!r.uid){r.uid=newUid(r.mine);await new Promise(res=>{const tx=db.transaction(sn,'readwrite');tx.objectStore(sn).put(r);tx.oncomplete=res;tx.onerror=res;tx.onabort=res;});}}
   const msg='ROM entries | '+$('shDate').value+' | '+SHL[$('shShift').value]+' | '+mine.length+' entr'+(mine.length===1?'y':'ies')+'\n\n'+mine.map(([sn,r])=>codeLine(r,sn,makeCode(r,sn))).join('\n\n');
   showCode('Codes for this shift',msg,'Send this whole message to the other mine\u2019s sampler. They paste it in Import entries by code and all your entries are added at once.');renderLogList();renderExtra();};
@@ -1527,13 +1532,13 @@ $('impFile').onclick=async()=>{
   const[w0,w1]=shWin(),inW=t=>{const d=new Date(t);return d>=w0&&d<w1;};
   const[fr,st]=await Promise.all([getAll('reports'),getAll('stocks')]);
   const mine=[...fr.filter(r=>inW(r.date)&&!r.imported).map(r=>['reports',r]),...st.filter(r=>inW(r.date)&&!r.imported).map(r=>['stocks',r])].sort((a,b)=>new Date(a[1].date)-new Date(b[1].date));
-  if(!mine.length){say2('impMsg','No entries of your own were saved in this shift.');return;}
+  if(!mine.length){say2('impMsgS','No entries of your own were saved in this shift.');return;}
   for(const [sn,r] of mine){if(!r.uid){r.uid=newUid(r.mine);await new Promise(res=>{const tx=db.transaction(sn,'readwrite');tx.objectStore(sn).put(r);tx.oncomplete=res;tx.onerror=res;tx.onabort=res;});}}
   const txt='ROM entries | '+$('shDate').value+' | '+SHL[$('shShift').value]+' | '+mine.length+' entr'+(mine.length===1?'y':'ies')+'\n\n'+mine.map(([sn,r])=>codeLine(r,sn,makeCode(r,sn))).join('\n\n')+'\n',
     mn=[...new Set(mine.map(([sn,r])=>r.mine).filter(Boolean))].join('-')||'entries',name='ROM_entries_'+mn+'_'+$('shDate').value+'_'+$('shShift').value+'.txt',file=new File([txt],name,{type:'text/plain'});
   renderLogList();renderExtra();
-  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file]});say2('impMsg','File shared.');return;}catch(e){if(e&&e.name==='AbortError')return;}}
-  dlBlob(name,new Blob([txt],{type:'text/plain'}));say2('impMsg','File saved to Downloads: '+name+'. Send it to the other sampler.');};
+  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file]});say2('impMsgS','File shared.');return;}catch(e){if(e&&e.name==='AbortError')return;}}
+  dlBlob(name,new Blob([txt],{type:'text/plain'}));say2('impMsgS','File saved to Downloads: '+name+'. Send it to the other sampler.');};
 $('impFileIn').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
   let t='';try{t=await f.text();}catch(err){say2('impMsg','Could not read that file.');return;}
   $('impTxt').value=t;$('impBtn').onclick();};
