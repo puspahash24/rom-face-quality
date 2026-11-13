@@ -9,7 +9,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
-:root{--rep:#0d5c63;--bg:#edeeea;--card:#fff;--ink:#1b2a30;--mute:#5c6b70;--line:#cfd6d4;--acc:#0d5c63;--acc-ink:#fff;--warn:#9a3412}
+:root{--rep:#1e40af;--bg:#edeeea;--card:#fff;--ink:#1b2a30;--mute:#5c6b70;--line:#cfd6d4;--acc:#0d5c63;--acc-ink:#fff;--warn:#9a3412}
 @media (prefers-color-scheme:dark){:root{--bg:#12191c;--card:#1b2529;--ink:#e6ecea;--mute:#98a8ab;--line:#31403f;--acc:#4fb3bb;--acc-ink:#07262a;--warn:#fdba74}}
 /* themes: green (default), blue, purple, orange, maroon follow the phone's dark mode; light and dark are fixed */
 :root[data-theme=blue]{--acc:#1d4ed8;--rep:#1e40af}
@@ -21,8 +21,8 @@
 :root[data-theme=purple]{--acc:#c4a6ff;--acc-ink:#2a0f5c}
 :root[data-theme=orange]{--acc:#fb923c;--acc-ink:#431407}
 :root[data-theme=maroon]{--acc:#f87171;--acc-ink:#450a0a}}
-:root[data-theme=light]{--bg:#f4f6f8;--card:#fff;--ink:#1b2a30;--mute:#5c6b70;--line:#d9dde3;--acc:#334155;--acc-ink:#fff;--warn:#9a3412;--rep:#334155}
-:root[data-theme=dark]{--bg:#12191c;--card:#1b2529;--ink:#e6ecea;--mute:#98a8ab;--line:#31403f;--acc:#4fb3bb;--acc-ink:#07262a;--warn:#fdba74;--rep:#0d5c63}
+:root[data-theme=light]{--bg:#f4f6f8;--card:#fff;--ink:#1b2a30;--mute:#5c6b70;--line:#d9dde3;--acc:#334155;--acc-ink:#fff;--warn:#9a3412;--rep:#1e40af}
+:root[data-theme=dark]{--bg:#12191c;--card:#1b2529;--ink:#e6ecea;--mute:#98a8ab;--line:#31403f;--acc:#4fb3bb;--acc-ink:#07262a;--warn:#fdba74;--rep:#1e40af}
 header .ttl{display:flex;flex-direction:column;min-width:0}
 #themeWrap{position:relative;flex-shrink:0}
 #themeBtn{padding:6px 8px;line-height:0}
@@ -195,6 +195,12 @@ main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
 </div>
 
 <div class="sub">
+  <h2>Face quality source</h2>
+  <div class="fields"><label>Quality source <select id="nvSel"><option value="Blasthole" selected>Blasthole (nearest holes)</option><option value="Manual">Manual entry (face not accessible)</option></select></label><label id="nvReasonL" style="display:none">Reason for manual entry <select id="nvReason"><option value="">Select reason</option><option>Rain</option><option>Vehicle unavailability</option><option>Safety restriction</option><option>Others</option></select></label><label id="nvReasonOL" style="display:none">Other reason <input id="nvReasonO" type="text" maxlength="40" placeholder="Enter reason" autocomplete="off"></label></div>
+  <div id="nvQ" style="display:none"><p class="note">Manual quality (not from blastholes).</p>
+  <div class="q4"><label>Fe %<input id="nvFe" type="number" step="any" inputmode="decimal"></label><label>SiO2 %<input id="nvSi" type="number" step="any" inputmode="decimal"></label><label>Al2O3 %<input id="nvAl" type="number" step="any" inputmode="decimal"></label><label>P %<input id="nvP" type="number" step="any" inputmode="decimal"></label></div></div>
+</div>
+<div class="sub">
   <h2>Destination</h2>
   <p class="note">Select the plant(s) this face is supplying ROM to. You can choose more than one.</p>
   <div id="destBox" class="dest"></div>
@@ -219,7 +225,6 @@ main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
     <label class="btn ghost">Upload photo (gallery / files)<input id="photoUp" type="file" accept="image/*"></label>
     <button id="save">Save report image</button>
   </div>
-  <div class="row"><label><input id="noPhoto" type="checkbox"> No photo, could not visit the face</label><select id="noReason" style="display:none;font:inherit;padding:6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)"><option>Rain</option><option>Safety reasons</option><option>Other</option></select></div>
   <div id="saveMsg" class="note" style="color:var(--acc);font-weight:600"></div>
   <div class="row"><span id="photoMsg" class="note"></span><button id="rmPhoto" class="ghost" style="display:none;padding:4px 8px;font-size:12px">Remove photo</button></div>
   <div id="prevWrap">
@@ -241,7 +246,7 @@ main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
 <section>
   <h2>Stock quality</h2>
   <p class="note">Photograph the stock, type its quality and select the plants it is feeding.</p>
-  <div class="fields"><label>Mine <select id="stMine"><option value="">Select mine</option><option>Noamundi</option><option>Katamati</option></select></label><label>Stock name <input id="stName" type="text" maxlength="40" placeholder="e.g. Stock-2 Hill-3" autocomplete="off"></label></div>
+  <div class="fields"><label>Mine <select id="stMine"><option value="">Select mine</option><option>Noamundi</option><option>Katamati</option></select></label><label>Stock / face name <input id="stName" type="text" maxlength="40" placeholder="e.g. Stock-2 Hill-3" autocomplete="off"></label></div>
   <div class="fields"><label>Ore type <select id="stOre"></select></label><label id="stOreOtherL" style="display:none">Other ore type <input id="stOreOther" type="text" maxlength="30" placeholder="Enter ore type" autocomplete="off"></label></div>
   <p class="note" id="stOreTxt"></p>
   <div class="q4"><label>Fe %<input id="stFe" type="number" step="any" inputmode="decimal"></label><label>SiO2 %<input id="stSi" type="number" step="any" inputmode="decimal"></label><label>Al2O3 %<input id="stAl" type="number" step="any" inputmode="decimal"></label><label>P %<input id="stP" type="number" step="any" inputmode="decimal"></label></div>
@@ -487,7 +492,8 @@ const ICON_IN='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" strok
 const ICON_OUT='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>';
 function flash(btn,text,left){const o=btn.querySelector('.tip');if(o)o.remove();const t=document.createElement('span');t.className='tip'+(left?' tl':'');t.textContent=text;btn.appendChild(t);clearTimeout(btn._tt);btn._tt=setTimeout(()=>t.remove(),2200);}
 let fsBtn;
-let fsTs=0;
+let fsTs=0,ctlTs=0;
+['pointerdown','touchstart','mousedown','click'].forEach(ev=>document.addEventListener(ev,e=>{if(e.target&&e.target.closest&&e.target.closest('.leaflet-control'))ctlTs=Date.now();},true));
 function setFull(on){
   fsTs=Date.now();
   document.body.classList.toggle('fs',on);$('map').classList.toggle('full',on);
@@ -539,7 +545,7 @@ const IcoControl=L.Control.extend({options:{position:'topright'},onAdd(){
   const box=L.DomUtil.create('div','leaflet-bar'),b=L.DomUtil.create('a','ico-btn',box);b.href='#';b.setAttribute('role','button');
   const lab=()=>{b.innerHTML=icoHtml();b.title='Icon: '+(iconMode==='loader'?'Loader':'Shovel');b.setAttribute('aria-label',b.title);};lab();
   L.DomEvent.disableClickPropagation(box);
-  L.DomEvent.on(b,'click',ev=>{L.DomEvent.preventDefault(ev);iconMode=iconMode==='loader'?'shovel':'loader';try{localStorage.setItem('rom_icon',iconMode);}catch(e){}lab();if(pin)pin.setIcon(curIcon());flash(b,b.title,true);});
+  L.DomEvent.on(b,'click',ev=>{L.DomEvent.stop(ev);iconMode=iconMode==='loader'?'shovel':'loader';try{localStorage.setItem('rom_icon',iconMode);}catch(e){}lab();if(pin)pin.setIcon(curIcon());flash(b,b.title,true);});
   return box;}});
 map.addControl(new IcoControl());
 const ICON_COMPASS='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="transition:none"><circle cx="12" cy="12" r="10"/><path d="M12 4.5L15.2 12H8.8Z" fill="#c0392b" stroke="none"/><path d="M12 19.5L15.2 12H8.8Z" fill="currentColor" fill-opacity=".6" stroke="none"/></svg>';
@@ -668,7 +674,7 @@ function setPos(lat,lon){
 
 const lockedWarn=()=>{msg('Shovel is locked. Tap the lock on the map to unlock');$('gpsinfo').textContent='Shovel is locked. Tap the lock button on the map to move it.';};
 $('drop').onclick=()=>{if(pinLocked){lockedWarn();return;}const c=map.getCenter();setPos(c.lat,c.lng);};
-map.on('click',e=>{if(pinLocked||Date.now()-fsTs<700)return;setPos(e.latlng.lat,e.latlng.lng);});
+map.on('click',e=>{if(pinLocked||Date.now()-fsTs<700||Date.now()-ctlTs<700)return;const t=e.originalEvent&&e.originalEvent.target;if(t&&(!document.body.contains(t)||(t.closest&&t.closest('.leaflet-control'))))return;setPos(e.latlng.lat,e.latlng.lng);});
 
 $('gps').onclick=()=>{
   if(!navigator.geolocation){$('gpsinfo').textContent='GPS is not available in this browser.';return;}
@@ -740,7 +746,7 @@ function update(p){
     last.res=null;
     $('res').innerHTML=`<span class="warn">No blastholes within ${R} m.</span> Move closer or raise the max distance.`;
     $('status').textContent='No holes in range';$('fsBar').textContent='No holes within '+R+' m';
-    if(photoImg||$('noPhoto').checked)renderPreview();
+    if(photoImg||nvOn())renderPreview();
     return;
   }
   const w=near.map(x=>wt?1/Math.max(x.d,1):1),sw=w.reduce((a,b)=>a+b,0);
@@ -755,7 +761,7 @@ function update(p){
   <table><tr><th>Hole</th><th>m</th><th>Fe</th><th>SiO2</th><th>Al2O3</th><th>P</th></tr>${near.map(x=>`<tr><td><span class="dot" style="background:${colour(x.h.type)}"></span>${x.h.name}</td><td>${x.d.toFixed(0)}</td><td>${x.h.fe}</td><td>${x.h.si}</td><td>${x.h.al}</td><td>${x.h.p}</td></tr>`).join('')}</table>`;
   $('status').textContent=`Fe ${f(a.fe,1)}% from ${near.length} holes`;
   $('fsBar').textContent=`Fe ${f(a.fe,2)} | SiO2 ${f(a.si,2)} | Al2O3 ${f(a.al,2)} | P ${f(a.p,3)}  (${near.length} holes)`;
-  if(photoImg||$('noPhoto').checked)renderPreview();
+  if(photoImg||nvOn())renderPreview();
 }
 
 /* ---------- Map snapshot drawn straight onto a canvas (independent of the on-screen map) ---------- */
@@ -865,13 +871,20 @@ async function buildMapCanvas(){
   return c;
 }
 
+/* --- Could not visit the face: manual quality --- */
+const nvOn=()=>$('nvSel').value==='Manual';
+const nvReasonTxt=()=>{const r=$('nvReason').value;return r==='Others'?($('nvReasonO').value.trim()||'Others'):r;};
+function effRes(){
+  if(nvOn()){const v=i=>{const t=$(i).value.trim();return t===''?NaN:+t;};const fe=v('nvFe');if(isNaN(fe))return null;
+    return{a:{fe,si:v('nvSi'),al:v('nvAl'),p:v('nvP')},mixTxt:'Manual entry (face not accessible)',n:0,wt:false,manual:true,R:+$('rad').value||15};}
+  return last&&last.res;}
 async function buildReportCanvas(){
   const W=1000,txt=[];
-  if(last&&last.res){
-    const r=last.res;
+  const r=effRes();
+  if(r){
     txt.push(
-      'ROM quality (nearest '+r.n+' holes, '+(r.wt?'distance weighted':'simple average')+')',
-      `Fe ${r.a.fe.toFixed(2)}%   SiO2 ${r.a.si.toFixed(2)}%   Al2O3 ${r.a.al.toFixed(2)}%   P ${isNaN(r.a.p)?'-':r.a.p.toFixed(3)}%`,
+      r.manual?'Manual face quality (not from blastholes)':'ROM quality (nearest '+r.n+' holes, '+(r.wt?'distance weighted':'simple average')+')',
+      `Fe ${r.a.fe.toFixed(2)}%   SiO2 ${isNaN(r.a.si)?'-':r.a.si.toFixed(2)}%   Al2O3 ${isNaN(r.a.al)?'-':r.a.al.toFixed(2)}%   P ${isNaN(r.a.p)?'-':r.a.p.toFixed(3)}%`,
       'Material: '+r.mixTxt
     );
     if($('faceOre').value)txt.push('Ore type: '+oreLine($('faceOre').value,$('faceOreOther').value.trim()));
@@ -879,7 +892,7 @@ async function buildReportCanvas(){
     const mp=[dm&&'Mine: '+dm,dp&&'Pit: '+dp,(dr&&isFinite(+dr))&&'MRL: '+(+dr)+' m'].filter(Boolean).join('     ');
     if(mp)txt.push(mp);
     const dl=destList();if(dl.length)txt.push('Destination: '+dl.join(', '));
-    if(!photoImg&&$('noPhoto').checked)txt.push('Field photo not taken: '+$('noReason').value);
+    if(nvOn())txt.push('Quality source: Manual entry, face not accessible ('+(nvReasonTxt()||'-')+')');
     txt.push('Time: '+new Date().toLocaleString());
   } else {
     txt.push(
@@ -896,7 +909,7 @@ async function buildReportCanvas(){
   x.fillStyle='#fff';x.fillRect(0,0,W,H);
   if(photoImg)x.drawImage(photoImg,0,0,W,ph);
   if(mc)x.drawImage(mc,0,ph);
-  x.fillStyle=(getComputedStyle(document.documentElement).getPropertyValue('--rep')||'').trim()||'#0d5c63';x.fillRect(0,by,W,H-by);
+  x.fillStyle=repCol();x.fillRect(0,by,W,H-by);
   x.fillStyle='#fff';x.textBaseline='alphabetic';x.textAlign='left';
   txt.forEach((t,i)=>{
     let fs=i===1?28:22;const wt=i<2?'bold ':'';
@@ -950,8 +963,8 @@ function fillPits(sel){
   if(sel&&(PITS[m]||[]).includes(sel))$('pitName').value=sel;}
 $('mineName').innerHTML='<option value="">Select mine</option>'+Object.keys(PITS).map(n=>`<option>${n}</option>`).join('');
 {const m=recall('rom_mineName');if(PITS[m])$('mineName').value=m;fillPits(recall('rom_pitName'));}
-$('mineName').onchange=()=>{store('rom_mineName',$('mineName').value);store('rom_pitName','');fillPits('');if(photoImg||$('noPhoto').checked)renderPreview();};
-$('pitName').onchange=()=>{store('rom_pitName',$('pitName').value);if(photoImg||$('noPhoto').checked)renderPreview();};
+$('mineName').onchange=()=>{store('rom_mineName',$('mineName').value);store('rom_pitName','');fillPits('');if(photoImg||nvOn())renderPreview();};
+$('pitName').onchange=()=>{store('rom_pitName',$('pitName').value);if(photoImg||nvOn())renderPreview();};
 const PLANTS=['NDCMP','Wet Plant','IOPP','C&S NOA','NIM METSO LT','KTM SANDVIK','KTM METSO','OUT-DUMP','Others'];
 $('destBox').innerHTML=PLANTS.map(n=>`<label class="chk"><input type="checkbox" value="${escH(n)}"> ${escH(n)}</label>`).join('');
 function destList(){
@@ -961,24 +974,25 @@ function destList(){
 $('destBox').onchange=()=>{
   const oth=[...document.querySelectorAll('#destBox input')].find(c=>c.value==='Others').checked;
   $('destOther').style.display=oth?'block':'none';if(!oth)$('destOther').value='';
-  if(photoImg||$('noPhoto').checked)renderPreview();};
-$('destOther').oninput=()=>{if(photoImg||$('noPhoto').checked)renderPreview();};
-$('mrl').oninput=()=>{if(photoImg||$('noPhoto').checked)renderPreview();};
+  if(photoImg||nvOn())renderPreview();};
+$('destOther').oninput=()=>{if(photoImg||nvOn())renderPreview();};
+$('mrl').oninput=()=>{if(photoImg||nvOn())renderPreview();};
 $('rmPhoto').onclick=()=>{photoImg=null;$('rmPhoto').style.display='none';$('photoMsg').textContent='Photo removed.';renderPreview();};
 $('photo').onchange=onPhoto;
 $('photoUp').onchange=onPhoto;
 
 const showSave=t=>{$('saveMsg').textContent=t;clearTimeout(showSave.t);showSave.t=setTimeout(()=>$('saveMsg').textContent='',9000);};
 $('save').onclick=async()=>{
-  if(!last||!last.res){alert('Set a location with blastholes in range first.');return;}
+  if(nvOn()){if(!$('nvReason').value){alert('Select the reason the face could not be visited.');return;}if($('nvReason').value==='Others'&&!$('nvReasonO').value.trim()){alert('Enter the reason.');return;}if(!effRes()){alert('Enter at least the Fe % for the manual face quality.');return;}}
+  else if(!last||!last.res){alert('Set a location with blastholes in range first.');return;}
   if(!$('faceOre').value){alert('Select the ore type.');return;}
   if($('faceOre').value==='Others'&&!$('faceOreOther').value.trim()){alert('Enter the ore type.');return;}
-  if(!photoImg&&!$('noPhoto').checked&&!confirm('No field photo has been added. Save the report without a photo?'))return;
+  if(!photoImg&&!nvOn()&&!confirm('No field photo has been added. Save the report without a photo?'))return;
   const c=await buildReportCanvas();
   c.toBlob(blob=>{
     if(!db){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ROM_face_'+Date.now()+'.jpg';a.click();
       showSave('Storage is not available on this device, so the image was downloaded instead.');return;}
-    saveReportLog(blob,last.res,last,c);
+    saveReportLog(blob,effRes(),last,c);
   },'image/jpeg',0.88);
 };
 
@@ -1000,19 +1014,20 @@ function saveReportLog(blob,res,loc,canvas){
   reader.onloadend=()=>{
     const record={
       date:new Date().toISOString(),
-      loc:`${loc.lat.toFixed(5)}, ${loc.lon.toFixed(5)}`,
+      loc:loc?`${loc.lat.toFixed(5)}, ${loc.lon.toFixed(5)}`:'',
       fe:res.a.fe.toFixed(2),
-      si:res.a.si.toFixed(2),
-      al:res.a.al.toFixed(2),
+      si:isNaN(res.a.si)?'-':res.a.si.toFixed(2),
+      al:isNaN(res.a.al)?'-':res.a.al.toFixed(2),
       p:isNaN(res.a.p)?'-':res.a.p.toFixed(3),
       mix:res.mixTxt,
       mine:$('mineName').value.trim(),
       pit:$('pitName').value.trim(),
       mrl:$('mrl').value.trim(),
-      dest:destList().join(', '),destArr:destList(),uid:newUid($('mineName').value.trim()),ore:$('faceOre').value,oreOther:$('faceOre').value==='Others'?$('faceOreOther').value.trim():'',noPhoto:(!photoImg&&$('noPhoto').checked)?$('noReason').value:'',title:'ROM quality (nearest '+res.n+' holes, '+(res.wt?'distance weighted':'simple average')+')',
+      dest:destList().join(', '),destArr:destList(),uid:newUid($('mineName').value.trim()),ore:$('faceOre').value,oreOther:$('faceOre').value==='Others'?$('faceOreOther').value.trim():'',noPhoto:nvOn()?nvReasonTxt():'',manual:nvOn(),title:'ROM quality (nearest '+res.n+' holes, '+(res.wt?'distance weighted':'simple average')+')',
       img:reader.result,
       thumb
     };
+    if(res.manual){record.title='Manual face quality (not from blastholes)';}
     const tx=db.transaction('reports','readwrite');
     tx.objectStore('reports').add(record);
     tx.oncomplete=()=>{renderLogList();shBuild();showSave('Report saved to the Report history log at the bottom of Face quality. Use Share or Download there.');};
@@ -1085,11 +1100,12 @@ $('clearLog').onclick=()=>{
 };
 
 /* ---------- Stock entries and shift end report ---------- */
+const repCol=()=>(getComputedStyle(document.documentElement).getPropertyValue('--rep')||'').trim()||'#1e40af';
 const fx=(v,n)=>(v===undefined||v===null||isNaN(v))?'-':(+v).toFixed(n);
 const tm=t=>new Date(t).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
 const getAll=n=>new Promise(r=>{if(!db)return r([]);db.transaction(n).objectStore(n).getAll().onsuccess=e=>r(e.target.result||[]);});
 const say2=(id,t)=>{$(id).textContent=t;clearTimeout(say2[id]);say2[id]=setTimeout(()=>$(id).textContent='',9000);};
-const repCol=()=>(getComputedStyle(document.documentElement).getPropertyValue('--rep')||'').trim()||'#0d5c63';
+
 async function readImg(f){let s,w,h;
   try{s=await createImageBitmap(f,{imageOrientation:'from-image'});w=s.width;h=s.height;}
   catch(_){s=await new Promise((r,j)=>{const i=new Image();i.onload=()=>r(i);i.onerror=j;i.src=URL.createObjectURL(f);});w=s.naturalWidth;h=s.naturalHeight;}
@@ -1105,17 +1121,18 @@ $('stSave').onclick=()=>{
     dest=[...document.querySelectorAll('#stDest input:checked')].map(c=>c.value);
   const mine=$('stMine').value;if(!mine){alert('Select the mine.');return;}
   const ore=$('stOre').value,oreOt=$('stOreOther').value.trim();if(!ore){alert('Select the ore type.');return;}if(ore==='Others'&&!oreOt){alert('Enter the ore type.');return;}
+  const kind='Stock',reason='';
   if(!name){alert('Enter the stock name.');return;}
   if(isNaN(q[0])){alert('Enter at least the Fe %.');return;}
   if(!db){alert('Storage is not available on this device.');return;}
   if(!dest.length&&!confirm('No plant selected. Save anyway?'))return;
   const W=1000,ph=stImg?Math.round(W*stImg.height/stImg.width):0,now=new Date(),
-    txt=['Stock: '+name+'   |   '+mine,`Fe ${fx(q[0],2)}%   SiO2 ${fx(q[1],2)}%   Al2O3 ${fx(q[2],2)}%   P ${fx(q[3],3)}%`,'Feeding to: '+(dest.join(', ')||'-'),'Ore type: '+oreLine(ore,oreOt),'Time: '+now.toLocaleString()],
+    txt=[kind+': '+name+'   |   '+mine,`Fe ${fx(q[0],2)}%   SiO2 ${fx(q[1],2)}%   Al2O3 ${fx(q[2],2)}%   P ${fx(q[3],3)}%`,'Feeding to: '+(dest.join(', ')||'-'),'Ore type: '+oreLine(ore,oreOt),...(reason?['Could not visit the face: '+reason]:[]),'Time: '+now.toLocaleString()],
     LH=32,H=ph+22+txt.length*LH+8,c=document.createElement('canvas');c.width=W;c.height=H;
   const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,W,H);if(stImg)x.drawImage(stImg,0,0,W,ph);
   x.fillStyle=repCol();x.fillRect(0,ph,W,H-ph);x.fillStyle='#fff';x.textAlign='left';x.textBaseline='alphabetic';
   txt.forEach((t,i)=>{let fs=i<2?28:22;const b=i<2?'bold ':'';x.font=b+fs+'px sans-serif';while(fs>14&&x.measureText(t).width>W-48){fs--;x.font=b+fs+'px sans-serif';}x.fillText(t,24,ph+34+i*LH);});
-  const rec={date:now.toISOString(),uid:newUid(mine),name,mine,ore,oreOther:ore==='Others'?oreOt:'',fe:q[0],si:q[1],al:q[2],p:q[3],dest,img:c.toDataURL('image/jpeg',.88),text:'Stock '+name+' ('+mine+'): '+txt[1]+' | '+txt[2]};
+  const rec={date:now.toISOString(),uid:newUid(mine),kind,reason,name,mine,ore,oreOther:ore==='Others'?oreOt:'',fe:q[0],si:q[1],al:q[2],p:q[3],dest,img:c.toDataURL('image/jpeg',.88),text:kind+' '+name+' ('+mine+'): '+txt[1]+' | '+txt[2]};
   const tx=db.transaction('stocks','readwrite');tx.objectStore('stocks').add(rec);
   tx.oncomplete=()=>{say2('stMsg','Stock entry saved. It now appears as a source in the shift report.');
     ['stName','stFe','stSi','stAl','stP'].forEach(i=>$(i).value='');setOre('st','');document.querySelectorAll('#stDest input').forEach(c=>c.checked=false);stImg=null;renderExtra();shBuild();};
@@ -1133,7 +1150,7 @@ async function shBuild(){
   const[w0,w1]=shWin(),inW=t=>{const d=new Date(t);return d>=w0&&d<w1;};
   const[fr,st]=await Promise.all([getAll('reports'),getAll('stocks')]);
   const srcs=[...fr.filter(r=>inW(r.date)).map(r=>({k:'f'+r.id,mine:r.mine||'',sched:r.sched||{},lbl:'Face '+[r.mine,r.pit,r.mrl&&'MRL '+r.mrl].filter(Boolean).join(' '),tm:tm(r.date),ore:oreMix(r.ore),hasOre:!!r.ore,oreLbl:r.ore?oreLabel(r.ore,r.oreOther):'',fe:parseFloat(r.fe),si:parseFloat(r.si),al:parseFloat(r.al),p:parseFloat(r.p),dest:r.destArr||(r.dest?r.dest.split(', '):[])})),
-    ...st.filter(r=>inW(r.date)).map(r=>({k:'s'+r.id,mine:r.mine||'',sched:r.sched||{},lbl:'Stock '+r.name+(r.mine?' ('+r.mine+')':''),tm:tm(r.date),ore:oreMix(r.ore),hasOre:!!r.ore,oreLbl:r.ore?oreLabel(r.ore,r.oreOther):'',fe:r.fe,si:r.si,al:r.al,p:r.p,dest:r.dest||[]}))];
+    ...st.filter(r=>inW(r.date)).map(r=>({k:'s'+r.id,mine:r.mine||'',sched:r.sched||{},lbl:(r.kind||'Stock')+' '+r.name+(r.mine?' ('+r.mine+')':''),kind:r.kind||'Stock',tm:tm(r.date),ore:oreMix(r.ore),hasOre:!!r.ore,oreLbl:r.ore?oreLabel(r.ore,r.oreOther):'',fe:r.fe,si:r.si,al:r.al,p:r.p,dest:r.dest||[]}))];
   shRows=[];
   PLANTS.forEach(pl=>srcs.forEach(s=>{if(s.dest.some(d=>d===pl||(pl==='Others'&&d.startsWith('Others'))))shRows.push({pl,s});}));
   let h='',cur='';
@@ -1157,7 +1174,7 @@ function shCanvas(rows){
   const x=c.getContext('2d'),ink='#1b2a30';
   x.fillStyle='#fff';x.fillRect(0,0,W,H);x.fillStyle=repCol();x.fillRect(0,0,W,top-20);
   x.fillStyle='#fff';x.textAlign='left';x.font='bold 34px sans-serif';x.fillText('Shift End Report',24,46);
-  x.font='21px sans-serif';x.fillText([$('shDate').value.split('-').reverse().join('-'),SHL[$('shShift').value],$('mineName').value].filter(Boolean).join('   |   '),24,84);
+  x.font='21px sans-serif';x.fillText([$('shDate').value.split('-').reverse().join('-'),SHL[$('shShift').value],'Noamundi and Katamati'].filter(Boolean).join('   |   '),24,84);
   const xs=[24,480,625,745,870,985],put=(v,y,b,fs,ind,fs0)=>{fs=fs||24;ind=ind||0;v.forEach((t,i)=>{let f=(!i&&fs0)?fs0:fs;const bw=b?'bold ':'';x.font=bw+f+'px sans-serif';
     if(!i){while(f>14&&x.measureText(t).width>418-xs[0]-ind){f--;x.font=bw+f+'px sans-serif';}x.textAlign='left';x.fillText(t,xs[0]+ind,y);}
     else{x.textAlign='right';x.fillText(t,xs[i],y);}});};
@@ -1184,7 +1201,7 @@ $('shSave').onclick=()=>{
   if(!db){alert('Storage is not available on this device.');return;}
   const sl=q=>`   - ${q.lbl}: ${q.t} trips | Fe ${fx(q.fe,2)} | SiO2 ${fx(q.si,2)} | Al2O3 ${fx(q.al,2)} | P ${fx(q.p,3)}`;
   const text=SHL[$('shShift').value]+' '+$('shDate').value+'\n'+rows.map(r=>[`${r.pl}: ${r.T} trips | Fe ${fx(r.fe,2)} | SiO2 ${fx(r.si,2)} | Al2O3 ${fx(r.al,2)} | P ${fx(r.p,3)}${r.ore?' | Ore '+oreTxt(r.ore):''}`,...r.src.map(sl)].join('\n')).join('\n');
-  const rec={date:shWin()[0].toISOString(),shift:$('shShift').value,mine:$('mineName').value,rows,text,img:shCanvas(rows).toDataURL('image/jpeg',.88)};
+  const rec={date:shWin()[0].toISOString(),shift:$('shShift').value,mine:'Noamundi and Katamati',rows,text,img:shCanvas(rows).toDataURL('image/jpeg',.88)};
   const tx=db.transaction('shifts','readwrite');tx.objectStore('shifts').add(rec);
   tx.oncomplete=()=>{say2('shMsg','Shift report saved. Use Share or Download below.');renderExtra();};
   tx.onerror=()=>say2('shMsg','Could not save the shift report.');};
@@ -1211,7 +1228,7 @@ const destOf=it=>Array.isArray(it.dest)?it.dest:(it.destArr||(it.dest?String(it.
 function faceLines(it){
   const mp=[it.mine&&'Mine: '+it.mine,it.pit&&'Pit: '+it.pit,(it.mrl&&isFinite(+it.mrl))&&'MRL: '+(+it.mrl)+' m'].filter(Boolean).join('     ');
   const l=[it.title||'ROM quality at the loading face',`Fe ${it.fe}%   SiO2 ${it.si}%   Al2O3 ${it.al}%   P ${it.p}%`,'Material: '+it.mix];
-  if(it.ore)l.push('Ore type: '+oreLine(it.ore,it.oreOther));if(mp)l.push(mp);if(it.dest)l.push('Destination: '+it.dest);if(it.noPhoto)l.push('Field photo not taken: '+it.noPhoto);l.push('Time: '+new Date(it.date).toLocaleString());return l;}
+  if(it.ore)l.push('Ore type: '+oreLine(it.ore,it.oreOther));if(mp)l.push(mp);if(it.dest)l.push('Destination: '+it.dest);if(it.noPhoto)l.push('Quality source: Manual entry, face not accessible ('+it.noPhoto+')');l.push('Time: '+new Date(it.date).toLocaleString());return l;}
 async function redrawFace(old,upd){
   const im=await loadDataImg(old.img);if(!im)return null;
   const top=im.height-(28+(faceLines(old).length-1)*30+14);if(top<50)return null;
@@ -1223,14 +1240,14 @@ async function redrawFace(old,upd){
   return{img:c.toDataURL('image/jpeg',.88),thumb:t.toDataURL('image/jpeg',.7)};}
 async function redrawStock(old,u){
   const im=await loadDataImg(old.img);if(!im)return null;
-  const W=im.width,top=im.height-(22+(old.ore?5:4)*32+8);if(top<0)return null;
-  const txt=['Stock: '+u.name+(u.mine?'   |   '+u.mine:''),`Fe ${fx(u.fe,2)}%   SiO2 ${fx(u.si,2)}%   Al2O3 ${fx(u.al,2)}%   P ${fx(u.p,3)}%`,'Feeding to: '+(u.dest.join(', ')||'-')];
-  if(u.ore)txt.push('Ore type: '+oreLine(u.ore,u.oreOther));txt.push('Time: '+new Date(u.date).toLocaleString());
+  const W=im.width,top=im.height-(22+(4+(old.ore?1:0)+(old.kind==='Face'&&old.reason?1:0))*32+8);if(top<0)return null;
+  const txt=[(u.kind||'Stock')+': '+u.name+(u.mine?'   |   '+u.mine:''),`Fe ${fx(u.fe,2)}%   SiO2 ${fx(u.si,2)}%   Al2O3 ${fx(u.al,2)}%   P ${fx(u.p,3)}%`,'Feeding to: '+(u.dest.join(', ')||'-')];
+  if(u.ore)txt.push('Ore type: '+oreLine(u.ore,u.oreOther));if(u.kind==='Face'&&u.reason)txt.push('Could not visit the face: '+u.reason);txt.push('Time: '+new Date(u.date).toLocaleString());
   const H=top+22+txt.length*32+8,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
   x.fillStyle='#fff';x.fillRect(0,0,W,H);if(top>0)x.drawImage(im,0,0,W,top,0,0,W,top);
   x.fillStyle=repCol();x.fillRect(0,top,W,H-top);x.fillStyle='#fff';x.textAlign='left';x.textBaseline='alphabetic';
   txt.forEach((t,i)=>{let fs=i<2?28:22;const b=i<2?'bold ':'';x.font=b+fs+'px sans-serif';while(fs>14&&x.measureText(t).width>W-48){fs--;x.font=b+fs+'px sans-serif';}x.fillText(t,24,top+34+i*32);});
-  return{img:c.toDataURL('image/jpeg',.88),text:'Stock '+u.name+(u.mine?' ('+u.mine+')':'')+': '+txt[1]+' | '+txt[2]};}
+  return{img:c.toDataURL('image/jpeg',.88),text:(u.kind||'Stock')+' '+u.name+(u.mine?' ('+u.mine+')':'')+': '+txt[1]+' | '+txt[2]};}
 function openEdit(sn,id){
   if(!db)return;
   db.transaction(sn).objectStore(sn).get(id).onsuccess=e=>{
@@ -1268,8 +1285,9 @@ document.addEventListener('click',e=>{const b=e.target.closest('.delBtn');if(!b|
 
 
 /* ---------- No-photo option and CSV export ---------- */
-const npChg=()=>{$('noReason').style.display=$('noPhoto').checked?'inline-block':'none';if(photoImg||$('noPhoto').checked)renderPreview();else $('prevWrap').style.display='none';};
-$('noPhoto').onchange=npChg;$('noReason').onchange=npChg;
+const npChg=()=>{const y=nvOn();$('nvReasonL').style.display=y?'block':'none';$('nvReasonOL').style.display=y&&$('nvReason').value==='Others'?'block':'none';$('nvQ').style.display=y?'block':'none';if(!y)['nvFe','nvSi','nvAl','nvP'].forEach(i=>$(i).value='');if(photoImg||y)renderPreview();else $('prevWrap').style.display='none';};
+$('nvSel').onchange=npChg;$('nvReason').onchange=npChg;
+['nvReasonO','nvFe','nvSi','nvAl','nvP'].forEach(i=>$(i).oninput=()=>{if(photoImg||nvOn())renderPreview();});
 const csvq=v=>{v=String(v==null?'':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
 const cn=(v,n)=>{const t=fx(v,n);return t==='-'?'':t;};
 const ymd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
@@ -1282,7 +1300,7 @@ function shCsv(rows,date,shift,mine){
   return '\ufeff'+L.map(a=>a.map(csvq).join(',')).join('\r\n');}
 function dlText(name,text){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/csv;charset=utf-8'}));a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000);}
 $('shCsv').onclick=()=>{const rows=shCalc();if(!rows.length){alert('Enter trips for at least one source first.');return;}
-  dlText('Shift_Report_'+$('shDate').value+'_'+$('shShift').value+'.csv',shCsv(rows,$('shDate').value,$('shShift').value,$('mineName').value));};
+  dlText('Shift_Report_'+$('shDate').value+'_'+$('shShift').value+'.csv',shCsv(rows,$('shDate').value,$('shShift').value,'Noamundi and Katamati'));};
 document.addEventListener('click',e=>{const b=e.target.closest('.csvBtn');if(!b||!db)return;
   db.transaction('shifts').objectStore('shifts').get(+b.dataset.id).onsuccess=ev=>{const it=ev.target.result;if(!it)return;
     dlText('Shift_Report_'+ymd(new Date(it.date))+'_'+it.shift+'.csv',shCsv(it.rows,ymd(new Date(it.date)),it.shift,it.mine));};});
@@ -1305,7 +1323,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)purgeOld()
 
 
 /* ---------- Ore type ---------- */
-const ORES=['HO','BD','FO','HO+FO','BD+HO','BD+FO','SO','2HO+FO','HO+2FO','Others'],ORE_KEYS=['HO','BD','FO','SO','Others'];
+const ORES=['HO','BD','FO','HO+FO','BD+HO','BD+FO','FO+SO','SO','2HO+FO','HO+2FO','3FO+HO','3HO+FO','Others'],ORE_KEYS=['HO','BD','FO','SO','Others'];
 function oreMix(sel){const m={HO:0,BD:0,FO:0,SO:0,Others:0};if(!sel)return m;if(sel==='Others'){m.Others=100;return m;}
   const ps=sel.split('+').map(t=>{const x=/^(\d*)([A-Za-z]+)$/.exec(t.trim());return x?{c:+(x[1]||1),k:x[2].toUpperCase()}:null;}).filter(Boolean),sum=ps.reduce((a,q)=>a+q.c,0)||1;
   ps.forEach(q=>{const k=m[q.k]!==undefined?q.k:'Others';m[k]+=q.c/sum*100;});return m;}
@@ -1316,7 +1334,7 @@ const oreOptions=sel=>'<option value="">Select ore type</option>'+ORES.map(o=>`<
 function setOre(p,val,other){const sl=$(p+'Ore'),o=$(p+'OreOther');sl.value=val||'';if(o.value!==(other||''))o.value=other||'';
   $(p+'OreOtherL').style.display=sl.value==='Others'?'block':'none';$(p+'OreTxt').textContent=sl.value?'Proportion: '+oreLine(sl.value,o.value.trim()):'';}
 ['face','st'].forEach(p=>{$(p+'Ore').innerHTML=oreOptions('');
-  const ch=()=>{setOre(p,$(p+'Ore').value,$(p+'OreOther').value);if(p==='face'&&(photoImg||$('noPhoto').checked))renderPreview();};
+  const ch=()=>{setOre(p,$(p+'Ore').value,$(p+'OreOther').value);if(p==='face'&&(photoImg||nvOn()))renderPreview();};
   $(p+'Ore').onchange=ch;$(p+'OreOther').oninput=ch;});
 
 
@@ -1377,7 +1395,7 @@ function cpSaveDraft(){try{localStorage.setItem(cpKey,JSON.stringify(cpDraft));}
 function cpItems(){
   const items=[],trips=i=>+((document.querySelector('#shSrc input[data-i="'+i+'"]')||{}).value)||0;
   shRows.forEach((r,i)=>{const key=r.pl+'|'+r.s.k,ov=cpDraft.sched[key],sc=r.s.sched&&r.s.sched[r.pl]!==undefined?r.s.sched[r.pl]:null;
-    items.push({pl:r.pl,key,lbl:r.s.lbl,mine:r.s.mine||'',type:r.s.k[0]==='s'?'Stock':'Face',trips:trips(i),sched:ov!==undefined?ov:sc,extra:false});});
+    items.push({pl:r.pl,key,lbl:r.s.lbl,mine:r.s.mine||'',type:r.s.k[0]==='s'?(r.s.kind||'Stock'):'Face',trips:trips(i),sched:ov!==undefined?ov:sc,extra:false});});
   cpDraft.extra.forEach((e,j)=>items.push({pl:e.pl,key:'x#'+j,lbl:e.type+' '+e.name+(e.mine?' ('+e.mine+')':''),mine:e.mine,type:e.type,trips:0,sched:e.sched,extra:true,xi:j}));
   return items;}
 function cpCompute(){
@@ -1415,7 +1433,7 @@ function cpCanvas(r){
   const col=v=>v===null?'#666':v>=90?'#1e7d32':v>=75?'#b26a00':'#b3261e',sg=v=>(v>0?'+':'')+fx(v,1);
   x.fillStyle='#fff';x.fillRect(0,0,W,H);x.fillStyle=repCol();x.fillRect(0,0,W,top-20);
   x.fillStyle='#fff';x.textAlign='left';x.font='bold 34px sans-serif';x.fillText('Schedule Compliance Report',24,46);
-  x.font='21px sans-serif';x.fillText([$('shDate').value.split('-').reverse().join('-'),SHL[$('shShift').value],$('mineName').value].filter(Boolean).join('   |   '),24,84);
+  x.font='21px sans-serif';x.fillText([$('shDate').value.split('-').reverse().join('-'),SHL[$('shShift').value],'Noamundi and Katamati'].filter(Boolean).join('   |   '),24,84);
   const cell=(t,i,yy,fs,b,color)=>{x.font=(b?'bold ':'')+fs+'px sans-serif';x.fillStyle=color||ink;x.textAlign=i?'right':'left';x.fillText(t,cx[i],yy);};
   const lab=(t,yy,color)=>{let f=21;x.font=f+'px sans-serif';while(f>13&&x.measureText(t).width>480){f--;x.font=f+'px sans-serif';}x.fillStyle=color||ink;x.textAlign='left';x.fillText(t,24,yy);};
   let y=top;
@@ -1442,7 +1460,7 @@ $('cpGen').onclick=()=>{const r=cpCompute();if(!r.has){alert('Enter the schedule
 function cpText(r){return SHL[$('shShift').value]+' '+$('shDate').value+'\n'+r.plants.map(p=>p.pl+': '+(p.score==null?'no schedule':p.score.toFixed(0)+'%')).join(' | ')+'\nOverall: '+(r.overall==null?'-':r.overall.toFixed(0)+'%');}
 $('cpSave').onclick=()=>{const r=cpCompute();if(!r.has){alert('Enter the scheduled feed % for at least one face or stock first.');return;}
   if(!db){alert('Storage is not available on this device.');return;}
-  const rec={date:shWin()[0].toISOString(),shift:$('shShift').value,mine:$('mineName').value,plants:r.plants,mines:r.mines,overall:r.overall,text:cpText(r),img:cpCanvas(r).toDataURL('image/jpeg',.88)};
+  const rec={date:shWin()[0].toISOString(),shift:$('shShift').value,mine:'Noamundi and Katamati',plants:r.plants,mines:r.mines,overall:r.overall,text:cpText(r),img:cpCanvas(r).toDataURL('image/jpeg',.88)};
   const tx=db.transaction('comps','readwrite');tx.objectStore('comps').add(rec);
   tx.oncomplete=()=>{cpOn=true;cpPrev();say2('cpMsg','Compliance report saved. Use Share or Download below.');renderExtra();};
   tx.onerror=()=>say2('cpMsg','Could not save the compliance report.');};
@@ -1468,18 +1486,18 @@ const chk=t=>{let h=2166136261;for(let i=0;i<t.length;i++){h^=t.charCodeAt(i);h=
 function makeCode(r,sn){
   const nn=v=>(v===undefined||v===null||(typeof v==='number'&&isNaN(v)))?null:v;
   const o=sn==='reports'?{v:1,t:'F',u:r.uid,d:r.date,m:r.mine,pt:r.pit,r:r.mrl,l:r.loc,q:[r.fe,r.si,r.al,r.p],x:r.mix,de:destOf(r),s:r.sched,o:r.ore,oo:r.oreOther,ti:r.title}
-    :{v:1,t:'S',u:r.uid,d:r.date,m:r.mine,n:r.name,q:[nn(r.fe),nn(r.si),nn(r.al),nn(r.p)],de:destOf(r),s:r.sched,o:r.ore,oo:r.oreOther};
+    :{v:1,t:'S',u:r.uid,d:r.date,m:r.mine,n:r.name,q:[nn(r.fe),nn(r.si),nn(r.al),nn(r.p)],de:destOf(r),s:r.sched,o:r.ore,oo:r.oreOther,k:r.kind||'Stock',rs:r.reason||''};
   Object.keys(o).forEach(k=>{const v=o[k];if(v===undefined||v===''||(Array.isArray(v)&&!v.length)||(v&&typeof v==='object'&&!Array.isArray(v)&&!Object.keys(v).length))delete o[k];});
   const p=b64u(new TextEncoder().encode(JSON.stringify(o)));return 'ROM1.'+p+'.'+chk(p);}
 function decodeCode(c){
   const m=/^ROM1\.([A-Za-z0-9_-]+)\.([0-9A-Z]{4})$/.exec(c);if(!m||chk(m[1])!==m[2])return null;
   try{const o=JSON.parse(new TextDecoder().decode(unb64u(m[1])));return(o&&o.v===1&&o.u&&(o.t==='F'||o.t==='S')&&Array.isArray(o.q))?o:null;}catch(e){return null;}}
 function codeLine(r,sn,code){
-  const who=sn==='reports'?'Face '+[r.mine,r.pit,r.mrl&&'MRL '+r.mrl].filter(Boolean).join(' '):'Stock '+r.name+(r.mine?' ('+r.mine+')':'');
+  const who=sn==='reports'?'Face '+[r.mine,r.pit,r.mrl&&'MRL '+r.mrl].filter(Boolean).join(' '):(r.kind||'Stock')+' '+r.name+(r.mine?' ('+r.mine+')':'');
   return who+' | Fe '+fx(r.fe,2)+' SiO2 '+fx(r.si,2)+' Al2O3 '+fx(r.al,2)+' P '+fx(r.p,3)+' | To: '+(destOf(r).join(', ')||'-')+' | ID '+r.uid+'\n'+code;}
 function stockLines(r){
-  const l=['Stock: '+r.name+(r.mine?'   |   '+r.mine:''),`Fe ${fx(r.fe,2)}%   SiO2 ${fx(r.si,2)}%   Al2O3 ${fx(r.al,2)}%   P ${fx(r.p,3)}%`,'Feeding to: '+((r.dest||[]).join(', ')||'-')];
-  if(r.ore)l.push('Ore type: '+oreLine(r.ore,r.oreOther));l.push('Time: '+new Date(r.date).toLocaleString());return l;}
+  const l=[(r.kind||'Stock')+': '+r.name+(r.mine?'   |   '+r.mine:''),`Fe ${fx(r.fe,2)}%   SiO2 ${fx(r.si,2)}%   Al2O3 ${fx(r.al,2)}%   P ${fx(r.p,3)}%`,'Feeding to: '+((r.dest||[]).join(', ')||'-')];
+  if(r.ore)l.push('Ore type: '+oreLine(r.ore,r.oreOther));if(r.kind==='Face'&&r.reason)l.push('Could not visit the face: '+r.reason);l.push('Time: '+new Date(r.date).toLocaleString());return l;}
 function importCard(rec,face){
   const W=1000,top=70,lines=face?faceLines(rec):stockLines(rec),LH=face?30:32,H=face?top+28+(lines.length-1)*30+14:top+22+lines.length*32+8;
   const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
@@ -1491,7 +1509,7 @@ function importCard(rec,face){
 async function storeImported(o){
   const q=o.q,face=o.t==='F',nv=v=>v==null?NaN:v;let rec,sn;
   if(face){sn='reports';rec={date:o.d,loc:o.l||'',fe:q[0],si:q[1],al:q[2],p:q[3],mix:o.x||'',mine:o.m||'',pit:o.pt||'',mrl:o.r||'',dest:(o.de||[]).join(', '),destArr:o.de||[],sched:o.s||{},ore:o.o||'',oreOther:o.oo||'',noPhoto:'',title:o.ti||'',uid:o.u,imported:true};}
-  else{sn='stocks';rec={date:o.d,name:o.n||'',mine:o.m||'',sched:o.s||{},ore:o.o||'',oreOther:o.oo||'',fe:nv(q[0]),si:nv(q[1]),al:nv(q[2]),p:nv(q[3]),dest:o.de||[],uid:o.u,imported:true};}
+  else{sn='stocks';rec={date:o.d,kind:o.k||'Stock',reason:o.rs||'',name:o.n||'',mine:o.m||'',sched:o.s||{},ore:o.o||'',oreOther:o.oo||'',fe:nv(q[0]),si:nv(q[1]),al:nv(q[2]),p:nv(q[3]),dest:o.de||[],uid:o.u,imported:true};}
   const c=importCard(rec,face);rec.img=c.toDataURL('image/jpeg',.88);
   if(face){const t=document.createElement('canvas');t.width=200;t.height=Math.round(200*c.height/c.width);t.getContext('2d').drawImage(c,0,0,t.width,t.height);rec.thumb=t.toDataURL('image/jpeg',.7);}
   else{const sl=stockLines(rec);rec.text='Stock '+rec.name+(rec.mine?' ('+rec.mine+')':'')+': '+sl[1]+' | '+sl[2];}
@@ -1548,7 +1566,7 @@ $('themeMenu').innerHTML=THEMES.map(t=>`<button data-t="${t[0]}"><span class="sw
 const markTheme=()=>document.querySelectorAll('#themeMenu button').forEach(b=>b.classList.toggle('sel',b.dataset.t===document.documentElement.dataset.theme));
 $('themeBtn').onclick=e=>{e.stopPropagation();$('themeMenu').hidden=!$('themeMenu').hidden;markTheme();};
 $('themeMenu').onclick=e=>{const b=e.target.closest('button');if(!b)return;
-  document.documentElement.dataset.theme=b.dataset.t;store('rom_theme',b.dataset.t);markTheme();$('themeMenu').hidden=true;if(photoImg||$('noPhoto').checked)renderPreview();};
+  document.documentElement.dataset.theme=b.dataset.t;store('rom_theme',b.dataset.t);markTheme();$('themeMenu').hidden=true;if(photoImg||nvOn())renderPreview();};
 document.addEventListener('click',e=>{if(!e.target.closest('#themeWrap'))$('themeMenu').hidden=true;});
 /* ---------- Interface size: scales all the panels below the map (the map has its own zoom) ---------- */
 {const Z=[80,90,100,110,125,150,175,200];let zi=Z.indexOf(100);
