@@ -1013,11 +1013,11 @@ async function faceSaveRun(){
   else if(!last||!last.res){alert('Set a location with blastholes in range first.');return;}
   if(!$('faceOre').value){alert('Select the ore type.');return;}
   if($('faceOre').value==='Others'&&!$('faceOreOther').value.trim()){alert('Enter the ore type.');return;}
-  {const n3=v=>{const x=parseFloat(v);return isNaN(x)?'-':x.toFixed(3);},kk=(m,pt,r)=>[m,pt,r].map(v=>String(v||'').trim().toLowerCase()).join('|');
+  {const nq=(a)=>[2,2,2,3].map((d,i)=>{const x=parseFloat(a[i]);return isNaN(x)?'-':x.toFixed(d);}).join('|'),kk=(m,pt,r)=>[m,pt,r].map(v=>String(v||'').trim().toLowerCase()).join('|');
    const r0=effRes(),man=nvOn(),lk=man?'':(last?last.lat.toFixed(5)+','+last.lon.toFixed(5):'');
-   const key=kk($('mineName').value,$('pitName').value,$('mrl').value)+'#'+lk,qs=[r0.a.fe,r0.a.si,r0.a.al,r0.a.p].map(n3).join('|');
-   const hit=(await getAll('reports')).find(r=>!r.imported&&(kk(r.mine,r.pit,r.mrl)+'#'+(r.manual?'':String(r.loc||'').replace(/\s/g,'')))===key&&[r.fe,r.si,r.al,r.p].map(n3).join('|')===qs);
-   if(hit&&!confirm('A report for this face with the same MRL and quality was already saved at '+new Date(hit.date).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+'.\n\nSave it again?'))return;}
+   const key=kk($('mineName').value,$('pitName').value,$('mrl').value)+'#'+lk,qs=nq([r0.a.fe,r0.a.si,r0.a.al,r0.a.p]);
+   const hit=(await getAll('reports')).find(r=>!r.imported&&(kk(r.mine,r.pit,r.mrl)+'#'+(r.manual?'':String(r.loc||'').replace(/\s/g,'')))===key&&nq([r.fe,r.si,r.al,r.p])===qs);
+   if(hit&&!confirm('\u26A0 POSSIBLE DOUBLE ENTRY\n\nThis face ('+([hit.mine,hit.pit,hit.mrl&&'MRL '+hit.mrl].filter(Boolean).join(' ')||'same location')+') with the same quality was already saved at '+new Date(hit.date).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+'.\n\nOK = save it again as a separate entry\nCancel = do not save')){showSave('Not saved. This face was already saved at '+new Date(hit.date).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+'.');return;}}
   if(!photoImg&&!nvOn()&&!confirm('No field photo has been added. Save the report without a photo?'))return;
   const c=await buildReportCanvas();
   c.toBlob(blob=>{
@@ -1026,7 +1026,7 @@ async function faceSaveRun(){
     saveReportLog(blob,effRes(),last,c);
   },'image/jpeg',0.88);
 }
-$('save').onclick=async()=>{if(fBusy)return;fBusy=true;try{await faceSaveRun();}finally{setTimeout(()=>{fBusy=false;},3000);}};
+$('save').onclick=async()=>{if(fBusy){showSave('Already saving. The extra tap was ignored.');return;}fBusy=true;try{await faceSaveRun();}finally{setTimeout(()=>{fBusy=false;},3000);}};
 
 /* --- IndexedDB Storage for Face Photos & Reports Log --- */
 let db;
@@ -1159,10 +1159,10 @@ $('stSave').onclick=async()=>{
   if(isNaN(q[0])){alert('Enter at least the Fe %.');return;}
   if(!db){alert('Storage is not available on this device.');return;}
   if(!dest.length&&!confirm('No plant selected. Save anyway?'))return;
-  if(stBusy)return;stBusy=true;setTimeout(()=>{stBusy=false;},3000);
+  if(stBusy){say2('stMsg','Already saving. The extra tap was ignored.');return;}stBusy=true;setTimeout(()=>{stBusy=false;},3000);
   {const n3=v=>{const x=parseFloat(v);return isNaN(x)?'-':x.toFixed(3);},kk=r=>[r.mine,r.name,r.ore].map(v=>String(v||'').trim().toLowerCase()).join('|')+'#'+[r.fe,r.si,r.al,r.p].map(n3).join('|');
    const me={mine,name,ore,fe:q[0],si:q[1],al:q[2],p:q[3]},hit=(await getAll('stocks')).find(r=>!r.imported&&kk(r)===kk(me));
-   if(hit&&!confirm('Stock "'+name+'" with the same quality was already saved at '+new Date(hit.date).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+'.\n\nSave it again?')){stBusy=false;return;}}
+   if(hit&&!confirm('\u26A0 POSSIBLE DOUBLE ENTRY\n\nStock "'+name+'" with the same quality was already saved at '+new Date(hit.date).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+'.\n\nOK = save it again as a separate entry\nCancel = do not save')){stBusy=false;say2('stMsg','Not saved. This stock was already saved at '+new Date(hit.date).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+'.');return;}}
   const W=1000,ph=stImg?Math.round(W*stImg.height/stImg.width):0,now=new Date(),
     txt=[kind+': '+name+'   |   '+mine,`Fe ${fx(q[0],2)}%   SiO2 ${fx(q[1],2)}%   Al2O3 ${fx(q[2],2)}%   P ${fx(q[3],3)}%`,'Feeding to: '+(dest.join(', ')||'-'),'Ore type: '+oreLine(ore,oreOt),...descLines($('stDesc').value),'Time: '+now.toLocaleString()],
     LH=32,H=ph+22+txt.length*LH+8,c=document.createElement('canvas');c.width=W;c.height=H;
