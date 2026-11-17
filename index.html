@@ -295,6 +295,8 @@ main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
   <div id="shSrc"></div>
   <img id="shPrev" style="display:none;width:100%;border-radius:6px;margin-top:10px" alt="Shift end report preview">
   <div class="row"><button id="shBuild" class="ghost">Refresh sources</button><button id="shSave">Save Shift Report (Image)</button><button id="shPdf">Save Shift Report with Field Photographs (PDF)</button><button id="shCsv" class="ghost">Export CSV (Excel)</button></div>
+  <div class="row"><button id="shQvc" style="width:100%">Share plant quality code (for Quality Value Chain)</button></div>
+  <p class="note" style="margin:4px 0 0">Sends the trip-weighted Fe, SiO2, Al2O3 and P of each plant as a short message with a code. Paste the whole message in the Quality Value Chain app to predict each plant’s product quality.</p>
   <div id="shMsg" class="note" style="color:var(--acc);font-weight:600"></div>
   <p class="note" style="margin:6px 0 0">Entries are removed automatically 2 hours after their shift ends (A shift at 4 PM, B shift at 12 AM, C shift at 8 AM). Share or download what you need before then.</p>
   <div id="shList" class="note">No shift reports yet.</div>
@@ -1249,7 +1251,7 @@ $('shSave').onclick=()=>{
   tx.oncomplete=()=>{say2('shMsg','Shift report saved. Use Share or Download below.');renderExtra();};
   tx.onerror=()=>say2('shMsg','Could not save the shift report.');};
 
-const xBtns=(s,id)=>`<div style="display:flex;flex-direction:column;gap:6px"><button class="xShare" data-s="${s}" data-id="${id}" style="padding:4px 8px;font-size:12px">Share</button><button class="xDl ghost" data-s="${s}" data-id="${id}" style="padding:4px 8px;font-size:12px">Download</button>${s==='stocks'?`<button class="editBtn ghost" data-s="stocks" data-id="${id}" style="padding:4px 8px;font-size:12px">Edit</button>`:''}${s==='shifts'?`<button class="csvBtn ghost" data-id="${id}" style="padding:4px 8px;font-size:12px">CSV</button>`:''}${s==='stocks'?`<button class="codeBtn ghost" data-s="stocks" data-id="${id}" style="padding:4px 8px;font-size:12px">Code</button>`:''}${s==='comps'?`<button class="cpCsvBtn ghost" data-id="${id}" style="padding:4px 8px;font-size:12px">CSV</button>`:''}<button class="delBtn danger" data-s="${s}" data-id="${id}" style="padding:4px 8px;font-size:12px">Delete</button></div>`;
+const xBtns=(s,id)=>`<div style="display:flex;flex-direction:column;gap:6px"><button class="xShare" data-s="${s}" data-id="${id}" style="padding:4px 8px;font-size:12px">Share</button><button class="xDl ghost" data-s="${s}" data-id="${id}" style="padding:4px 8px;font-size:12px">Download</button>${s==='stocks'?`<button class="editBtn ghost" data-s="stocks" data-id="${id}" style="padding:4px 8px;font-size:12px">Edit</button>`:''}${s==='shifts'?`<button class="csvBtn ghost" data-id="${id}" style="padding:4px 8px;font-size:12px">CSV</button><button class="qvcBtn ghost" data-id="${id}" style="padding:4px 8px;font-size:12px">QVC code</button>`:''}${s==='stocks'?`<button class="codeBtn ghost" data-s="stocks" data-id="${id}" style="padding:4px 8px;font-size:12px">Code</button>`:''}${s==='comps'?`<button class="cpCsvBtn ghost" data-id="${id}" style="padding:4px 8px;font-size:12px">CSV</button>`:''}<button class="delBtn danger" data-s="${s}" data-id="${id}" style="padding:4px 8px;font-size:12px">Delete</button></div>`;
 async function renderExtra(){
   if(!db)return;
   const st=(await getAll('stocks')).sort((a,b)=>b.id-a.id),sh=(await getAll('shifts')).sort((a,b)=>b.id-a.id);
@@ -1350,6 +1352,27 @@ document.addEventListener('click',e=>{const b=e.target.closest('.csvBtn');if(!b|
   db.transaction('shifts').objectStore('shifts').get(+b.dataset.id).onsuccess=ev=>{const it=ev.target.result;if(!it)return;
     dlText('Shift_Report_'+ymd(new Date(it.date))+'_'+it.shift+'.csv',shCsv(it.rows,ymd(new Date(it.date)),it.shift,it.mine));};});
 
+
+/* ---------- Plant quality code for the Quality Value Chain app (QVC1) ---------- */
+const QVC_PLANT={'Wet Plant':'WET','IOPP':'IOPP','NDCMP':'NDCMP','C&S NOA':'ISS','NIM METSO LT':'MNIM','KTM SANDVIK':'SAND','KTM METSO':'MKTM'};
+function qvcMessage(rows,date,shift){
+  const r4=(v,n)=>(v===undefined||v===null||isNaN(v))?null:+(+v).toFixed(n);
+  const pr=rows.filter(r=>QVC_PLANT[r.pl]&&r.T>0), other=rows.filter(r=>!QVC_PLANT[r.pl]&&r.T>0);
+  if(!pr.length)return null;
+  const o={v:1,d:date,s:shift,r:pr.map(r=>{const x={p:QVC_PLANT[r.pl],n:r.T,q:[r4(r.fe,2),r4(r.si,2),r4(r.al,2),r4(r.p,3)]};if(r.ore)x.o=ORE_KEYS.map(k=>r4(r.ore[k],1));return x;})};
+  const pl=b64u(new TextEncoder().encode(JSON.stringify(o))),code='QVC1.'+pl+'.'+chk(pl);
+  const dd=date.split('-').reverse().join('-');
+  const lines=pr.map(r=>`${r.pl}: ${r.T} trips | Fe ${fx(r.fe,2)} | SiO2 ${fx(r.si,2)} | Al2O3 ${fx(r.al,2)} | P ${fx(r.p,3)}`);
+  return 'Plant quality | '+dd+' | '+SHL[shift]+'\n'+lines.join('\n')+(other.length?'\n(not sent to plants: '+other.map(r=>r.pl+' '+r.T+' trips').join(', ')+')':'')+'\n\nQuality Value Chain code (paste the whole message):\n'+code;}
+$('shQvc').onclick=()=>{const rows=shCalc();if(!rows.length){alert('Enter trips for at least one source first.');return;}
+  const msg=qvcMessage(rows,$('shDate').value,$('shShift').value);
+  if(!msg){say2('shMsg','No trips to a processing plant in this shift (only out-dump or others).');return;}
+  showCode('Plant quality code',msg,'Send this whole message (WhatsApp, SMS or email). In the Quality Value Chain app, open Plant summary and paste it — every plant is filled in at once. Trips are sent too; tonnes are worked out there.');};
+document.addEventListener('click',e=>{const b=e.target.closest('.qvcBtn');if(!b||!db)return;
+  db.transaction('shifts').objectStore('shifts').get(+b.dataset.id).onsuccess=ev=>{const it=ev.target.result;if(!it)return;
+    const msg=qvcMessage(it.rows||[],ymd(new Date(it.date)),it.shift);
+    if(!msg){alert('This shift report has no trips to a processing plant.');return;}
+    showCode('Plant quality code',msg,'Send this whole message. In the Quality Value Chain app, open Plant summary and paste it.');};});
 
 /* ---------- Auto-delete logs 2 hours after their shift ends ---------- */
 function shiftExpiry(t){const d=new Date(t),h=d.getHours(),b=new Date(d);b.setMinutes(0,0,0);
