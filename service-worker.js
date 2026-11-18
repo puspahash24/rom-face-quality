@@ -1,5 +1,5 @@
 // ROM Face Check - offline helper
-const CACHE = 'rom-face-v3';
+const CACHE = 'rom-face-v5';
 const CDN = 'cdnjs.cloudflare.com';
 const PRECACHE = [
   './', './index.html', './manifest.json',
@@ -27,6 +27,15 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
+
+  // Schedule reader (OCR) files: large and fixed, so keep the saved copy once downloaded.
+  if (url.origin === self.location.origin && /(tesseract\.min\.js|worker\.min\.js|tesseract-core[\w-]*\.wasm\.js|eng\.traineddata\.gz)$/.test(url.pathname)) {
+    e.respondWith(caches.match(req).then(hit => hit || fetch(req).then(res => {
+      if (keep(res)) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
+      return res;
+    })));
+    return;
+  }
 
   // The app itself: always try the network first so updates arrive, fall back to the saved copy offline.
   if (url.origin === self.location.origin) {
