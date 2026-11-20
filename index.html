@@ -146,6 +146,9 @@ main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
 .cpdet[open]>summary{margin-bottom:8px}
 .srcname{font-size:16px;font-weight:800;line-height:1.3;color:var(--ink)}
 .log-info b.ident{font-size:17px;font-weight:800;line-height:1.3;color:var(--ink);margin-bottom:3px}
+.schsel{max-width:100%;font:inherit;font-size:13px;padding:5px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
+.schmiss{font-size:13px;color:#b3261e;padding:4px 0;border-bottom:1px dashed var(--line)}
+.schplan{font-size:12.5px;margin:2px 0 4px;color:var(--ink);opacity:.85}
 .plhead{display:block;margin-top:12px;font-size:21px;font-weight:800;color:var(--acc);line-height:1.25}
 .src .lbl{font-size:17px;font-weight:800;color:var(--ink);line-height:1.3}
 #zoomWrap{display:flex;align-items:center;gap:4px;flex-shrink:0;margin-left:auto;margin-right:8px}
@@ -303,11 +306,23 @@ main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
 </section>
 <section>
   <details class="cpdet" id="cpDet"><summary>Schedule compliance <span class="note" style="font-size:12px;font-weight:400">(tap to open, only when asked)</span></summary>
-  <p class="note">Uses the date and shift chosen in the Shift end report. Faces and stocks you fed are listed with their trips. Enter or correct the scheduled feed % for each (optional), and add any scheduled face or stock that was not operated.</p>
+  <p class="note">Uses the date and shift chosen in the Shift end report and the trips entered there.</p>
+  <div class="sub" id="schBox">
+    <h2>Schedule from NRD Schedule Planner</h2>
+    <p class="note">Paste the schedule message you received (the code starts with SCH1.). Each face and stock you fed is matched to the schedule automatically: faces by pit and MRL (e.g. H6-672 = Hill-6, MRL about 672), stocks by name. Check the matches below and correct any that are wrong.</p>
+    <textarea id="schTxt" rows="3" placeholder="Paste the schedule message here" style="width:100%;font:13px ui-monospace,Menlo,monospace;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)"></textarea>
+    <div class="row"><button id="schImp" style="flex:1">Import schedule</button></div>
+    <div class="fields"><label>Schedule used for this shift <select id="schSel" class="schsel"></select></label><label>MRL match tolerance (m) <input id="schTol" type="number" min="1" max="60" step="1" inputmode="numeric" value="10"></label></div>
+    <div id="schInfo" class="note"></div>
+    <div id="schMsg" class="note" style="color:var(--acc);font-weight:600"></div>
+  </div>
   <div id="cpSrc"></div>
+  <div id="cpManual">
+  <p class="note" style="margin:8px 0 0">Without a schedule code: enter or correct the scheduled feed % for each face or stock, and add any scheduled face or stock that was not operated.</p>
   <p class="note" style="margin:12px 0 4px"><b>Add a scheduled face or stock that was not operated</b></p>
   <div class="fields"><label>Plant <select id="cpPl"></select></label><label>Type <select id="cpType"><option>Face</option><option>Stock</option></select></label><label>Mine <select id="cpMine"><option value="">Select mine</option><option>Noamundi</option><option>Katamati</option></select></label><label>Face / stock name <input id="cpName" type="text" maxlength="40" autocomplete="off" placeholder="e.g. WP-528 (DB Side)"></label><label>Scheduled feed % <input id="cpSch" type="number" min="0" max="100" step="any" inputmode="decimal"></label></div>
   <div class="row"><button id="cpAdd" class="ghost">Add to schedule list</button></div>
+  </div>
   <img id="cpPrev" style="display:none;width:100%;border-radius:6px;margin-top:10px" alt="Schedule compliance report preview">
   <div class="row"><button id="cpGen">Generate compliance report</button><button id="cpSave">Save report (Image)</button><button id="cpCsv" class="ghost">Export CSV (Excel)</button></div>
   <div id="cpMsg" class="note" style="color:var(--acc);font-weight:600"></div>
@@ -1194,8 +1209,8 @@ async function shBuild(){
   const prev={};document.querySelectorAll('#shSrc input').forEach(i=>prev[i.dataset.key]=i.value);
   const[w0,w1]=shWin(),inW=t=>{const d=new Date(t);return d>=w0&&d<w1;};
   const[fr,st]=await Promise.all([getAll('reports'),getAll('stocks')]);
-  const srcs=[...fr.filter(r=>inW(r.date)).map(r=>({k:'f'+r.id,mine:r.mine||'',sched:r.sched||{},lbl:'Face '+[r.mine,r.pit,r.mrl&&'MRL '+r.mrl].filter(Boolean).join(' '),tm:tm(r.date),ore:oreMix(r.ore),hasOre:!!r.ore,oreLbl:r.ore?oreLabel(r.ore,r.oreOther):'',fe:parseFloat(r.fe),si:parseFloat(r.si),al:parseFloat(r.al),p:parseFloat(r.p),dest:r.destArr||(r.dest?r.dest.split(', '):[])})),
-    ...st.filter(r=>inW(r.date)).map(r=>({k:'s'+r.id,mine:r.mine||'',sched:r.sched||{},lbl:(r.kind||'Stock')+' '+r.name+(r.mine?' ('+r.mine+')':''),kind:r.kind||'Stock',tm:tm(r.date),ore:oreMix(r.ore),hasOre:!!r.ore,oreLbl:r.ore?oreLabel(r.ore,r.oreOther):'',fe:r.fe,si:r.si,al:r.al,p:r.p,dest:r.dest||[]}))];
+  const srcs=[...fr.filter(r=>inW(r.date)).map(r=>({k:'f'+r.id,mine:r.mine||'',pit:r.pit||'',mrl:r.mrl||'',sched:r.sched||{},lbl:'Face '+[r.mine,r.pit,r.mrl&&'MRL '+r.mrl].filter(Boolean).join(' '),tm:tm(r.date),ore:oreMix(r.ore),hasOre:!!r.ore,oreLbl:r.ore?oreLabel(r.ore,r.oreOther):'',fe:parseFloat(r.fe),si:parseFloat(r.si),al:parseFloat(r.al),p:parseFloat(r.p),dest:r.destArr||(r.dest?r.dest.split(', '):[])})),
+    ...st.filter(r=>inW(r.date)).map(r=>({k:'s'+r.id,mine:r.mine||'',nm:r.name||'',sched:r.sched||{},lbl:(r.kind||'Stock')+' '+r.name+(r.mine?' ('+r.mine+')':''),kind:r.kind||'Stock',tm:tm(r.date),ore:oreMix(r.ore),hasOre:!!r.ore,oreLbl:r.ore?oreLabel(r.ore,r.oreOther):'',fe:r.fe,si:r.si,al:r.al,p:r.p,dest:r.dest||[]}))];
   shRows=[];
   RPT_PLANTS.forEach(pl=>srcs.forEach(s=>{if(s.dest.some(d=>d===pl||(pl==='Others'&&d.startsWith('Others'))))shRows.push({pl,s});}));
   let h='',cur='';
@@ -1460,37 +1475,128 @@ function schedHtml(plants,vals){
 function readSched(boxId){const o={};document.querySelectorAll('#'+boxId+' input[data-pl]').forEach(i=>{const v=i.value.trim();if(v!==''&&!isNaN(+v))o[i.dataset.pl]=+v;});return o;}
 function refreshSched(destSel,boxId){const cur=readSched(boxId),pl=[...document.querySelectorAll(destSel+' input:checked')].map(c=>c.value);$(boxId).innerHTML=schedHtml(pl,cur);}
 
+/* ---------- Schedule codes from the NRD Schedule Planner (SCH1) ---------- */
+const SCH_IDX='rom_sched_v1',SCHRE=/SCH1\.[A-Za-z0-9_-]+\.[0-9A-Z]{4}/g;
+const schAll=()=>{try{return JSON.parse(localStorage.getItem(SCH_IDX))||[];}catch(e){return [];}};
+function schDecode(c){const m=/^SCH1\.([A-Za-z0-9_-]+)\.([0-9A-Z]{4})$/.exec(c);if(!m||chk(m[1])!==m[2])return null;
+  try{const o=JSON.parse(new TextDecoder().decode(unb64u(m[1])));return(o&&o.v===1&&o.d&&o.s&&Array.isArray(o.p))?o:null;}catch(e){return null;}}
+function schImportText(t){const codes=String(t||'').match(SCHRE)||[];let n=0,bad=0;const got=[];
+  codes.forEach(c=>{const o=schDecode(c);if(!o){bad++;return;}const a=schAll().filter(x=>!(x.d===o.d&&x.s===o.s));a.unshift(o);store(SCH_IDX,JSON.stringify(a.slice(0,40)));n++;got.push(o);});
+  return{n,bad,got,found:codes.length};}
+const dmy=d=>String(d||'').split('-').reverse().join('-');
+const schName=o=>dmy(o.d)+' '+o.s+' shift'+(o.i?' (by '+o.i+')':'');
+const addDay=(d,k)=>{const[y,m,dd]=d.split('-').map(Number),x=new Date(y,m-1,dd+k);return ymd(x);};
+// Day N C shift and Day N+1 A shift run the same schedule
+function schFor(){const d=$('shDate').value,s=$('shShift').value,all=schAll(),ch=recall('rom_schuse_'+d+'_'+s);
+  if(ch==='none')return null;
+  if(ch){const f=all.find(x=>x.d+'|'+x.s===ch);if(f)return f;}
+  let f=all.find(x=>x.d===d&&x.s===s);if(f)return f;
+  if(s==='A'){f=all.find(x=>x.d===addDay(d,-1)&&x.s==='C');if(f)return{...f,carried:'C shift of '+dmy(f.d)};}
+  if(s==='C'){f=all.find(x=>x.d===addDay(d,1)&&x.s==='A');if(f)return{...f,carried:'A shift of '+dmy(f.d)};}
+  return null;}
+function schUI(){const d=$('shDate').value,s=$('shShift').value,all=schAll(),ch=recall('rom_schuse_'+d+'_'+s),cur=schFor();
+  $('schSel').innerHTML='<option value="">Automatic (this shift'+(s==='A'?', or previous C shift':s==='C'?', or next A shift':'')+')</option>'+all.map(o=>`<option value="${escH(o.d+'|'+o.s)}">${escH(schName(o))}</option>`).join('')+'<option value="none">Do not use a schedule (enter % by hand)</option>';
+  $('schSel').value=ch&&[...$('schSel').options].some(o=>o.value===ch)?ch:'';
+  $('schInfo').innerHTML=cur?'<b>Using schedule: '+escH(schName(cur))+'</b>'+(cur.carried?' (same as '+escH(cur.carried)+')':'')+'<br>'+cur.p.map(p=>escH(p.pl)+': '+(p.r.map(r=>escH(r[0])+' '+r[2]+'%').join(', ')||'-')+(p.a&&p.a.length?' | Alt: '+p.a.map(a=>escH(a[0])).join(', '):'')).join('<br>')
+    :(all.length?'No schedule for this shift. Choose one above or paste the code.':'No schedule imported yet.');
+  $('cpManual').style.display=cur?'none':'block';}
+$('schImp').onclick=()=>{const r=schImportText($('schTxt').value);
+  if(!r.found){say2('schMsg','No schedule code found. Paste the whole message with the code that starts with SCH1.');return;}
+  if(r.n){const o=r.got[0];say2('schMsg','Schedule imported: '+r.got.map(schName).join(', ')+(r.bad?'. '+r.bad+' code(s) could not be read.':'.'));$('schTxt').value='';
+    if(!(o.d===$('shDate').value&&o.s===$('shShift').value)&&confirm('This schedule is for '+schName(o)+'. Switch the shift report to that date and shift?')){$('shDate').value=o.d;$('shShift').value=o.s;shBuild();return;}}
+  else say2('schMsg','The code could not be read. Ask for it to be sent again.');
+  cpKey='';cpRender();};
+$('schSel').onchange=()=>{store('rom_schuse_'+$('shDate').value+'_'+$('shShift').value,$('schSel').value);cpKey='';cpRender();};
+$('schTol').value=recall('rom_schtol')||'10';
+$('schTol').oninput=()=>{store('rom_schtol',$('schTol').value);cpRender();};
+
+/* matching fed faces / stocks to scheduled ones */
+const PITC={WP:'Western Pit',H3:'Hill-3',H4:'Hill-4',H6:'Hill-6',P1:'Pit-1',P2:'Pit-2',P4:'Pit-4'},MINEC={N:'Noamundi',K:'Katamati'};
+const STOPW=new Set(['STOCK','STK','FACE','THE','OF','NIM','KTM','NOAMUNDI','KATAMATI','SIDE','PIT','HILL']);
+const toks=t=>String(t||'').toUpperCase().replace(/\(.*?\)/g,' ').split(/[^A-Z0-9]+/).filter(w=>w.length>=2&&!STOPW.has(w)&&!/^\d+$/.test(w));
+const normN=t=>String(t||'').toUpperCase().replace(/\(.*?\)/g,'').replace(/[^A-Z0-9]/g,'');
+function schParse(name,m){const u=String(name||'').toUpperCase(),pm=/(?:^|[^A-Z])(WP|H\s*-?\s*[346]|HILL\s*-?\s*[346]|P\s*-?\s*[124]|PIT\s*-?\s*[124])(?![0-9])/.exec(u);
+  let pit=null;if(pm)pit=PITC[pm[1].replace(/[\s-]/g,'').replace('HILL','H').replace('PIT','P')]||null;
+  const mrls=(u.replace(/\(.*?\)/g,' ').match(/\d{3,4}/g)||[]).map(Number).filter(x=>x>=200&&x<=1500);
+  let mine=pit?(PITS.Noamundi.includes(pit)?'Noamundi':'Katamati'):(MINEC[m]||null);if(!mine&&/^\s*K\s*-/.test(u))mine='Katamati';if(!mine&&/^\s*N\s*-/.test(u))mine='Noamundi';
+  return{pit,mrls,mine};}
+function schScore(src,it,tol){const p=schParse(it[0],it[3]),face=src.k[0]==='f';
+  if(p.mine&&src.mine&&p.mine!==src.mine)return Infinity;
+  if(face){if(!p.mrls.length)return Infinity;if(p.pit&&src.pit&&p.pit!==src.pit)return Infinity;
+    const mr=parseFloat(src.mrl);if(isNaN(mr))return(p.pit&&p.pit===src.pit)?tol+5:Infinity;
+    const d=Math.min(...p.mrls.map(x=>Math.abs(x-mr)));return d<=tol?d:Infinity;}
+  const a=normN(src.nm),b=normN(it[0]);if(a&&b&&a===b)return 0;if(a&&b&&a.length>2&&b.length>2&&(a.includes(b)||b.includes(a)))return 1;
+  const ta=toks(src.nm),tb=toks(it[0]),c=ta.filter(w=>tb.includes(w)).length;return c?10-Math.min(c,5):Infinity;}
+function schAuto(src,P,tol){let best=null,bs=Infinity;
+  P.r.forEach((it,i)=>{const sc=schScore(src,it,tol);if(sc<bs){bs=sc;best='r:'+i;}});
+  (P.a||[]).forEach((it,i)=>{const sc=schScore(src,it,tol);if(sc<bs){bs=sc;best='a:'+i;}});
+  return best||'u';}
+function schMatchLbl(P,v){if(!v||v==='u')return'Unscheduled';const[t,i]=v.split(':');const it=t==='r'?P.r[+i]:(P.a||[])[+i];return it?(t==='a'?'Alternate: ':'')+it[0]:'Unscheduled';}
+function schPlant(sch,pl){return sch.p.find(p=>p.pl===pl)||null;}
+function schItems(sch){const tol=+$('schTol').value||10,items=[],trips=i=>+((document.querySelector('#shSrc input[data-i="'+i+'"]')||{}).value)||0;
+  const mineOf=c=>MINEC[c]||'';
+  const fed={};shRows.forEach((r,i)=>{(fed[r.pl]=fed[r.pl]||[]).push({r,i});});
+  const pls=RPT_PLANTS.filter(pl=>schPlant(sch,pl)||fed[pl]);
+  pls.forEach(pl=>{const P=schPlant(sch,pl)||{pl,r:[],a:[]},list=fed[pl]||[];
+    const rs=P.r.map((it,i)=>({pl,key:'r:'+i,lbl:it[0],mine:mineOf(it[3]),type:it[4]==='S'?'Stock':'Face',trips:0,sched:+it[2]||0,extra:false,via:[]}));
+    const as=(P.a||[]).map((it,i)=>({pl,key:'a:'+i,lbl:it[0],mine:mineOf(it[1]),type:it[2]==='S'?'Stock':'Face',trips:0,sched:0,alt:true,extra:false,via:[]}));
+    const un=[];
+    list.forEach(({r,i})=>{const t=trips(i),mk=pl+'|'+r.s.k,ov=cpDraft.map[mk],auto=schAuto(r.s,P,tol),v=ov||auto;
+      r.auto=auto;r.match=v;
+      if(v==='u'||!v){un.push({pl,key:'u:'+r.s.k,lbl:r.s.lbl,mine:r.s.mine||'',type:r.s.k[0]==='s'?(r.s.kind||'Stock'):'Face',trips:t,sched:0,extra:false,via:[]});return;}
+      const[tp,ix]=v.split(':'),tg=(tp==='r'?rs:as)[+ix];if(!tg){un.push({pl,key:'u:'+r.s.k,lbl:r.s.lbl,mine:r.s.mine||'',type:'Face',trips:t,sched:0,extra:false,via:[]});return;}
+      tg.trips+=t;if(t>0)tg.via.push(r.s.lbl.replace(/^Face /,'')+' ('+t+')');if(!tg.mine)tg.mine=r.s.mine||'';});
+    items.push(...rs,...as.filter(x=>x.trips>0),...un);
+    items.altNames=items.altNames||{};items.altNames[pl]=(P.a||[]).map(a=>a[0]);
+    items.planQ=items.planQ||{};if(P.q)items.planQ[pl]=P.q;});
+  return items;}
+
 /* ---------- Schedule compliance ---------- */
 let cpDraft={sched:{},extra:[]},cpKey='',cpOn=false,cpT=null;
 $('cpPl').innerHTML=PLANTS.map(n=>`<option>${escH(n)}</option>`).join('');
 function cpLoad(){const k='rom_cp_'+$('shDate').value+'_'+$('shShift').value;if(k===cpKey)return;cpKey=k;
-  try{cpDraft=JSON.parse(localStorage.getItem(k))||{};}catch(e){cpDraft={};}cpDraft.sched=cpDraft.sched||{};cpDraft.extra=cpDraft.extra||[];}
+  try{cpDraft=JSON.parse(localStorage.getItem(k))||{};}catch(e){cpDraft={};}cpDraft.sched=cpDraft.sched||{};cpDraft.extra=cpDraft.extra||[];cpDraft.map=cpDraft.map||{};}
 function cpSaveDraft(){try{localStorage.setItem(cpKey,JSON.stringify(cpDraft));}catch(e){}}
 function cpItems(){
+  const sch=schFor();if(sch)return schItems(sch);
   const items=[],trips=i=>+((document.querySelector('#shSrc input[data-i="'+i+'"]')||{}).value)||0;
   shRows.forEach((r,i)=>{const key=r.pl+'|'+r.s.k,ov=cpDraft.sched[key],sc=r.s.sched&&r.s.sched[r.pl]!==undefined?r.s.sched[r.pl]:null;
     items.push({pl:r.pl,key,lbl:r.s.lbl,mine:r.s.mine||'',type:r.s.k[0]==='s'?(r.s.kind||'Stock'):'Face',trips:trips(i),sched:ov!==undefined?ov:sc,extra:false});});
   cpDraft.extra.forEach((e,j)=>items.push({pl:e.pl,key:'x#'+j,lbl:e.type+' '+e.name+(e.mine?' ('+e.mine+')':''),mine:e.mine,type:e.type,trips:0,sched:e.sched,extra:true,xi:j}));
   return items;}
 function cpCompute(){
-  const items=cpItems(),plants=[];
+  const sch=schFor(),items=cpItems(),plants=[],act=sch?shCalc():[];
   RPT_PLANTS.forEach(pl=>{const it=items.filter(x=>x.pl===pl);if(!it.length)return;
     const T=it.reduce((a,x)=>a+x.trips,0),S=it.reduce((a,x)=>a+(+x.sched||0),0);
     const rows=it.map(x=>{const act=T?x.trips/T*100:0,plan=S>0?(+x.sched||0)/S*100:null,
-      status=x.trips>0?((plan!==null&&plan<=0)?'Unscheduled':'Operated'):((+x.sched||0)>0?'Not operated':'No feed');return{...x,act,plan,status};});
-    plants.push({pl,T,S,rows,score:S>0?(T>0?rows.reduce((a,x)=>a+Math.min(x.act,x.plan||0),0):0):null});});
+      status=x.alt?'Alternate':x.trips>0?((plan!==null&&plan<=0)?'Unscheduled':'Operated'):((+x.sched||0)>0?'Not operated':'No feed');return{...x,act,plan,status};});
+    const score=S>0?(T>0?rows.reduce((a,x)=>a+(x.alt?0:Math.min(x.act,x.plan||0)),0):(sch?null:0)):null,altA=rows.reduce((a,x)=>a+(x.alt?x.act:0),0);
+    const aq=act.find(a=>a.pl===pl);
+    plants.push({pl,T,S,rows,score,altPct:altA,scoreAlt:score==null?null:Math.min(100,score+altA),alts:(items.altNames||{})[pl]||[],planQ:(items.planQ||{})[pl]||null,actQ:aq?[aq.fe,aq.si,aq.al,aq.p]:null,noTrips:sch&&S>0&&T===0});});
   const mm={};
-  plants.forEach(p=>{if(!(p.S>0))return;p.rows.forEach(x=>{const mine=x.mine||'Unassigned',o=mm[mine]||(mm[mine]={plan:0,act:0,met:0}),pt=p.T*(x.plan||0)/100;o.plan+=pt;o.act+=x.trips;o.met+=Math.min(pt,x.trips);});});
+  plants.forEach(p=>{if(!(p.S>0))return;p.rows.forEach(x=>{const mine=x.mine||'Unassigned',o=mm[mine]||(mm[mine]={plan:0,act:0,met:0}),pt=p.T*(x.plan||0)/100;o.plan+=pt;o.act+=x.trips;o.met+=x.alt?0:Math.min(pt,x.trips);});});
   const mines=Object.keys(mm).map(k=>({mine:k,plan:mm[k].plan,act:mm[k].act,score:mm[k].plan>0?mm[k].met/mm[k].plan*100:null}));
   let ws=0,wt=0;plants.forEach(p=>{if(p.score!==null&&p.T>0){ws+=p.score*p.T;wt+=p.T;}});
-  return{plants,mines,overall:wt?ws/wt:null,has:plants.some(p=>p.S>0)};}
+  let wa=0;plants.forEach(p=>{if(p.scoreAlt!==null&&p.T>0)wa+=p.scoreAlt*p.T;});
+  return{plants,mines,overall:wt?ws/wt:null,overallAlt:wt?wa/wt:null,has:plants.some(p=>p.S>0),sch:sch?{name:schName(sch),carried:sch.carried||''}:null};}
 function cpRender(){
-  if(!$('cpSrc'))return;cpLoad();
+  if(!$('cpSrc'))return;cpLoad();schUI();
+  const sch=schFor();if(sch){cpRenderSch(sch);return;}
   const items=cpItems(),pls=RPT_PLANTS.filter(pl=>items.some(x=>x.pl===pl));let h='';
   pls.forEach(pl=>{h+=`<b class="plhead">${escH(pl)}</b>`;
     items.filter(x=>x.pl===pl).forEach(x=>{h+=`<div class="src"><span><span class="srcname">${escH(x.lbl)}</span><br><small class="note">${x.extra?'Scheduled, not operated':'Trips fed: '+x.trips}</small></span><span style="display:flex;gap:6px;align-items:center"><input type="number" min="0" max="100" step="any" inputmode="decimal" placeholder="Sched %" data-ck="${escH(x.key)}" value="${x.sched==null?'':x.sched}">${x.extra?`<button class="cpDel ghost" data-xi="${x.xi}" style="padding:4px 8px" aria-label="Remove">\u00d7</button>`:''}</span></div>`;});});
   $('cpSrc').innerHTML=h||'<p class="note">No faces or stocks with a destination in this shift yet. You can still add scheduled ones below.</p>';
   cpPrev();}
+function cpRenderSch(sch){const items=schItems(sch);let h='';
+  const pls=RPT_PLANTS.filter(pl=>items.some(x=>x.pl===pl));
+  pls.forEach(pl=>{const P=schPlant(sch,pl)||{r:[],a:[]},fed=shRows.map((r,i)=>({r,i})).filter(o=>o.r.pl===pl);
+    h+=`<b class="plhead">${escH(pl)}</b><div class="schplan">Scheduled: ${P.r.map(r=>escH(r[0])+' '+r[2]+'%').join(', ')||'none'}${P.a&&P.a.length?' | Alternate: '+P.a.map(a=>escH(a[0])).join(', '):''}</div>`;
+    fed.forEach(({r,i})=>{const t=+((document.querySelector('#shSrc input[data-i="'+i+'"]')||{}).value)||0,mk=pl+'|'+r.s.k,ov=cpDraft.map[mk]||'';
+      const opt=(v,l)=>`<option value="${v}"${ov===v?' selected':''}>${escH(l)}</option>`;
+      h+=`<div class="src"><span><span class="srcname">${escH(r.s.lbl)}</span><br><small class="note">Trips: ${t}${ov?' | set by hand':''}</small></span><select class="schsel" data-mk="${escH(mk)}">${opt('','Auto: '+schMatchLbl(P,r.auto))}${P.r.map((it,j)=>opt('r:'+j,it[0])).join('')}${(P.a||[]).map((it,j)=>opt('a:'+j,'Alternate: '+it[0])).join('')}${opt('u','Unscheduled')}</select></div>`;});
+    items.filter(x=>x.pl===pl&&x.key[0]==='r'&&x.trips===0).forEach(x=>{h+=`<div class="schmiss">${escH(x.lbl)}: scheduled ${x.sched}%, no trips matched</div>`;});});
+  $('cpSrc').innerHTML=h||'<p class="note">No faces or stocks in this shift yet.</p>';cpPrev();}
+$('cpSrc').addEventListener('change',e=>{const s=e.target.closest('select[data-mk]');if(!s)return;if(s.value)cpDraft.map[s.dataset.mk]=s.value;else delete cpDraft.map[s.dataset.mk];cpSaveDraft();cpRender();});
 $('cpSrc').oninput=e=>{const i=e.target.closest('input[data-ck]');if(!i)return;const k=i.dataset.ck,v=i.value.trim(),val=v===''||isNaN(+v)?null:+v;
   if(k.indexOf('x#')===0)cpDraft.extra[+k.slice(2)].sched=val;else cpDraft.sched[k]=val;
   cpSaveDraft();clearTimeout(cpT);cpT=setTimeout(cpPrev,300);};
@@ -1501,7 +1607,7 @@ $('cpAdd').onclick=()=>{cpLoad();
   cpDraft.extra.push({pl,type,mine,name,sched:+sv});cpSaveDraft();$('cpName').value='';$('cpSch').value='';cpRender();say2('cpMsg','Added to '+pl+'.');};
 function cpCanvas(r){
   const W=1000,PH=62,CH=38,RH=42,top=118,ink='#1b2a30',cx=[24,600,730,860,985],need=r.plants.some(p=>p.S>0&&Math.abs(p.S-100)>0.5);
-  let H=top;r.plants.forEach(p=>{H+=PH+CH+p.rows.length*RH+RH+18;});
+  let H=top;r.plants.forEach(p=>{H+=PH+CH+p.rows.length*RH+RH+18+((p.planQ||p.actQ)&&r.sch?RH*2:0)+(p.alts.length&&r.sch?RH:0);});if(r.sch)H+=40;
   if(r.mines.length)H+=46+CH+r.mines.length*RH+18;H+=56+(need?34:0)+10;
   const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
   const col=v=>v===null?'#666':v>=90?'#1e7d32':v>=75?'#b26a00':'#b3261e',sg=v=>(v>0?'+':'')+fx(v,1);
@@ -1509,29 +1615,36 @@ function cpCanvas(r){
   x.fillStyle='#fff';x.textAlign='left';x.font='bold 34px sans-serif';x.fillText('Schedule Compliance Report',24,46);
   x.font='21px sans-serif';x.fillText([$('shDate').value.split('-').reverse().join('-'),SHL[$('shShift').value],'Noamundi and Katamati'].filter(Boolean).join('   |   '),24,84);
   const cell=(t,i,yy,fs,b,color)=>{x.font=(b?'bold ':'')+fs+'px sans-serif';x.fillStyle=color||ink;x.textAlign=i?'right':'left';x.fillText(t,cx[i],yy);};
-  const lab=(t,yy,color)=>{let f=21;x.font=f+'px sans-serif';while(f>13&&x.measureText(t).width>480){f--;x.font=f+'px sans-serif';}x.fillStyle=color||ink;x.textAlign='left';x.fillText(t,24,yy);};
+  const lab=(t,yy,color,mw)=>{let f=21;x.font=f+'px sans-serif';while(f>13&&x.measureText(t).width>(mw||480)){f--;x.font=f+'px sans-serif';}x.fillStyle=color||ink;x.textAlign='left';x.fillText(t,24,yy);};
   let y=top;
+  if(r.sch){x.fillStyle='#555';x.textAlign='left';x.font='italic 19px sans-serif';x.fillText('Schedule: '+r.sch.name+(r.sch.carried?' (same as '+r.sch.carried+')':'')+'  |  faces matched by pit and MRL, stocks by name',24,y+24);y+=40;}
   r.plants.forEach(p=>{
     x.fillStyle='#e8eef0';x.fillRect(0,y,W,PH);cell(p.pl,0,y+43,34,true);
-    x.font='bold 26px sans-serif';x.fillStyle=col(p.score);x.textAlign='right';x.fillText(p.score===null?'No schedule entered':'Compliance '+p.score.toFixed(0)+'%',985,y+42);
+    x.font='bold 26px sans-serif';x.fillStyle=col(p.score);x.textAlign='right';x.fillText(p.noTrips?'No trips recorded':p.score===null?'No schedule entered':'Compliance '+p.score.toFixed(0)+'%'+(p.altPct>0.05?'  ('+p.scoreAlt.toFixed(0)+'% with alt.)':''),985,y+42);
     y+=PH;['Face / Stock','Trips','Sched %','Actual %','Var (pp)'].forEach((t,i)=>cell(t,i,y+26,20,true,'#555'));y+=CH;
     p.rows.forEach((q,i)=>{if(i%2){x.fillStyle='#f3f6f6';x.fillRect(0,y,W,RH);}
-      const bad=q.status==='Not operated',unsch=q.status==='Unscheduled';
-      lab(q.lbl+(bad?' (not operated)':unsch?' (unscheduled)':''),y+29,bad?'#b3261e':unsch?'#b26a00':ink);
+      const bad=q.status==='Not operated',unsch=q.status==='Unscheduled',alt=q.status==='Alternate';
+      lab(q.lbl+(bad?' (not operated)':unsch?' (unscheduled)':alt?' (alternate)':'')+(q.via&&q.via.length?'  ← '+q.via.join(', '):''),y+29,bad?'#b3261e':unsch?'#b26a00':alt?'#1d4ed8':ink);
       cell(String(q.trips),1,y+29,22);cell(q.sched==null?'-':fx(q.sched,1),2,y+29,22);cell(fx(q.act,1),3,y+29,22);cell(q.plan==null?'-':sg(q.act-q.plan),4,y+29,22);y+=RH;});
-    x.fillStyle=ink;x.fillRect(0,y,W,2);cell('Total',0,y+30,22,true);cell(String(p.T),1,y+30,22,true);cell(p.S>0?fx(p.S,1):'-',2,y+30,22,true);cell(p.T?'100.0':'-',3,y+30,22,true);y+=RH+18;});
+    x.fillStyle=ink;x.fillRect(0,y,W,2);cell('Total',0,y+30,22,true);cell(String(p.T),1,y+30,22,true);cell(p.S>0?fx(p.S,1):'-',2,y+30,22,true);cell(p.T?'100.0':'-',3,y+30,22,true);y+=RH;
+    if(r.sch&&(p.planQ||p.actQ)){const qs=a=>a?'Fe '+fx(a[0],2)+'   SiO2 '+fx(a[1],2)+'   Al2O3 '+fx(a[2],2)+'   P '+fx(a[3],3):'-';
+      lab('Planned quality:  '+qs(p.planQ),y+28,'#555',800);y+=RH;lab('Actual quality (trip-weighted):  '+qs(p.actQ),y+28,ink,800);
+      if(p.planQ&&p.actQ&&!isNaN(p.actQ[0])){const d=p.actQ[0]-p.planQ[0];x.font='bold 21px sans-serif';x.textAlign='right';x.fillStyle=Math.abs(d)<=0.5?'#1e7d32':d<0?'#b3261e':'#b26a00';x.fillText('Fe '+(d>0?'+':'')+d.toFixed(2),985,y+28);}y+=RH;}
+    if(r.sch&&p.alts.length){lab('Alternate faces/stocks in schedule: '+p.alts.join(', '),y+28,'#1d4ed8',950);y+=RH;}
+    y+=18;});
   if(r.mines.length){
     x.fillStyle=repCol();x.fillRect(0,y,W,46);x.fillStyle='#fff';x.textAlign='left';x.font='bold 26px sans-serif';x.fillText('Mine-wise compliance',24,y+32);y+=46;
     const mx=[24,640,810,985],mc=(t,i,yy,b,color)=>{x.font=(b?'bold ':'')+'22px sans-serif';x.fillStyle=color||ink;x.textAlign=i?'right':'left';x.fillText(t,mx[i],yy);};
     ['Mine','Planned trips','Actual trips','Compliance'].forEach((t,i)=>{x.font='bold 20px sans-serif';x.fillStyle='#555';x.textAlign=i?'right':'left';x.fillText(t,mx[i],y+26);});y+=CH;
     r.mines.forEach((m,i)=>{if(i%2){x.fillStyle='#f3f6f6';x.fillRect(0,y,W,RH);}mc(m.mine,0,y+29,true);mc(fx(m.plan,1),1,y+29);mc(fx(m.act,0),2,y+29);mc(m.score==null?'-':m.score.toFixed(0)+'%',3,y+29,true,col(m.score));y+=RH;});y+=18;}
   x.fillStyle=ink;x.fillRect(0,y,W,2);x.textAlign='left';x.font='bold 26px sans-serif';x.fillText('Overall shift compliance (trip-weighted): ',24,y+38);
-  const lw=x.measureText('Overall shift compliance (trip-weighted): ').width;x.fillStyle=col(r.overall);x.fillText(r.overall==null?'-':r.overall.toFixed(0)+'%',24+lw,y+38);y+=56;
+  const lw=x.measureText('Overall shift compliance (trip-weighted): ').width;x.fillStyle=col(r.overall);x.fillText(r.overall==null?'-':r.overall.toFixed(0)+'%',24+lw,y+38);
+  if(r.overallAlt!=null&&r.overall!=null&&r.overallAlt-r.overall>0.5){x.font='bold 22px sans-serif';x.fillStyle='#1d4ed8';x.fillText('('+r.overallAlt.toFixed(0)+'% counting alternates)',24+lw+90,y+38);}y+=56;
   if(need){x.fillStyle='#555';x.font='18px sans-serif';x.fillText('* Scheduled % did not total 100 for some plants; compared after scaling to 100.',24,y+16);}
   return c;}
 function cpPrev(){const im=$('cpPrev');if(!cpOn){im.style.display='none';return;}const r=cpCompute();if(!r.has){im.style.display='none';return;}im.src=cpCanvas(r).toDataURL('image/jpeg',.88);im.style.display='block';}
 $('cpGen').onclick=()=>{const r=cpCompute();if(!r.has){alert('Enter the scheduled feed % for at least one face or stock first.');return;}cpOn=true;cpPrev();say2('cpMsg','Compliance report generated. Save it or export the CSV.');};
-function cpText(r){return SHL[$('shShift').value]+' '+$('shDate').value+'\n'+r.plants.map(p=>p.pl+': '+(p.score==null?'no schedule':p.score.toFixed(0)+'%')).join(' | ')+'\nOverall: '+(r.overall==null?'-':r.overall.toFixed(0)+'%');}
+function cpText(r){return SHL[$('shShift').value]+' '+$('shDate').value+(r.sch?' (schedule '+r.sch.name+')':'')+'\n'+r.plants.map(p=>p.pl+': '+(p.noTrips?'no trips':p.score==null?'no schedule':p.score.toFixed(0)+'%'+(p.altPct>0.05?' ('+p.scoreAlt.toFixed(0)+'% with alt.)':''))).join(' | ')+'\nOverall: '+(r.overall==null?'-':r.overall.toFixed(0)+'%')+(r.overallAlt!=null&&r.overall!=null&&r.overallAlt-r.overall>0.5?' ('+r.overallAlt.toFixed(0)+'% counting alternates)':'');}
 $('cpSave').onclick=()=>{const r=cpCompute();if(!r.has){alert('Enter the scheduled feed % for at least one face or stock first.');return;}
   if(!db){alert('Storage is not available on this device.');return;}
   const rec={date:shWin()[0].toISOString(),shift:$('shShift').value,mine:'Noamundi and Katamati',plants:r.plants,mines:r.mines,overall:r.overall,text:cpText(r),img:cpCanvas(r).toDataURL('image/jpeg',.88)};
@@ -1539,8 +1652,8 @@ $('cpSave').onclick=()=>{const r=cpCompute();if(!r.has){alert('Enter the schedul
   tx.oncomplete=()=>{cpOn=true;cpPrev();say2('cpMsg','Compliance report saved. Use Share or Download below.');renderExtra();};
   tx.onerror=()=>say2('cpMsg','Could not save the compliance report.');};
 function cpCsvText(date,shift,r){
-  const L=[['Date','Shift','Plant','Type','Source','Mine','Status','Scheduled %','Scheduled % (scaled to 100)','Trips','Actual %','Variance (pp)','Plant trips','Plant scheduled total %','Plant compliance %']],b=[date,SHL[shift]];
-  r.plants.forEach(p=>p.rows.forEach(x=>L.push([...b,p.pl,x.type,x.lbl,x.mine,x.status,x.sched==null?'':x.sched,x.plan==null?'':cn(x.plan,1),x.trips,cn(x.act,1),x.plan==null?'':cn(x.act-x.plan,1),p.T,p.S||'',p.score==null?'':cn(p.score,1)])));
+  const L=[['Date','Shift','Plant','Type','Source','Mine','Status','Scheduled %','Scheduled % (scaled to 100)','Trips','Actual %','Variance (pp)','Plant trips','Plant scheduled total %','Plant compliance %','Plant compliance incl. alternates %','Matched ROM entries (trips)','Planned Fe','Actual Fe']],b=[date,SHL[shift]];
+  r.plants.forEach(p=>p.rows.forEach(x=>L.push([...b,p.pl,x.type,x.lbl,x.mine,x.status,x.sched==null?'':x.sched,x.plan==null?'':cn(x.plan,1),x.trips,cn(x.act,1),x.plan==null||x.alt?'':cn(x.act-x.plan,1),p.T,p.S||'',p.score==null?'':cn(p.score,1),p.scoreAlt==null?'':cn(p.scoreAlt,1),(x.via||[]).join('; '),p.planQ?cn(p.planQ[0],2):'',p.actQ?cn(p.actQ[0],2):''])));
   L.push([]);L.push(['Date','Shift','Mine','Planned trips','Actual trips','Mine compliance %']);
   r.mines.forEach(m=>L.push([...b,m.mine,cn(m.plan,1),cn(m.act,1),m.score==null?'':cn(m.score,1)]));
   L.push([...b,'OVERALL','','',r.overall==null?'':cn(r.overall,1)]);
@@ -1604,6 +1717,10 @@ async function storeImported(o){
   await new Promise(res=>{const tx=db.transaction(sn,'readwrite');tx.objectStore(sn).add(rec);tx.oncomplete=res;tx.onerror=res;tx.onabort=res;});}
 $('impBtn').onclick=async()=>{
   if(!db){alert('Storage is not available on this device.');return;}
+  if(SCHRE.test($('impTxt').value)){SCHRE.lastIndex=0;const sr=schImportText($('impTxt').value);
+    if(!/ROM1\./.test($('impTxt').value)){say2('impMsg',sr.n?'Schedule imported: '+sr.got.map(schName).join(', ')+'. Open Schedule compliance to see the matches.':'The schedule code could not be read.');if(sr.n){$('impTxt').value='';cpKey='';cpRender();}return;}
+    cpKey='';cpRender();}
+  SCHRE.lastIndex=0;
   const codes=$('impTxt').value.match(/ROM1\.[A-Za-z0-9_-]+\.[0-9A-Z]{4}/g)||[];
   if(!codes.length){say2('impMsg','No entry code found. Paste the code that starts with ROM1.');return;}
   const[fr,st]=await Promise.all([getAll('reports'),getAll('stocks')]),have=new Set([...fr,...st].map(r=>r.uid).filter(Boolean));
