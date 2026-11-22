@@ -1,5 +1,5 @@
 // ROM Face Check - offline helper
-const CACHE = 'rom-face-v7';
+const CACHE = 'rom-face-v9';
 const CDN = 'cdnjs.cloudflare.com';
 const PRECACHE = [
   './', './index.html', './manifest.json',

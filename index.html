@@ -74,6 +74,16 @@ button,.btn{font:inherit;padding:9px 12px;border-radius:6px;border:1px solid var
 button.ghost,.btn.ghost{background:transparent;color:var(--acc)}
 button.danger{border-color:var(--warn);background:transparent;color:var(--warn)}
 button:focus-visible,input:focus-visible,.btn:focus-within{outline:3px solid var(--acc);outline-offset:2px}
+.mapfiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0}
+.mf{border:1px solid var(--line);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.mfh{font-weight:700;font-size:14px}
+.mf .btn{width:100%;padding:8px 6px;font-size:14px}
+.mf .note{font-size:12px;overflow-wrap:anywhere}
+.mf #droneInfo button,.mf #kmlInfo button{margin-top:4px}
+.mfchk{display:flex;gap:6px;align-items:center}
+.mfop{display:flex;gap:6px;align-items:center}.mfop input{flex:1;min-width:0}
+.mfnote{margin:4px 0 0}.mfnote summary{cursor:pointer}.mfnote p{margin:6px 0}
+@media (max-width:330px){.mapfiles{grid-template-columns:1fr}}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0}
 label{color:var(--mute);font-size:13px}
 input[type=number]{width:70px;font:inherit;padding:6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
@@ -146,6 +156,10 @@ main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
 .cpdet[open]>summary{margin-bottom:8px}
 .srcname{font-size:16px;font-weight:800;line-height:1.3;color:var(--ink)}
 .log-info b.ident{font-size:17px;font-weight:800;line-height:1.3;color:var(--ink);margin-bottom:3px}
+.cfsel{font:inherit;font-size:12.5px;font-weight:600;padding:4px 5px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);max-width:100%}
+.cfsel.cfC{background:#e6f4ea;color:#1e7d32;border-color:#9ccc9f}.cfsel.cfN{background:#fde8e7;color:#b3261e;border-color:#f0a8a3}
+.cfrow{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.cfall{font:inherit;font-size:12px;padding:3px 8px;border:1px solid #9ccc9f;border-radius:12px;background:#e6f4ea;color:#1e7d32;cursor:pointer;margin-left:8px;vertical-align:middle}
 .schsel{max-width:100%;font:inherit;font-size:13px;padding:5px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
 .schmiss{font-size:13px;color:#b3261e;padding:4px 0;border-bottom:1px dashed var(--line)}
 .schplan{font-size:12.5px;margin:2px 0 4px;color:var(--ink);opacity:.85}
@@ -173,12 +187,27 @@ main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
 <section>
 <h2>Face quality (Blasthole map)</h2>
 <div class="sub">
-  <h2>Blasthole map</h2>
-  <div class="row"><label class="btn">Upload KML / KMZ<input id="kml" type="file" accept=".kml,.kmz"></label>
-  <span id="count" class="note"></span></div>
-  <div id="kmlInfo" class="note"></div>
-  <div class="row"><label><input id="lbl" type="checkbox" checked> Show hole IDs (zoom in to see them)</label></div>
-  <p class="note">Face and bench lines in the same KML/KMZ are drawn automatically. Each point name is read as Fe-SiO2-Al2O3-P_Type (for example 67-1-1.2-0.08_HO), or Fe, SiO2, Al2O3 and P are read from extended data.</p>
+  <h2>Map files</h2>
+  <div class="mapfiles">
+    <div class="mf">
+      <div class="mfh">Blasthole map <span class="note">(daily)</span></div>
+      <label class="btn">Upload blasthole KMZ<input id="kml" type="file" accept=".kml,.kmz"></label>
+      <div id="count" class="note"></div>
+      <div id="kmlInfo" class="note"></div>
+      <label class="note mfchk"><input id="lbl" type="checkbox" checked> Show hole IDs</label>
+    </div>
+    <div class="mf">
+      <div class="mfh">Drone image <span class="note">(saved)</span></div>
+      <label class="btn ghost">Upload drone KMZ<input id="droneIn" type="file" accept=".kmz,.kml"></label>
+      <div id="droneInfo" class="note"></div>
+      <label class="note mfchk"><input id="droneOn" type="checkbox" checked> Show drone image</label>
+      <div class="mfop" id="droneOpRow" style="display:none"><span class="note">Opacity</span><input id="droneOp" type="range" min="0.2" max="1" step="0.05" value="1"><span id="droneOpV" class="note">100%</span></div>
+    </div>
+  </div>
+  <details class="note mfnote"><summary>About these files</summary>
+    <p>Blasthole map: upload the new KML / KMZ every day. Face and bench lines in it are drawn automatically. Each point name is read as Fe-SiO2-Al2O3-P_Type (for example 67-1-1.2-0.08_HO), or Fe, SiO2, Al2O3 and P are read from extended data. Zoom in to see hole IDs.</p>
+    <p>Drone image: upload the orthophoto KMZ once. It stays saved on this device and shows under the blastholes until you replace or remove it.</p>
+  </details>
 </div>
 
 <div class="sub">
@@ -306,7 +335,7 @@ main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
 </section>
 <section>
   <details class="cpdet" id="cpDet"><summary>Schedule compliance <span class="note" style="font-size:12px;font-weight:400">(tap to open, only when asked)</span></summary>
-  <p class="note">Uses the date and shift chosen in the Shift end report and the trips entered there.</p>
+  <p class="note">Uses the date and shift chosen in the Shift end report and the trips entered there. Mark each fed face or stock <b>Conformable</b> or <b>Non-conformable</b> on quality: trips beyond the scheduled share, or from an unscheduled face or stock, count as complied when the quality is conformable. Faces not checked are treated as non-conformable.</p>
   <div class="sub" id="schBox">
     <h2>Schedule from NRD Schedule Planner</h2>
     <p class="note">Paste the schedule message you received (the code starts with SCH1.). Each face and stock you fed is matched to the schedule automatically: faces by pit and MRL (e.g. H6-672 = Hill-6, MRL about 672), stocks by name. Check the matches below and correct any that are wrong.</p>
@@ -665,7 +694,7 @@ async function kmlRestore(){
 async function loadFile(f){
   let txt;
   if(f.name.toLowerCase().endsWith('.kmz')){const z=await JSZip.loadAsync(f);
-    const k=Object.keys(z.files).find(n=>n.toLowerCase().endsWith('.kml'));txt=await z.files[k].async('string');}
+    const ks=Object.keys(z.files).filter(n=>n.toLowerCase().endsWith('.kml')),k=ks.includes('doc.kml')?'doc.kml':ks.sort((a,b)=>a.split('/').length-b.split('/').length)[0];txt=await z.files[k].async('string');}
   else txt=await f.text();
   const d=parseKml(txt);setData(d,true);
   kmlPersist(d,f.name);
@@ -687,6 +716,121 @@ function setData(d,fit){
 
 kmlRestore();
 $('kml').onchange=e=>e.target.files[0]&&loadFile(e.target.files[0]).catch(err=>$('count').textContent='Could not read file: '+err.message);
+
+/* ---------- Drone image background ----------
+   The orthophoto KMZ (single image or GDAL-style tiled super-overlay) is saved once in IndexedDB.
+   Only the tiles on screen, at the detail level that suits the zoom, are unpacked and shown,
+   and they are released again when off screen, so a 20-30 MB file runs smoothly on phones. */
+const DRONE={zip:null,tiles:[],byDepth:{},depths:[],nat:{},on:true,op:1,shown:new Map(),bounds:null};
+map.createPane('drone');map.getPane('drone').style.zIndex=250;map.getPane('drone').style.pointerEvents='none';
+try{DRONE.on=localStorage.getItem('rom_drone_on')!=='0';DRONE.op=+localStorage.getItem('rom_drone_op')||1;}catch(e){}
+const DMIME={jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',gif:'image/gif',webp:'image/webp'};
+const dNorm=p=>{const o=[];p.split('/').forEach(x=>{if(!x||x==='.')return;if(x==='..')o.pop();else o.push(x);});return o.join('/');};
+const dKids=(el,n)=>el?[...el.children].filter(c=>c.localName===n):[];
+const dTxt=(el,n)=>{const c=dKids(el,n)[0];return c?c.textContent.trim():'';};
+const isUrl=h=>/^[a-z][a-z0-9+.\-]*:/i.test(h);
+async function droneParse(zip){
+  const names=Object.keys(zip.files).filter(n=>!zip.files[n].dir),has=new Set(names);
+  const kmls=names.filter(n=>/\.kml$/i.test(n));if(!kmls.length)throw new Error('no .kml inside the file');
+  const main=kmls.includes('doc.kml')?'doc.kml':kmls.sort((a,b)=>a.split('/').length-b.split('/').length||(a<b?-1:1))[0];
+  const tiles=[],seen=new Set();
+  async function walk(path,depth){
+    if(seen.has(path)||seen.size>30000)return;seen.add(path);
+    const d=new DOMParser().parseFromString(await zip.file(path).async('string'),'application/xml');
+    const dir=path.includes('/')?path.slice(0,path.lastIndexOf('/')+1):'';
+    for(const g of d.getElementsByTagName('GroundOverlay')){
+      const href=dTxt(dKids(g,'Icon')[0],'href');if(!href||isUrl(href))continue;
+      const p=dNorm(dir+href),ext=(p.split('.').pop()||'').toLowerCase();if(!has.has(p)||!DMIME[ext])continue;
+      const b=dKids(g,'LatLonBox')[0];let n,s,e,w;
+      if(b){n=+dTxt(b,'north');s=+dTxt(b,'south');e=+dTxt(b,'east');w=+dTxt(b,'west');}
+      else{const q=g.getElementsByTagNameNS('*','LatLonQuad')[0];if(!q)continue;
+        const cs=q.textContent.trim().split(/\s+/).map(t=>t.split(',').map(Number));
+        n=Math.max(...cs.map(c=>c[1]));s=Math.min(...cs.map(c=>c[1]));e=Math.max(...cs.map(c=>c[0]));w=Math.min(...cs.map(c=>c[0]));}
+      if(![n,s,e,w].every(isFinite))continue;
+      tiles.push({p,mime:DMIME[ext],n,s,e,w,depth,order:+dTxt(g,'drawOrder')||0});}
+    const links=[];
+    for(const nl of d.getElementsByTagName('NetworkLink')){const l=dKids(nl,'Link')[0]||dKids(nl,'Url')[0],h=dTxt(l,'href');
+      if(!h||isUrl(h))continue;const lp=dNorm(dir+h.split('?')[0]);if(has.has(lp)&&/\.kml$/i.test(lp))links.push(lp);}
+    await Promise.all(links.map(lp=>walk(lp,depth+1)));}
+  await walk(main,0);
+  return tiles;}
+function droneSet(zip,tiles){
+  droneClear();
+  DRONE.zip=zip;DRONE.tiles=tiles;DRONE.byDepth={};DRONE.nat={};
+  tiles.forEach(t=>{(DRONE.byDepth[t.depth]=DRONE.byDepth[t.depth]||{tiles:[],w:0}).tiles.push(t);});
+  DRONE.depths=Object.keys(DRONE.byDepth).map(Number).sort((a,b)=>a-b);
+  DRONE.depths.forEach(d=>{const g=DRONE.byDepth[d];g.w=g.tiles.reduce((a,t)=>a+(t.e-t.w),0)/g.tiles.length;});
+  let n=-90,s=90,e=-180,w=180;tiles.forEach(t=>{n=Math.max(n,t.n);s=Math.min(s,t.s);e=Math.max(e,t.e);w=Math.min(w,t.w);});
+  DRONE.bounds=L.latLngBounds([s,w],[n,e]);
+  droneRefresh();}
+function droneClear(){for(const v of DRONE.shown.values()){v.dead=true;if(v.ov)map.removeLayer(v.ov);if(v.u)URL.revokeObjectURL(v.u);}DRONE.shown.clear();}
+/* detail level for a zoom: the coarsest level whose image pixels are not stretched more than 1.6x */
+function droneDepth(z){
+  const ds=DRONE.depths;if(ds.length<2)return ds[0]||0;
+  const k=256*Math.pow(2,z)/360;
+  for(const d of ds){if(DRONE.byDepth[d].w*k/(DRONE.nat[d]||256)<=1.6)return d;}
+  return ds[ds.length-1];}
+function droneWanted(b,z){
+  const vis=t=>t.s<b.getNorth()&&t.n>b.getSouth()&&t.w<b.getEast()&&t.e>b.getWest();
+  let d=droneDepth(z),i=DRONE.depths.indexOf(d),cand=DRONE.byDepth[d].tiles.filter(vis);
+  while(cand.length>150&&i>0){d=DRONE.depths[--i];cand=DRONE.byDepth[d].tiles.filter(vis);}
+  const d0=DRONE.depths[0],back=d===d0?[]:DRONE.byDepth[d0].tiles.filter(vis);   // coarse backdrop while the sharp tiles load
+  return back.concat(cand);}
+let droneRaf=0;
+function droneRefresh(){
+  if(droneRaf)return;droneRaf=requestAnimationFrame(()=>{droneRaf=0;
+    const want=new Set(DRONE.on&&DRONE.tiles.length?droneWanted(map.getBounds().pad(0.3),map.getZoom()):[]);
+    for(const [t,v] of DRONE.shown)if(!want.has(t)){v.dead=true;if(v.ov)map.removeLayer(v.ov);if(v.u)URL.revokeObjectURL(v.u);DRONE.shown.delete(t);}
+    want.forEach(t=>{if(DRONE.shown.has(t))return;const v={};DRONE.shown.set(t,v);
+      DRONE.zip.file(t.p).async('uint8array').then(a=>{if(v.dead)return;
+        v.u=URL.createObjectURL(new Blob([a],{type:t.mime}));
+        v.ov=L.imageOverlay(v.u,[[t.s,t.w],[t.n,t.e]],{pane:'drone',opacity:DRONE.op,interactive:false,zIndex:t.depth*100+t.order}).addTo(map);
+        v.ov.once('load',()=>{const im=v.ov&&v.ov.getElement();if(im&&im.naturalWidth&&!DRONE.nat[t.depth]){DRONE.nat[t.depth]=im.naturalWidth;droneRefresh();}});});});});}
+map.on('moveend zoomend',droneRefresh);
+
+function droneUi(rec){
+  const el=$('droneInfo'),ex=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  $('droneOpRow').style.display=DRONE.tiles.length?'':'none';
+  if(!rec){el.innerHTML='No drone image saved.';return;}
+  const lv=DRONE.depths.length;
+  el.innerHTML='Saved: <b>'+ex(rec.name)+'</b> | '+(rec.size/1048576).toFixed(1)+' MB | '+DRONE.tiles.length+' image tile'+(DRONE.tiles.length>1?'s':'')+(lv>1?' in '+lv+' detail levels':'')+
+    ' | uploaded '+fmtD(rec.saved)+' <button id="droneZoom" class="ghost" style="padding:4px 8px;font-size:12px">Zoom to</button> <button id="droneDel" class="ghost" style="padding:4px 8px;font-size:12px">Remove</button>';
+  $('droneZoom').onclick=()=>DRONE.bounds&&map.fitBounds(DRONE.bounds);
+  $('droneDel').onclick=async()=>{if(!confirm('Remove the saved drone image from this device?'))return;
+    droneClear();DRONE.zip=null;DRONE.tiles=[];DRONE.depths=[];DRONE.bounds=null;try{await KDB.set('drone',null);}catch(e){}droneUi(null);};}
+async function droneOpen(buf,rec,fresh){
+  $('droneInfo').textContent='Reading drone image ('+(buf.byteLength/1048576).toFixed(1)+' MB)...';
+  const zip=await JSZip.loadAsync(buf),tiles=await droneParse(zip);
+  if(!tiles.length)throw new Error('no JPEG/PNG image overlay found in this file');
+  droneSet(zip,tiles);
+  if(fresh&&DRONE.bounds&&!(pts.length&&DRONE.bounds.contains(L.latLngBounds(pts.map(p=>[p.lat,p.lon])))))map.fitBounds(DRONE.bounds);
+  droneUi(rec);}
+$('droneIn').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{const buf=await f.arrayBuffer(),rec={name:f.name,size:f.size,saved:Date.now()};
+    await droneOpen(buf,rec,true);
+    try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();await KDB.set('drone',{...rec,buf});}
+    catch(err){$('droneInfo').innerHTML+=' <span class="warn">Could not be saved on this device (storage full); it will be needed again after closing the app.</span>';}
+    msg('Drone image loaded');}
+  catch(err){$('droneInfo').textContent='Could not read drone file: '+err.message;}};
+$('droneOn').checked=DRONE.on;
+$('droneOn').onchange=()=>{DRONE.on=$('droneOn').checked;try{localStorage.setItem('rom_drone_on',DRONE.on?'1':'0');}catch(e){}droneRefresh();};
+$('droneOp').value=DRONE.op;$('droneOpV').textContent=Math.round(DRONE.op*100)+'%';
+$('droneOp').oninput=()=>{DRONE.op=+$('droneOp').value;$('droneOpV').textContent=Math.round(DRONE.op*100)+'%';
+  for(const v of DRONE.shown.values())if(v.ov)v.ov.setOpacity(DRONE.op);try{localStorage.setItem('rom_drone_op',String(DRONE.op));}catch(e){}};
+(async()=>{let rec=null;try{rec=await KDB.get('drone');}catch(e){}
+  if(rec&&rec.buf){try{await droneOpen(rec.buf,rec,!pts.length);}catch(e){$('droneInfo').textContent='Saved drone image could not be opened: '+e.message;}}
+  else droneUi(null);})();
+/* draw the drone image into the report map (same projection helpers as buildMapCanvas) */
+async function droneDraw(x,X,Y,MW,MH,z){
+  if(!DRONE.on||!DRONE.tiles.length)return false;
+  const inView=t=>X(t.e)>0&&X(t.w)<MW&&Y(t.s)>0&&Y(t.n)<MH;
+  let d=droneDepth(z),i=DRONE.depths.indexOf(d),list=DRONE.byDepth[d].tiles.filter(inView);
+  while(list.length>150&&i>0){d=DRONE.depths[--i];list=DRONE.byDepth[d].tiles.filter(inView);}
+  x.globalAlpha=DRONE.op;
+  await Promise.all(list.map(async t=>{const a=await DRONE.zip.file(t.p).async('uint8array'),u=URL.createObjectURL(new Blob([a],{type:t.mime}));
+    const im=await new Promise(r=>{const i2=new Image();i2.onload=()=>r(i2);i2.onerror=()=>r(null);i2.src=u;});
+    if(im)x.drawImage(im,X(t.w),Y(t.n),X(t.e)-X(t.w),Y(t.s)-Y(t.n));URL.revokeObjectURL(u);}));
+  x.globalAlpha=1;return list.length>0;}
 
 function setPos(lat,lon){
   last={lat,lon};
@@ -845,6 +989,7 @@ async function buildMapCanvas(){
       const wx=((tx%nT)+nT)%nT,url=base.u.replace('{z}',zt).replace('{x}',wx).replace('{y}',ty);
       jobs.push(loadImg(url).then(im=>{if(im)x.drawImage(im,(tx*256-tlx)*sf,(ty*256-tly)*sf,256*sf+1,256*sf+1);}));}}
   await Promise.all(jobs);
+  if(await droneDraw(x,X,Y,MW,MH,z))base.a='Drone image | '+base.a;
 
   // face lines
   x.lineJoin='round';
@@ -1538,64 +1683,80 @@ function schItems(sch){const tol=+$('schTol').value||10,items=[],trips=i=>+((doc
   const fed={};shRows.forEach((r,i)=>{(fed[r.pl]=fed[r.pl]||[]).push({r,i});});
   const pls=RPT_PLANTS.filter(pl=>schPlant(sch,pl)||fed[pl]);
   pls.forEach(pl=>{const P=schPlant(sch,pl)||{pl,r:[],a:[]},list=fed[pl]||[];
-    const rs=P.r.map((it,i)=>({pl,key:'r:'+i,lbl:it[0],mine:mineOf(it[3]),type:it[4]==='S'?'Stock':'Face',trips:0,sched:+it[2]||0,extra:false,via:[]}));
-    const as=(P.a||[]).map((it,i)=>({pl,key:'a:'+i,lbl:it[0],mine:mineOf(it[1]),type:it[2]==='S'?'Stock':'Face',trips:0,sched:0,alt:true,extra:false,via:[]}));
+    const rs=P.r.map((it,i)=>({pl,key:'r:'+i,lbl:it[0],mine:mineOf(it[3]),type:it[4]==='S'?'Stock':'Face',trips:0,tripsC:0,cf:[],sched:+it[2]||0,extra:false,via:[]}));
+    const as=(P.a||[]).map((it,i)=>({pl,key:'a:'+i,lbl:it[0],mine:mineOf(it[1]),type:it[2]==='S'?'Stock':'Face',trips:0,tripsC:0,cf:[],sched:0,alt:true,extra:false,via:[]}));
     const un=[];
     list.forEach(({r,i})=>{const t=trips(i),mk=pl+'|'+r.s.k,ov=cpDraft.map[mk],auto=schAuto(r.s,P,tol),v=ov||auto;
       r.auto=auto;r.match=v;
-      if(v==='u'||!v){un.push({pl,key:'u:'+r.s.k,lbl:r.s.lbl,mine:r.s.mine||'',type:r.s.k[0]==='s'?(r.s.kind||'Stock'):'Face',trips:t,sched:0,extra:false,via:[]});return;}
-      const[tp,ix]=v.split(':'),tg=(tp==='r'?rs:as)[+ix];if(!tg){un.push({pl,key:'u:'+r.s.k,lbl:r.s.lbl,mine:r.s.mine||'',type:'Face',trips:t,sched:0,extra:false,via:[]});return;}
-      tg.trips+=t;if(t>0)tg.via.push(r.s.lbl.replace(/^Face /,'')+' ('+t+')');if(!tg.mine)tg.mine=r.s.mine||'';});
+      const isAlt=String(v).indexOf('a:')===0,cv=cfVal(pl,r.s.k,isAlt),ok=cv==='C';
+      if(v==='u'||!v){un.push({pl,key:'u:'+r.s.k,lbl:r.s.lbl,mine:r.s.mine||'',type:r.s.k[0]==='s'?(r.s.kind||'Stock'):'Face',trips:t,tripsC:ok?t:0,cf:[cv],sched:0,extra:false,via:[]});return;}
+      const[tp,ix]=v.split(':'),tg=(tp==='r'?rs:as)[+ix];if(!tg){un.push({pl,key:'u:'+r.s.k,lbl:r.s.lbl,mine:r.s.mine||'',type:'Face',trips:t,tripsC:ok?t:0,cf:[cv],sched:0,extra:false,via:[]});return;}
+      tg.trips+=t;if(ok)tg.tripsC+=t;if(t>0)tg.cf.push(cv);if(t>0)tg.via.push(r.s.lbl.replace(/^Face /,'')+' ('+t+')');if(!tg.mine)tg.mine=r.s.mine||'';});
     items.push(...rs,...as.filter(x=>x.trips>0),...un);
     items.altNames=items.altNames||{};items.altNames[pl]=(P.a||[]).map(a=>a[0]);
     items.planQ=items.planQ||{};if(P.q)items.planQ[pl]=P.q;});
   return items;}
 
+/* ---------- Quality conformity of each fed face / stock ---------- */
+// '' = not checked (treated as non-conformable), 'C' = conformable, 'N' = non-conformable. Alternates are conformable unless set otherwise.
+const cfVal=(pl,k,alt)=>{const v=(cpDraft.conf||{})[pl+'|'+k];return v||(alt?'C':'');};
+const cfOK=(pl,k,alt)=>cfVal(pl,k,alt)==='C';
+const cfSel=(pl,k,alt)=>{const v=cfVal(pl,k,alt),o=(val,l)=>`<option value="${val}"${v===val?' selected':''}>${l}</option>`;
+  return `<select class="cfsel${v==='C'?' cfC':v==='N'?' cfN':''}" data-cf="${escH(pl+'|'+k)}" title="Quality conformity">${o('','Quality: not checked')}${o('C','Conformable')}${o('N','Non-conformable')}</select>`;};
+const cfTag=a=>{if(!a||!a.length)return'';const c=a.filter(v=>v==='C').length;return c===a.length?'Conformable':c===0?(a.every(v=>v==='N')?'Non-conformable':'Not checked'):'Part conformable';};
+
 /* ---------- Schedule compliance ---------- */
 let cpDraft={sched:{},extra:[]},cpKey='',cpOn=false,cpT=null;
 $('cpPl').innerHTML=PLANTS.map(n=>`<option>${escH(n)}</option>`).join('');
 function cpLoad(){const k='rom_cp_'+$('shDate').value+'_'+$('shShift').value;if(k===cpKey)return;cpKey=k;
-  try{cpDraft=JSON.parse(localStorage.getItem(k))||{};}catch(e){cpDraft={};}cpDraft.sched=cpDraft.sched||{};cpDraft.extra=cpDraft.extra||[];cpDraft.map=cpDraft.map||{};}
+  try{cpDraft=JSON.parse(localStorage.getItem(k))||{};}catch(e){cpDraft={};}cpDraft.sched=cpDraft.sched||{};cpDraft.extra=cpDraft.extra||[];cpDraft.map=cpDraft.map||{};cpDraft.conf=cpDraft.conf||{};}
 function cpSaveDraft(){try{localStorage.setItem(cpKey,JSON.stringify(cpDraft));}catch(e){}}
 function cpItems(){
   const sch=schFor();if(sch)return schItems(sch);
   const items=[],trips=i=>+((document.querySelector('#shSrc input[data-i="'+i+'"]')||{}).value)||0;
   shRows.forEach((r,i)=>{const key=r.pl+'|'+r.s.k,ov=cpDraft.sched[key],sc=r.s.sched&&r.s.sched[r.pl]!==undefined?r.s.sched[r.pl]:null;
-    items.push({pl:r.pl,key,lbl:r.s.lbl,mine:r.s.mine||'',type:r.s.k[0]==='s'?(r.s.kind||'Stock'):'Face',trips:trips(i),sched:ov!==undefined?ov:sc,extra:false});});
-  cpDraft.extra.forEach((e,j)=>items.push({pl:e.pl,key:'x#'+j,lbl:e.type+' '+e.name+(e.mine?' ('+e.mine+')':''),mine:e.mine,type:e.type,trips:0,sched:e.sched,extra:true,xi:j}));
+    const t=trips(i),cv=cfVal(r.pl,r.s.k,false);items.push({pl:r.pl,key,lbl:r.s.lbl,mine:r.s.mine||'',type:r.s.k[0]==='s'?(r.s.kind||'Stock'):'Face',trips:t,tripsC:cv==='C'?t:0,cf:t>0?[cv]:[],sched:ov!==undefined?ov:sc,extra:false});});
+  cpDraft.extra.forEach((e,j)=>items.push({pl:e.pl,key:'x#'+j,lbl:e.type+' '+e.name+(e.mine?' ('+e.mine+')':''),mine:e.mine,type:e.type,trips:0,tripsC:0,cf:[],sched:e.sched,extra:true,xi:j}));
   return items;}
 function cpCompute(){
   const sch=schFor(),items=cpItems(),plants=[],act=sch?shCalc():[];
   RPT_PLANTS.forEach(pl=>{const it=items.filter(x=>x.pl===pl);if(!it.length)return;
     const T=it.reduce((a,x)=>a+x.trips,0),S=it.reduce((a,x)=>a+(+x.sched||0),0);
     const rows=it.map(x=>{const act=T?x.trips/T*100:0,plan=S>0?(+x.sched||0)/S*100:null,
-      status=x.alt?'Alternate':x.trips>0?((plan!==null&&plan<=0)?'Unscheduled':'Operated'):((+x.sched||0)>0?'Not operated':'No feed');return{...x,act,plan,status};});
-    const score=S>0?(T>0?rows.reduce((a,x)=>a+(x.alt?0:Math.min(x.act,x.plan||0)),0):(sch?null:0)):null,altA=rows.reduce((a,x)=>a+(x.alt?x.act:0),0);
+      status=x.alt?'Alternate':x.trips>0?((plan!==null&&plan<=0)?'Unscheduled':'Operated'):((+x.sched||0)>0?'Not operated':'No feed');
+      const base=(!x.alt&&plan>0)?Math.min(act,plan):0,cfr=x.trips?(x.tripsC||0)/x.trips:0,cmp=base+(act-base)*cfr,beyond=act-base;
+      return{...x,act,plan,status,base,cmp,beyond,conf:cfTag(x.cf)};});
+    const strict=rows.reduce((a,x)=>a+x.base,0),score=S>0?(T>0?Math.min(100,rows.reduce((a,x)=>a+x.cmp,0)):(sch?null:0)):null,altA=score==null?0:score-strict;
     const aq=act.find(a=>a.pl===pl);
-    plants.push({pl,T,S,rows,score,altPct:altA,scoreAlt:score==null?null:Math.min(100,score+altA),alts:(items.altNames||{})[pl]||[],planQ:(items.planQ||{})[pl]||null,actQ:aq?[aq.fe,aq.si,aq.al,aq.p]:null,noTrips:sch&&S>0&&T===0});});
+    plants.push({pl,T,S,rows,score,strict:S>0&&T>0?strict:null,confPct:altA,alts:(items.altNames||{})[pl]||[],planQ:(items.planQ||{})[pl]||null,actQ:aq?[aq.fe,aq.si,aq.al,aq.p]:null,noTrips:sch&&S>0&&T===0});});
   const mm={};
-  plants.forEach(p=>{if(!(p.S>0))return;p.rows.forEach(x=>{const mine=x.mine||'Unassigned',o=mm[mine]||(mm[mine]={plan:0,act:0,met:0}),pt=p.T*(x.plan||0)/100;o.plan+=pt;o.act+=x.trips;o.met+=x.alt?0:Math.min(pt,x.trips);});});
-  const mines=Object.keys(mm).map(k=>({mine:k,plan:mm[k].plan,act:mm[k].act,score:mm[k].plan>0?mm[k].met/mm[k].plan*100:null}));
+  plants.forEach(p=>{if(!(p.S>0))return;p.rows.forEach(x=>{const mine=x.mine||'Unassigned',o=mm[mine]||(mm[mine]={plan:0,act:0,met:0}),pt=p.T*(x.plan||0)/100;o.plan+=pt;o.act+=x.trips;o.met+=p.T*x.cmp/100;});});
+  const mines=Object.keys(mm).map(k=>({mine:k,plan:mm[k].plan,act:mm[k].act,score:mm[k].plan>0?Math.min(100,mm[k].met/Math.max(mm[k].plan,mm[k].act)*100):null}));
   let ws=0,wt=0;plants.forEach(p=>{if(p.score!==null&&p.T>0){ws+=p.score*p.T;wt+=p.T;}});
-  let wa=0;plants.forEach(p=>{if(p.scoreAlt!==null&&p.T>0)wa+=p.scoreAlt*p.T;});
-  return{plants,mines,overall:wt?ws/wt:null,overallAlt:wt?wa/wt:null,has:plants.some(p=>p.S>0),sch:sch?{name:schName(sch),carried:sch.carried||''}:null};}
+  let wa=0;plants.forEach(p=>{if(p.strict!=null&&p.T>0)wa+=p.strict*p.T;});
+  return{plants,mines,overall:wt?ws/wt:null,overallStrict:wt?wa/wt:null,has:plants.some(p=>p.S>0),sch:sch?{name:schName(sch),carried:sch.carried||''}:null};}
 function cpRender(){
   if(!$('cpSrc'))return;cpLoad();schUI();
   const sch=schFor();if(sch){cpRenderSch(sch);return;}
   const items=cpItems(),pls=RPT_PLANTS.filter(pl=>items.some(x=>x.pl===pl));let h='';
-  pls.forEach(pl=>{h+=`<b class="plhead">${escH(pl)}</b>`;
-    items.filter(x=>x.pl===pl).forEach(x=>{h+=`<div class="src"><span><span class="srcname">${escH(x.lbl)}</span><br><small class="note">${x.extra?'Scheduled, not operated':'Trips fed: '+x.trips}</small></span><span style="display:flex;gap:6px;align-items:center"><input type="number" min="0" max="100" step="any" inputmode="decimal" placeholder="Sched %" data-ck="${escH(x.key)}" value="${x.sched==null?'':x.sched}">${x.extra?`<button class="cpDel ghost" data-xi="${x.xi}" style="padding:4px 8px" aria-label="Remove">\u00d7</button>`:''}</span></div>`;});});
+  pls.forEach(pl=>{h+=`<b class="plhead">${escH(pl)}</b>${items.some(x=>x.pl===pl&&!x.extra&&x.trips>0)?`<button type="button" class="cfall" data-allc="${escH(pl)}">All conformable</button>`:''}`;
+    items.filter(x=>x.pl===pl).forEach(x=>{h+=`<div class="src"><span><span class="srcname">${escH(x.lbl)}</span><br><small class="note">${x.extra?'Scheduled, not operated':'Trips fed: '+x.trips}</small></span><span class="cfrow">${x.extra?'':cfSel(pl,x.key.slice(pl.length+1),false)}<span style="display:flex;gap:6px;align-items:center"><input type="number" min="0" max="100" step="any" inputmode="decimal" placeholder="Sched %" data-ck="${escH(x.key)}" value="${x.sched==null?'':x.sched}">${x.extra?`<button class="cpDel ghost" data-xi="${x.xi}" style="padding:4px 8px" aria-label="Remove">\u00d7</button>`:''}</span></span></div>`;});});
   $('cpSrc').innerHTML=h||'<p class="note">No faces or stocks with a destination in this shift yet. You can still add scheduled ones below.</p>';
   cpPrev();}
 function cpRenderSch(sch){const items=schItems(sch);let h='';
   const pls=RPT_PLANTS.filter(pl=>items.some(x=>x.pl===pl));
   pls.forEach(pl=>{const P=schPlant(sch,pl)||{r:[],a:[]},fed=shRows.map((r,i)=>({r,i})).filter(o=>o.r.pl===pl);
-    h+=`<b class="plhead">${escH(pl)}</b><div class="schplan">Scheduled: ${P.r.map(r=>escH(r[0])+' '+r[2]+'%').join(', ')||'none'}${P.a&&P.a.length?' | Alternate: '+P.a.map(a=>escH(a[0])).join(', '):''}</div>`;
+    h+=`<b class="plhead">${escH(pl)}</b>${fed.length?`<button type="button" class="cfall" data-allc="${escH(pl)}">All conformable</button>`:''}<div class="schplan">Scheduled: ${P.r.map(r=>escH(r[0])+' '+r[2]+'%').join(', ')||'none'}${P.a&&P.a.length?' | Alternate: '+P.a.map(a=>escH(a[0])).join(', '):''}</div>`;
     fed.forEach(({r,i})=>{const t=+((document.querySelector('#shSrc input[data-i="'+i+'"]')||{}).value)||0,mk=pl+'|'+r.s.k,ov=cpDraft.map[mk]||'';
       const opt=(v,l)=>`<option value="${v}"${ov===v?' selected':''}>${escH(l)}</option>`;
-      h+=`<div class="src"><span><span class="srcname">${escH(r.s.lbl)}</span><br><small class="note">Trips: ${t}${ov?' | set by hand':''}</small></span><select class="schsel" data-mk="${escH(mk)}">${opt('','Auto: '+schMatchLbl(P,r.auto))}${P.r.map((it,j)=>opt('r:'+j,it[0])).join('')}${(P.a||[]).map((it,j)=>opt('a:'+j,'Alternate: '+it[0])).join('')}${opt('u','Unscheduled')}</select></div>`;});
+      const isAlt=String(ov||r.auto).indexOf('a:')===0;
+      h+=`<div class="src"><span><span class="srcname">${escH(r.s.lbl)}</span><br><small class="note">Trips: ${t}${ov?' | set by hand':''}</small></span><span class="cfrow"><select class="schsel" data-mk="${escH(mk)}">${opt('','Auto: '+schMatchLbl(P,r.auto))}${P.r.map((it,j)=>opt('r:'+j,it[0])).join('')}${(P.a||[]).map((it,j)=>opt('a:'+j,'Alternate: '+it[0])).join('')}${opt('u','Unscheduled')}</select>${cfSel(pl,r.s.k,isAlt)}</span></div>`;});
     items.filter(x=>x.pl===pl&&x.key[0]==='r'&&x.trips===0).forEach(x=>{h+=`<div class="schmiss">${escH(x.lbl)}: scheduled ${x.sched}%, no trips matched</div>`;});});
   $('cpSrc').innerHTML=h||'<p class="note">No faces or stocks in this shift yet.</p>';cpPrev();}
+$('cpSrc').addEventListener('change',e=>{const c=e.target.closest('select[data-cf]');if(!c)return;if(c.value)cpDraft.conf[c.dataset.cf]=c.value;else delete cpDraft.conf[c.dataset.cf];
+  c.className='cfsel'+(c.value==='C'?' cfC':c.value==='N'?' cfN':'');cpSaveDraft();cpPrev();});
+$('cpSrc').addEventListener('click',e=>{const b=e.target.closest('[data-allc]');if(!b)return;const pl=b.dataset.allc;
+  shRows.forEach(r=>{if(r.pl===pl)cpDraft.conf[pl+'|'+r.s.k]='C';});cpSaveDraft();cpRender();});
 $('cpSrc').addEventListener('change',e=>{const s=e.target.closest('select[data-mk]');if(!s)return;if(s.value)cpDraft.map[s.dataset.mk]=s.value;else delete cpDraft.map[s.dataset.mk];cpSaveDraft();cpRender();});
 $('cpSrc').oninput=e=>{const i=e.target.closest('input[data-ck]');if(!i)return;const k=i.dataset.ck,v=i.value.trim(),val=v===''||isNaN(+v)?null:+v;
   if(k.indexOf('x#')===0)cpDraft.extra[+k.slice(2)].sched=val;else cpDraft.sched[k]=val;
@@ -1607,7 +1768,7 @@ $('cpAdd').onclick=()=>{cpLoad();
   cpDraft.extra.push({pl,type,mine,name,sched:+sv});cpSaveDraft();$('cpName').value='';$('cpSch').value='';cpRender();say2('cpMsg','Added to '+pl+'.');};
 function cpCanvas(r){
   const W=1000,PH=62,CH=38,RH=42,top=118,ink='#1b2a30',cx=[24,600,730,860,985],need=r.plants.some(p=>p.S>0&&Math.abs(p.S-100)>0.5);
-  let H=top;r.plants.forEach(p=>{H+=PH+CH+p.rows.length*RH+RH+18+((p.planQ||p.actQ)&&r.sch?RH*2:0)+(p.alts.length&&r.sch?RH:0);});if(r.sch)H+=40;
+  let H=top+24;r.plants.forEach(p=>{H+=PH+CH+p.rows.length*RH+RH+18+((p.planQ||p.actQ)&&r.sch?RH*2:0)+(p.alts.length&&r.sch?RH:0);});if(r.sch)H+=40;
   if(r.mines.length)H+=46+CH+r.mines.length*RH+18;H+=56+(need?34:0)+10;
   const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
   const col=v=>v===null?'#666':v>=90?'#1e7d32':v>=75?'#b26a00':'#b3261e',sg=v=>(v>0?'+':'')+fx(v,1);
@@ -1620,11 +1781,13 @@ function cpCanvas(r){
   if(r.sch){x.fillStyle='#555';x.textAlign='left';x.font='italic 19px sans-serif';x.fillText('Schedule: '+r.sch.name+(r.sch.carried?' (same as '+r.sch.carried+')':'')+'  |  faces matched by pit and MRL, stocks by name',24,y+24);y+=40;}
   r.plants.forEach(p=>{
     x.fillStyle='#e8eef0';x.fillRect(0,y,W,PH);cell(p.pl,0,y+43,34,true);
-    x.font='bold 26px sans-serif';x.fillStyle=col(p.score);x.textAlign='right';x.fillText(p.noTrips?'No trips recorded':p.score===null?'No schedule entered':'Compliance '+p.score.toFixed(0)+'%'+(p.altPct>0.05?'  ('+p.scoreAlt.toFixed(0)+'% with alt.)':''),985,y+42);
+    x.font='bold 26px sans-serif';x.fillStyle=col(p.score);x.textAlign='right';x.fillText(p.noTrips?'No trips recorded':p.score===null?'No schedule entered':'Compliance '+p.score.toFixed(0)+'%',985,y+42);
+    if(p.confPct>0.05&&p.score!=null){x.font='18px sans-serif';x.fillStyle='#1e7d32';x.fillText('incl. '+p.confPct.toFixed(0)+'% conformable beyond schedule',985,y+64);}
     y+=PH;['Face / Stock','Trips','Sched %','Actual %','Var (pp)'].forEach((t,i)=>cell(t,i,y+26,20,true,'#555'));y+=CH;
     p.rows.forEach((q,i)=>{if(i%2){x.fillStyle='#f3f6f6';x.fillRect(0,y,W,RH);}
       const bad=q.status==='Not operated',unsch=q.status==='Unscheduled',alt=q.status==='Alternate';
-      lab(q.lbl+(bad?' (not operated)':unsch?' (unscheduled)':alt?' (alternate)':'')+(q.via&&q.via.length?'  ← '+q.via.join(', '):''),y+29,bad?'#b3261e':unsch?'#b26a00':alt?'#1d4ed8':ink);
+      const cfx=q.trips>0&&(q.beyond>0.05)?(q.conf==='Conformable'?' [conformable]':q.conf==='Part conformable'?' [part conformable]':' [non-conformable]'):'';
+      lab(q.lbl+(bad?' (not operated)':unsch?' (unscheduled)':alt?' (alternate)':'')+cfx+(q.via&&q.via.length?'  ← '+q.via.join(', '):''),y+29,bad?'#b3261e':(unsch||alt)&&q.conf==='Conformable'?'#1e7d32':unsch?'#b26a00':alt?'#1d4ed8':ink);
       cell(String(q.trips),1,y+29,22);cell(q.sched==null?'-':fx(q.sched,1),2,y+29,22);cell(fx(q.act,1),3,y+29,22);cell(q.plan==null?'-':sg(q.act-q.plan),4,y+29,22);y+=RH;});
     x.fillStyle=ink;x.fillRect(0,y,W,2);cell('Total',0,y+30,22,true);cell(String(p.T),1,y+30,22,true);cell(p.S>0?fx(p.S,1):'-',2,y+30,22,true);cell(p.T?'100.0':'-',3,y+30,22,true);y+=RH;
     if(r.sch&&(p.planQ||p.actQ)){const qs=a=>a?'Fe '+fx(a[0],2)+'   SiO2 '+fx(a[1],2)+'   Al2O3 '+fx(a[2],2)+'   P '+fx(a[3],3):'-';
@@ -1639,12 +1802,13 @@ function cpCanvas(r){
     r.mines.forEach((m,i)=>{if(i%2){x.fillStyle='#f3f6f6';x.fillRect(0,y,W,RH);}mc(m.mine,0,y+29,true);mc(fx(m.plan,1),1,y+29);mc(fx(m.act,0),2,y+29);mc(m.score==null?'-':m.score.toFixed(0)+'%',3,y+29,true,col(m.score));y+=RH;});y+=18;}
   x.fillStyle=ink;x.fillRect(0,y,W,2);x.textAlign='left';x.font='bold 26px sans-serif';x.fillText('Overall shift compliance (trip-weighted): ',24,y+38);
   const lw=x.measureText('Overall shift compliance (trip-weighted): ').width;x.fillStyle=col(r.overall);x.fillText(r.overall==null?'-':r.overall.toFixed(0)+'%',24+lw,y+38);
-  if(r.overallAlt!=null&&r.overall!=null&&r.overallAlt-r.overall>0.5){x.font='bold 22px sans-serif';x.fillStyle='#1d4ed8';x.fillText('('+r.overallAlt.toFixed(0)+'% counting alternates)',24+lw+90,y+38);}y+=56;
+  if(r.overallStrict!=null&&r.overall!=null&&r.overall-r.overallStrict>0.5){x.font='20px sans-serif';x.fillStyle='#555';x.fillText('(strictly to schedule: '+r.overallStrict.toFixed(0)+'%)',24+lw+90,y+38);}y+=56;
+  x.fillStyle='#555';x.font='18px sans-serif';x.fillText('Conformable quality: trips beyond schedule, or from unscheduled / alternate faces, count as complied.',24,y+4);y+=22;
   if(need){x.fillStyle='#555';x.font='18px sans-serif';x.fillText('* Scheduled % did not total 100 for some plants; compared after scaling to 100.',24,y+16);}
   return c;}
 function cpPrev(){const im=$('cpPrev');if(!cpOn){im.style.display='none';return;}const r=cpCompute();if(!r.has){im.style.display='none';return;}im.src=cpCanvas(r).toDataURL('image/jpeg',.88);im.style.display='block';}
 $('cpGen').onclick=()=>{const r=cpCompute();if(!r.has){alert('Enter the scheduled feed % for at least one face or stock first.');return;}cpOn=true;cpPrev();say2('cpMsg','Compliance report generated. Save it or export the CSV.');};
-function cpText(r){return SHL[$('shShift').value]+' '+$('shDate').value+(r.sch?' (schedule '+r.sch.name+')':'')+'\n'+r.plants.map(p=>p.pl+': '+(p.noTrips?'no trips':p.score==null?'no schedule':p.score.toFixed(0)+'%'+(p.altPct>0.05?' ('+p.scoreAlt.toFixed(0)+'% with alt.)':''))).join(' | ')+'\nOverall: '+(r.overall==null?'-':r.overall.toFixed(0)+'%')+(r.overallAlt!=null&&r.overall!=null&&r.overallAlt-r.overall>0.5?' ('+r.overallAlt.toFixed(0)+'% counting alternates)':'');}
+function cpText(r){return SHL[$('shShift').value]+' '+$('shDate').value+(r.sch?' (schedule '+r.sch.name+')':'')+'\n'+r.plants.map(p=>p.pl+': '+(p.noTrips?'no trips':p.score==null?'no schedule':p.score.toFixed(0)+'%'+(p.confPct>0.05?' (incl. '+p.confPct.toFixed(0)+'% conformable beyond schedule)':''))).join(' | ')+'\nOverall: '+(r.overall==null?'-':r.overall.toFixed(0)+'%')+(r.overallStrict!=null&&r.overall!=null&&r.overall-r.overallStrict>0.5?' (strictly to schedule '+r.overallStrict.toFixed(0)+'%)':'');}
 $('cpSave').onclick=()=>{const r=cpCompute();if(!r.has){alert('Enter the scheduled feed % for at least one face or stock first.');return;}
   if(!db){alert('Storage is not available on this device.');return;}
   const rec={date:shWin()[0].toISOString(),shift:$('shShift').value,mine:'Noamundi and Katamati',plants:r.plants,mines:r.mines,overall:r.overall,text:cpText(r),img:cpCanvas(r).toDataURL('image/jpeg',.88)};
@@ -1652,8 +1816,8 @@ $('cpSave').onclick=()=>{const r=cpCompute();if(!r.has){alert('Enter the schedul
   tx.oncomplete=()=>{cpOn=true;cpPrev();say2('cpMsg','Compliance report saved. Use Share or Download below.');renderExtra();};
   tx.onerror=()=>say2('cpMsg','Could not save the compliance report.');};
 function cpCsvText(date,shift,r){
-  const L=[['Date','Shift','Plant','Type','Source','Mine','Status','Scheduled %','Scheduled % (scaled to 100)','Trips','Actual %','Variance (pp)','Plant trips','Plant scheduled total %','Plant compliance %','Plant compliance incl. alternates %','Matched ROM entries (trips)','Planned Fe','Actual Fe']],b=[date,SHL[shift]];
-  r.plants.forEach(p=>p.rows.forEach(x=>L.push([...b,p.pl,x.type,x.lbl,x.mine,x.status,x.sched==null?'':x.sched,x.plan==null?'':cn(x.plan,1),x.trips,cn(x.act,1),x.plan==null||x.alt?'':cn(x.act-x.plan,1),p.T,p.S||'',p.score==null?'':cn(p.score,1),p.scoreAlt==null?'':cn(p.scoreAlt,1),(x.via||[]).join('; '),p.planQ?cn(p.planQ[0],2):'',p.actQ?cn(p.actQ[0],2):''])));
+  const L=[['Date','Shift','Plant','Type','Source','Mine','Status','Scheduled %','Scheduled % (scaled to 100)','Trips','Actual %','Variance (pp)','Plant trips','Plant scheduled total %','Quality conformity','Complied %','Plant compliance %','Plant compliance strictly to schedule %','Matched ROM entries (trips)','Planned Fe','Actual Fe']],b=[date,SHL[shift]];
+  r.plants.forEach(p=>p.rows.forEach(x=>L.push([...b,p.pl,x.type,x.lbl,x.mine,x.status,x.sched==null?'':x.sched,x.plan==null?'':cn(x.plan,1),x.trips,cn(x.act,1),x.plan==null||x.alt?'':cn(x.act-x.plan,1),p.T,p.S||'',x.trips>0?x.conf:'',cn(x.cmp,1),p.score==null?'':cn(p.score,1),p.strict==null?'':cn(p.strict,1),(x.via||[]).join('; '),p.planQ?cn(p.planQ[0],2):'',p.actQ?cn(p.actQ[0],2):''])));
   L.push([]);L.push(['Date','Shift','Mine','Planned trips','Actual trips','Mine compliance %']);
   r.mines.forEach(m=>L.push([...b,m.mine,cn(m.plan,1),cn(m.act,1),m.score==null?'':cn(m.score,1)]));
   L.push([...b,'OVERALL','','',r.overall==null?'':cn(r.overall,1)]);
