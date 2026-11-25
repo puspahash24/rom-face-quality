@@ -168,6 +168,42 @@ main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
 #zoomWrap{display:flex;align-items:center;gap:4px;flex-shrink:0;margin-left:auto;margin-right:8px}
 #zoomWrap button{padding:5px 8px;font-size:13px;line-height:1.1;min-width:34px}
 #zoomWrap button:disabled{opacity:.4}
+
+/* ---- Desktop / laptop optimisation (mouse and keyboard, wide screens) ---- */
+.deskhint{display:none}
+#map.dropping{outline:4px dashed var(--acc);outline-offset:-4px}
+@media (min-width:900px){
+  header{padding:0 20px}
+  header h1{font-size:18px}
+  #status{font-size:13px}
+  body{display:grid;grid-template-columns:minmax(0,1fr) clamp(470px,36vw,660px);grid-template-rows:52px minmax(0,1fr);height:100vh;height:100dvh;overflow:hidden}
+  header{grid-column:1/-1;grid-row:1;width:auto;height:auto}
+  #map{grid-column:1;grid-row:2;width:100%;height:100%;min-height:0;flex:none}
+  main{grid-column:2;grid-row:2;width:auto;height:100%;padding:16px;gap:14px;scrollbar-width:thin;scrollbar-color:var(--line) transparent;border-left:1px solid var(--line)}
+  main::-webkit-scrollbar{width:10px}main::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px;border:2px solid var(--bg)}
+  main>section{padding:16px 18px}
+  .fields{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+  .dest{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+  .row{gap:10px}
+  .log-thumb{width:84px;height:84px}
+  .log-info{font-size:13px}
+  button,.btn,.chk,select{cursor:pointer}
+  button:hover:not(:disabled),.btn:hover{filter:brightness(1.1)}
+  button.ghost:hover:not(:disabled),.btn.ghost:hover{background:color-mix(in srgb,var(--acc) 12%,transparent);filter:none}
+  .chk:hover{border-color:var(--acc)}
+  #edOv{padding:6vh 16px!important}
+  #edBox{max-width:680px!important}
+  #fsBar{left:50%;right:auto;transform:translateX(-50%);max-width:720px;width:max-content}
+  .deskhint{display:inline}
+}
+@media (min-width:1500px){
+  body{font-size:16px;grid-template-columns:minmax(0,1fr) clamp(520px,34vw,700px)}
+  .grid b{font-size:22px}
+  td,th{padding:5px 4px}
+}
+@media (min-width:900px) and (max-height:720px){
+  body{grid-template-rows:46px minmax(0,1fr)}
+}
 </style>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0d5c63">
@@ -191,7 +227,7 @@ main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
   <div class="mapfiles">
     <div class="mf">
       <div class="mfh">Blasthole map <span class="note">(daily)</span></div>
-      <label class="btn">Upload blasthole KMZ<input id="kml" type="file" accept=".kml,.kmz"></label>
+      <label class="btn">Upload blasthole KMZ<input id="kml" type="file" accept=".kml,.kmz"></label><span class="note deskhint">or drop the blasthole file on the map</span>
       <div id="count" class="note"></div>
       <div id="kmlInfo" class="note"></div>
       <label class="note mfchk"><input id="lbl" type="checkbox" checked> Show hole IDs</label>
@@ -305,7 +341,7 @@ main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
   <h2>Share and import entries</h2>
   <div class="sub">
     <h2>1. Send my entries to the other sampler</h2>
-    <p class="note">Sends the faces and stocks you saved in the shift chosen in the Shift end report. To send just one entry, tap Code on it in its history list.</p>
+    <p class="note">Sends the faces and stocks you saved in the shift chosen in the Shift report. To send just one entry, tap Code on it in its history list.</p>
     <div class="row"><button id="impShare" style="width:100%">Share my entries (this shift)</button></div>
     <div class="row"><button id="impFile" class="ghost" style="width:100%">Share my entries as a file</button></div>
     <div id="impMsgS" class="note" style="color:var(--acc);font-weight:600"></div>
@@ -320,12 +356,12 @@ main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
 </section>
 
 <section>
-  <h2>Shift end report</h2>
+  <h2>Shift report (mid-shift / shift end)</h2>
   <div class="fields"><label>Date (shift start) <input id="shDate" type="date"></label>
   <label>Shift <select id="shShift"><option value="A">A shift (6 AM to 2 PM)</option><option value="B">B shift (2 PM to 10 PM)</option><option value="C">C shift (10 PM to 6 AM)</option></select></label></div>
   <p class="note">Sources are the face reports and stock entries saved in this shift. Enter the trips fed from each source to each plant. Quality is the trip-weighted average.</p>
   <div id="shSrc"></div>
-  <img id="shPrev" style="display:none;width:100%;border-radius:6px;margin-top:10px" alt="Shift end report preview">
+  <img id="shPrev" style="display:none;width:100%;border-radius:6px;margin-top:10px" alt="Shift report preview">
   <div class="row"><button id="shBuild" class="ghost">Refresh sources</button><button id="shSave">Save Shift Report (Image)</button><button id="shPdf">Save Shift Report with Field Photographs (PDF)</button></div>
   <div class="row"><button id="shQvc" style="width:100%">Share plant quality code (for Quality Value Chain)</button></div>
   <p class="note" style="margin:4px 0 0">Sends the trip-weighted Fe, SiO2, Al2O3 and P of each plant as a short message with a code. Paste the whole message in the Quality Value Chain app to predict each plant’s product quality.</p>
@@ -335,7 +371,7 @@ main>section>h2{font-size:18px;margin:0 0 4px}.sub h2{font-size:15px}
 </section>
 <section>
   <details class="cpdet" id="cpDet"><summary>Schedule compliance <span class="note" style="font-size:12px;font-weight:400">(tap to open, only when asked)</span></summary>
-  <p class="note">Uses the date and shift chosen in the Shift end report and the trips entered there. Mark each fed face or stock <b>Conformable</b> or <b>Non-conformable</b> on quality: trips beyond the scheduled share, or from an unscheduled face or stock, count as complied when the quality is conformable. Faces not checked are treated as non-conformable.</p>
+  <p class="note">Uses the date and shift chosen in the Shift report and the trips entered there. Mark each fed face or stock <b>Conformable</b> or <b>Non-conformable</b> on quality: trips beyond the scheduled share, or from an unscheduled face or stock, count as complied when the quality is conformable. Faces not checked are treated as non-conformable.</p>
   <div class="sub" id="schBox">
     <h2>Schedule from NRD Schedule Planner</h2>
     <p class="note">Paste the schedule message you received (the code starts with SCH1.). Each face and stock you fed is matched to the schedule automatically: faces by pit and MRL (e.g. H6-672 = Hill-6, MRL about 672), stocks by name. Check the matches below and correct any that are wrong.</p>
@@ -716,6 +752,15 @@ function setData(d,fit){
 
 kmlRestore();
 $('kml').onchange=e=>e.target.files[0]&&loadFile(e.target.files[0]).catch(err=>$('count').textContent='Could not read file: '+err.message);
+/* desktop: drag a KML/KMZ file onto the page to load the blasthole map */
+(()=>{const m=$('map');
+  const isF=e=>e.dataTransfer&&[...(e.dataTransfer.types||[])].includes('Files');
+  ['dragenter','dragover'].forEach(ev=>document.addEventListener(ev,e=>{if(!isF(e))return;e.preventDefault();m.classList.add('dropping');}));
+  document.addEventListener('dragleave',e=>{if(!e.relatedTarget)m.classList.remove('dropping');});
+  document.addEventListener('drop',e=>{if(!isF(e))return;e.preventDefault();m.classList.remove('dropping');const f=e.dataTransfer.files[0];if(!f)return;
+    if(/\.(kml|kmz)$/i.test(f.name))loadFile(f).catch(err=>$('count').textContent='Could not read file: '+err.message);
+    else $('count').textContent='Drop a .kml or .kmz file to load the blasthole map.';});})();
+
 
 /* ---------- Drone image background ----------
    The orthophoto KMZ (single image or GDAL-style tiled super-overlay) is saved once in IndexedDB.
@@ -1373,13 +1418,16 @@ function shCalc(){
       if(r.s.hasOre){ow+=t;ORE_KEYS.forEach(k=>{oa[k]+=r.s.ore[k]*t;});}});
     if(T)out.push({pl,T,src,oreW:ow,ore:ow?Object.fromEntries(ORE_KEYS.map(k=>[k,oa[k]/ow])):null,fe:w.fe?a.fe/w.fe:NaN,si:w.si?a.si/w.si:NaN,al:w.al?a.al/w.al:NaN,p:w.p?a.p/w.p:NaN});});
   return out;}
+/* Mid-shift report while the shift is still running (more than 2 h before it ends); Shift End report from 2 h before the end onwards */
+function shKind(){const e=shWin()[1].getTime(),n=Date.now();return n<e-2*3600e3?'mid':'end';}
+function shAsOf(){return shKind()==='mid'?'as of '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'';}
 function shCanvas(rows){
   const W=1000,PL=56,SL=44,top=120,hasOre=rows.some(r=>r.ore),H0=top+24+rows.reduce((a,r)=>a+PL+r.src.length*SL,0)+PL,
     H=H0+(hasOre?44+PL*(rows.length+2):0)+24,c=document.createElement('canvas');c.width=W;c.height=H;
   const x=c.getContext('2d'),ink='#1b2a30';
   x.fillStyle='#fff';x.fillRect(0,0,W,H);x.fillStyle=repCol();x.fillRect(0,0,W,top-20);
-  x.fillStyle='#fff';x.textAlign='left';x.font='bold 34px sans-serif';x.fillText('Shift End Report',24,46);
-  x.font='21px sans-serif';x.fillText([$('shDate').value.split('-').reverse().join('-'),SHL[$('shShift').value],'Noamundi and Katamati'].filter(Boolean).join('   |   '),24,84);
+  x.fillStyle='#fff';x.textAlign='left';x.font='bold 34px sans-serif';x.fillText(shKind()==='mid'?'Mid-shift Report':'Shift End Report',24,46);
+  x.font='21px sans-serif';x.fillText([$('shDate').value.split('-').reverse().join('-'),SHL[$('shShift').value],'Noamundi and Katamati',shAsOf()].filter(Boolean).join('   |   '),24,84);
   const xs=[24,480,625,745,870,985],put=(v,y,b,fs,ind,fs0)=>{fs=fs||24;ind=ind||0;v.forEach((t,i)=>{let f=(!i&&fs0)?fs0:fs;const bw=b?'bold ':'';x.font=bw+f+'px sans-serif';
     if(!i){while(f>14&&x.measureText(t).width>418-xs[0]-ind){f--;x.font=bw+f+'px sans-serif';}x.textAlign='left';x.fillText(t,xs[0]+ind,y);}
     else{x.textAlign='right';x.fillText(t,xs[i],y);}});};
@@ -1730,11 +1778,14 @@ function cpCompute(){
     const aq=act.find(a=>a.pl===pl);
     plants.push({pl,T,S,rows,score,strict:S>0&&T>0?strict:null,confPct:altA,alts:(items.altNames||{})[pl]||[],planQ:(items.planQ||{})[pl]||null,actQ:aq?[aq.fe,aq.si,aq.al,aq.p]:null,noTrips:sch&&S>0&&T===0});});
   const mm={};
-  plants.forEach(p=>{if(!(p.S>0))return;p.rows.forEach(x=>{const mine=x.mine||'Unassigned',o=mm[mine]||(mm[mine]={plan:0,act:0,met:0}),pt=p.T*(x.plan||0)/100;o.plan+=pt;o.act+=x.trips;o.met+=p.T*x.cmp/100;});});
-  const mines=Object.keys(mm).map(k=>({mine:k,plan:mm[k].plan,act:mm[k].act,score:mm[k].plan>0?Math.min(100,mm[k].met/Math.max(mm[k].plan,mm[k].act)*100):null}));
+  plants.forEach(p=>{if(!(p.S>0))return;p.rows.forEach(x=>{const mine=x.mine||'Unassigned',o=mm[mine]||(mm[mine]={plan:0,act:0,met:0,metS:0}),pt=p.T*(x.plan||0)/100;o.plan+=pt;o.act+=x.trips;o.met+=p.T*x.cmp/100;o.metS+=p.T*(x.base||0)/100;});});
+  const mines=Object.keys(mm).map(k=>({mine:k,plan:mm[k].plan,act:mm[k].act,met:mm[k].met,metS:mm[k].metS,score:mm[k].plan>0?Math.min(100,mm[k].met/Math.max(mm[k].plan,mm[k].act)*100):null}));
   let ws=0,wt=0;plants.forEach(p=>{if(p.score!==null&&p.T>0){ws+=p.score*p.T;wt+=p.T;}});
   let wa=0;plants.forEach(p=>{if(p.strict!=null&&p.T>0)wa+=p.strict*p.T;});
-  return{plants,mines,overall:wt?ws/wt:null,overallStrict:wt?wa/wt:null,has:plants.some(p=>p.S>0),sch:sch?{name:schName(sch),carried:sch.carried||''}:null};}
+  /* overall = the mines' compliance combined on the same basis (same denominators), so it always lies between the mine-wise values */
+  const den=mines.reduce((a,m)=>a+Math.max(m.plan,m.act),0),mt=mines.reduce((a,m)=>a+m.met,0),ms=mines.reduce((a,m)=>a+m.metS,0);
+  const overall=den>0?Math.min(100,mt/den*100):(wt?ws/wt:null),overallStrict=den>0?Math.min(100,ms/den*100):(wt?wa/wt:null);
+  return{plants,mines,overall,overallStrict,has:plants.some(p=>p.S>0),sch:sch?{name:schName(sch),carried:sch.carried||''}:null};}
 function cpRender(){
   if(!$('cpSrc'))return;cpLoad();schUI();
   const sch=schFor();if(sch){cpRenderSch(sch);return;}
@@ -1768,13 +1819,13 @@ $('cpAdd').onclick=()=>{cpLoad();
   cpDraft.extra.push({pl,type,mine,name,sched:+sv});cpSaveDraft();$('cpName').value='';$('cpSch').value='';cpRender();say2('cpMsg','Added to '+pl+'.');};
 function cpCanvas(r){
   const W=1000,PH=62,CH=38,RH=42,top=118,ink='#1b2a30',cx=[24,600,730,860,985],need=r.plants.some(p=>p.S>0&&Math.abs(p.S-100)>0.5);
-  let H=top+24;r.plants.forEach(p=>{H+=PH+CH+p.rows.length*RH+RH+18+((p.planQ||p.actQ)&&r.sch?RH*2:0)+(p.alts.length&&r.sch?RH:0);});if(r.sch)H+=40;
+  let H=top+24;r.plants.forEach(p=>{H+=PH+CH+p.rows.length*RH+RH+18+((p.planQ||p.actQ)&&r.sch?RH*2+(p.planQ&&p.actQ&&!isNaN(p.actQ[0])?RH:0):0)+(p.alts.length&&r.sch?RH:0);});if(r.sch)H+=40;
   if(r.mines.length)H+=46+CH+r.mines.length*RH+18;H+=56+(need?34:0)+10;
   const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
   const col=v=>v===null?'#666':v>=90?'#1e7d32':v>=75?'#b26a00':'#b3261e',sg=v=>(v>0?'+':'')+fx(v,1);
   x.fillStyle='#fff';x.fillRect(0,0,W,H);x.fillStyle=repCol();x.fillRect(0,0,W,top-20);
-  x.fillStyle='#fff';x.textAlign='left';x.font='bold 34px sans-serif';x.fillText('Schedule Compliance Report',24,46);
-  x.font='21px sans-serif';x.fillText([$('shDate').value.split('-').reverse().join('-'),SHL[$('shShift').value],'Noamundi and Katamati'].filter(Boolean).join('   |   '),24,84);
+  x.fillStyle='#fff';x.textAlign='left';x.font='bold 34px sans-serif';x.fillText(shKind()==='mid'?'Schedule Compliance Report (Mid-shift)':'Schedule Compliance Report',24,46);
+  x.font='21px sans-serif';x.fillText([$('shDate').value.split('-').reverse().join('-'),SHL[$('shShift').value],'Noamundi and Katamati',shAsOf()].filter(Boolean).join('   |   '),24,84);
   const cell=(t,i,yy,fs,b,color)=>{x.font=(b?'bold ':'')+fs+'px sans-serif';x.fillStyle=color||ink;x.textAlign=i?'right':'left';x.fillText(t,cx[i],yy);};
   const lab=(t,yy,color,mw)=>{let f=21;x.font=f+'px sans-serif';while(f>13&&x.measureText(t).width>(mw||480)){f--;x.font=f+'px sans-serif';}x.fillStyle=color||ink;x.textAlign='left';x.fillText(t,24,yy);};
   let y=top;
@@ -1791,8 +1842,13 @@ function cpCanvas(r){
       cell(String(q.trips),1,y+29,22);cell(q.sched==null?'-':fx(q.sched,1),2,y+29,22);cell(fx(q.act,1),3,y+29,22);cell(q.plan==null?'-':sg(q.act-q.plan),4,y+29,22);y+=RH;});
     x.fillStyle=ink;x.fillRect(0,y,W,2);cell('Total',0,y+30,22,true);cell(String(p.T),1,y+30,22,true);cell(p.S>0?fx(p.S,1):'-',2,y+30,22,true);cell(p.T?'100.0':'-',3,y+30,22,true);y+=RH;
     if(r.sch&&(p.planQ||p.actQ)){const qs=a=>a?'Fe '+fx(a[0],2)+'   SiO2 '+fx(a[1],2)+'   Al2O3 '+fx(a[2],2)+'   P '+fx(a[3],3):'-';
-      lab('Planned quality:  '+qs(p.planQ),y+28,'#555',800);y+=RH;lab('Actual quality (trip-weighted):  '+qs(p.actQ),y+28,ink,800);
-      if(p.planQ&&p.actQ&&!isNaN(p.actQ[0])){const d=p.actQ[0]-p.planQ[0];x.font='bold 21px sans-serif';x.textAlign='right';x.fillStyle=Math.abs(d)<=0.5?'#1e7d32':d<0?'#b3261e':'#b26a00';x.fillText('Fe '+(d>0?'+':'')+d.toFixed(2),985,y+28);}y+=RH;}
+      lab('Suggested quality:  '+qs(p.planQ),y+28,'#555',800);y+=RH;lab('Predicted quality (trip-weighted):  '+qs(p.actQ),y+28,ink,800);y+=RH;
+      if(p.planQ&&p.actQ&&!isNaN(p.actQ[0])){
+        /* variation = predicted minus suggested; red = worse, amber = better than suggested but off, green = within tolerance */
+        const V=[['Fe',0,0.5,1],['SiO2',1,0.5,-1],['Al2O3',2,0.3,-1]];let xx=24;
+        x.font='bold 21px sans-serif';x.textAlign='left';x.fillStyle='#555';const t0='Variation (Predicted - Suggested):  ';x.fillText(t0,xx,y+28);xx+=x.measureText(t0).width;
+        V.forEach(([n,i,tol,good])=>{const d=p.actQ[i]-p.planQ[i];if(isNaN(d))return;const t=n+' '+(d>0?'+':'')+d.toFixed(2)+'     ';
+          x.fillStyle=Math.abs(d)<=tol?'#1e7d32':(d*good<0?'#b3261e':'#b26a00');x.fillText(t,xx,y+28);xx+=x.measureText(t).width;});y+=RH;}}
     if(r.sch&&p.alts.length){lab('Alternate faces/stocks in schedule: '+p.alts.join(', '),y+28,'#1d4ed8',950);y+=RH;}
     y+=18;});
   if(r.mines.length){
@@ -1816,8 +1872,8 @@ $('cpSave').onclick=()=>{const r=cpCompute();if(!r.has){alert('Enter the schedul
   tx.oncomplete=()=>{cpOn=true;cpPrev();say2('cpMsg','Compliance report saved. Use Share or Download below.');renderExtra();};
   tx.onerror=()=>say2('cpMsg','Could not save the compliance report.');};
 function cpCsvText(date,shift,r){
-  const L=[['Date','Shift','Plant','Type','Source','Mine','Status','Scheduled %','Scheduled % (scaled to 100)','Trips','Actual %','Variance (pp)','Plant trips','Plant scheduled total %','Quality conformity','Complied %','Plant compliance %','Plant compliance strictly to schedule %','Matched ROM entries (trips)','Planned Fe','Actual Fe']],b=[date,SHL[shift]];
-  r.plants.forEach(p=>p.rows.forEach(x=>L.push([...b,p.pl,x.type,x.lbl,x.mine,x.status,x.sched==null?'':x.sched,x.plan==null?'':cn(x.plan,1),x.trips,cn(x.act,1),x.plan==null||x.alt?'':cn(x.act-x.plan,1),p.T,p.S||'',x.trips>0?x.conf:'',cn(x.cmp,1),p.score==null?'':cn(p.score,1),p.strict==null?'':cn(p.strict,1),(x.via||[]).join('; '),p.planQ?cn(p.planQ[0],2):'',p.actQ?cn(p.actQ[0],2):''])));
+  const L=[['Date','Shift','Plant','Type','Source','Mine','Status','Scheduled %','Scheduled % (scaled to 100)','Trips','Actual %','Variance (pp)','Plant trips','Plant scheduled total %','Quality conformity','Complied %','Plant compliance %','Plant compliance strictly to schedule %','Matched ROM entries (trips)','Suggested Fe','Predicted Fe','Suggested SiO2','Predicted SiO2','Suggested Al2O3','Predicted Al2O3','Fe variation','SiO2 variation','Al2O3 variation']],b=[date,SHL[shift]];
+  r.plants.forEach(p=>p.rows.forEach(x=>L.push([...b,p.pl,x.type,x.lbl,x.mine,x.status,x.sched==null?'':x.sched,x.plan==null?'':cn(x.plan,1),x.trips,cn(x.act,1),x.plan==null||x.alt?'':cn(x.act-x.plan,1),p.T,p.S||'',x.trips>0?x.conf:'',cn(x.cmp,1),p.score==null?'':cn(p.score,1),p.strict==null?'':cn(p.strict,1),(x.via||[]).join('; '),...[0,1,2].flatMap(i=>[p.planQ?cn(p.planQ[i],2):'',p.actQ?cn(p.actQ[i],2):'']),...[0,1,2].map(i=>p.planQ&&p.actQ&&!isNaN(p.actQ[i])?cn(p.actQ[i]-p.planQ[i],2):'')])));
   L.push([]);L.push(['Date','Shift','Mine','Planned trips','Actual trips','Mine compliance %']);
   r.mines.forEach(m=>L.push([...b,m.mine,cn(m.plan,1),cn(m.act,1),m.score==null?'':cn(m.score,1)]));
   L.push([...b,'OVERALL','','',r.overall==null?'':cn(r.overall,1)]);
